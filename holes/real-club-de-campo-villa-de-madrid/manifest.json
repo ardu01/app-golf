@@ -1,0 +1,128 @@
+[
+  {
+    "n": 1,
+    "name": "Hoyo 1",
+    "file": "01.webp",
+    "source": "ccvm-recorrido-negro-oficial",
+    "fallback": "01.jpg"
+  },
+  {
+    "n": 2,
+    "name": "Hoyo 2",
+    "file": "02.webp",
+    "source": "ccvm-recorrido-negro-oficial",
+    "fallback": "02.jpg"
+  },
+  {
+    "n": 3,
+    "name": "Hoyo 3",
+    "file": "03.webp",
+    "source": "ccvm-recorrido-negro-oficial",
+    "fallback": "03.jpg"
+  },
+  {
+    "n": 4,
+    "name": "Hoyo 4",
+    "file": "04.webp",
+    "source": "ccvm-recorrido-negro-oficial",
+    "fallback": "04.jpg"
+  },
+  {
+    "n": 5,
+    "name": "Hoyo 5",
+    "file": "05.webp",
+    "source": "ccvm-recorrido-negro-oficial",
+    "fallback": "05.jpg"
+  },
+  {
+    "n": 6,
+    "name": "Hoyo 6",
+    "file": "06.webp",
+    "source": "ccvm-recorrido-negro-oficial",
+    "fallback": "06.jpg"
+  },
+  {
+    "n": 7,
+    "name": "Hoyo 7",
+    "file": "07.webp",
+    "source": "ccvm-recorrido-negro-oficial",
+    "fallback": "07.jpg"
+  },
+  {
+    "n": 8,
+    "name": "Hoyo 8",
+    "file": "08.webp",
+    "source": "ccvm-recorrido-negro-oficial",
+    "fallback": "08.jpg"
+  },
+  {
+    "n": 9,
+    "name": "Hoyo 9",
+    "file": "09.webp",
+    "source": "ccvm-recorrido-negro-oficial",
+    "fallback": "09.jpg"
+  },
+  {
+    "n": 10,
+    "name": "Hoyo 10",
+    "file": "10.webp",
+    "source": "ccvm-recorrido-negro-oficial",
+    "fallback": "10.jpg"
+  },
+  {
+    "n": 11,
+    "name": "Hoyo 11",
+    "file": "11.webp",
+    "source": "ccvm-recorrido-negro-oficial",
+    "fallback": "11.jpg"
+  },
+  {
+    "n": 12,
+    "name": "Hoyo 12",
+    "file": "12.webp",
+    "source": "ccvm-recorrido-negro-oficial",
+    "fallback": "12.jpg"
+  },
+  {
+    "n": 13,
+    "name": "Hoyo 13",
+    "file": "13.webp",
+    "source": "ccvm-recorrido-negro-oficial",
+    "fallback": "13.jpg"
+  },
+  {
+    "n": 14,
+    "name": "Hoyo 14",
+    "file": "14.webp",
+    "source": "ccvm-recorrido-negro-oficial",
+    "fallback": "14.jpg"
+  },
+  {
+    "n": 15,
+    "name": "Hoyo 15",
+    "file": "15.webp",
+    "source": "ccvm-recorrido-negro-oficial",
+    "fallback": "15.jpg"
+  },
+  {
+    "n": 16,
+    "name": "Hoyo 16",
+    "file": "16.webp",
+    "source": "ccvm-recorrido-negro-oficial",
+    "fallback": "16.jpg"
+  },
+  {
+    "n": 17,
+    "name": "Hoyo 17",
+    "file": "17.webp",
+    "source": "ccvm-recorrido-negro-oficial",
+    "fallback": "17.jpg"
+  },
+  {
+    "n": 18,
+    "name": "Hoyo 18",
+    "file": "18.webp",
+    "source": "ccvm-recorrido-negro-oficial",
+    "fallback": "18.jpg"
+  }
+]
