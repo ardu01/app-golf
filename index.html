@@ -1121,6 +1121,14 @@
     border-color: var(--border-fairway);
   }
   .profile-hero { text-align: center; padding: 8px 0 20px; }
+  .perfil-input {
+    width: 100%; height: 44px; border-radius: 10px; border: 1px solid var(--separator);
+    background: var(--bg-paper-elevated); padding: 0 12px; font-size: 17px; font-weight: 600;
+    color: var(--ink); margin-top: 6px;
+  }
+  .perfil-hcp {
+    flex: 1; text-align: center; font-variant-numeric: tabular-nums;
+  }
   .avatar-lg {
     width: 72px; height: 72px; border-radius: 50%; margin: 0 auto 12px;
     display: grid; place-items: center; font-size: 22px; font-weight: 700;
@@ -1349,6 +1357,29 @@
 
 
   /* Club call chips — subtle, non-intrusive */
+  .totals-entry {
+    margin-top: 12px; padding: 12px; border-radius: 12px;
+    background: var(--bg-paper-elevated);
+  }
+  .totals-entry .te-title { font-size: 13px; font-weight: 600; color: var(--ink-secondary); margin-bottom: 8px; }
+  .totals-entry .te-row {
+    display: grid; grid-template-columns: 1fr 72px 72px; gap: 8px;
+    align-items: center; margin-top: 8px;
+  }
+  .totals-entry .te-name { font-size: 15px; font-weight: 600; }
+  .totals-entry .te-hint { font-size: 11px; color: var(--ink-secondary); }
+  .totals-entry input {
+    width: 100%; height: 40px; border-radius: 10px; border: 1px solid var(--separator);
+    background: #fff; text-align: center; font-size: 16px; font-weight: 600;
+    font-variant-numeric: tabular-nums; color: var(--ink);
+  }
+  .lb-round-pick {
+    display: flex; gap: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    padding: 0 16px 10px; flex-shrink: 0;
+  }
+  .lb-round-pick .chip {
+    flex: 0 0 auto; white-space: nowrap;
+  }
   .club-calls {
     display: flex; gap: 8px; flex-shrink: 0;
     margin: 0 0 8px; padding: 0;
@@ -1384,11 +1415,15 @@
 
   #screen-scorecard .club-calls,
   #screen-hole .club-calls {
-    display: flex !important;
+    display: flex;
     gap: 10px;
     flex-shrink: 0;
     margin: 2px 0 8px;
     justify-content: flex-end;
+  }
+  #screen-scorecard .club-calls[hidden],
+  #screen-hole .club-calls[hidden] {
+    display: none !important;
   }
   #screen-scorecard .club-calls a,
   #screen-hole .club-calls a {
@@ -1516,9 +1551,8 @@
         <div class="fit">
           <div class="home-hero">
             <div class="home-top">
-              <span id="netBadge" class="badge badge-offline" style="pointer-events:auto;cursor:pointer;">Offline</span>
             </div>
-            <div class="greeting">Buenos días, Miguel</div>
+            <div class="greeting">Buenos días</div>
             <div class="greeting-sub">¿Listo para el campo?</div>
             <button class="btn btn-primary mb-8" onclick="setupStart()">Nueva partida</button>
             <div class="round-card">
@@ -1528,9 +1562,9 @@
               <div class="meta">
                 <span class="badge badge-oficial" id="homeCourseBadge">OFICIAL</span>
                 <span class="badge badge-tier">tier: score</span>
-                <span class="badge badge-offline">Sin sync</span>
               </div>
               <button class="btn btn-ghost" data-continue-hole onclick="go('hole')">Continuar · Hoyo 1</button>
+              <button class="btn btn-ghost" data-finish-round onclick="finishRoundEarly()" style="display:none">Cerrar ronda</button>
               <div class="stat-row">
                 <div class="stat-pill"><div class="v" id="homeToPar">—</div><div class="l">Al par</div></div>
                 <div class="stat-pill"><div class="v" id="homeThru">0</div><div class="l">Thru</div></div>
@@ -1612,7 +1646,7 @@
           <div class="progress-holes" id="holeProgress" aria-hidden="true"></div>
         </div>
         <div class="club-calls" id="holeClubCalls" hidden style="margin:0 16px 6px;justify-content:flex-end;">
-          <a id="holeCallCaddie" href="tel:+34918905111"><span class="call-mark" aria-hidden="true"></span>Club</a>
+          <a id="holeCallCaddie" href="tel:+34918905111"><span class="call-mark" aria-hidden="true"></span>Caddie master</a>
           <a id="holeCallRest" href="tel:+34918905630"><span class="call-mark" aria-hidden="true"></span>Restaurante</a>
         </div>
         <div id="holePlayPane" class="hole-tab-pane active" role="tabpanel">
@@ -1686,7 +1720,7 @@
             <span class="badge badge-oficial">OFICIAL</span>
           </div>
           <div class="club-calls" id="scClubCalls" hidden>
-            <a id="scCallCaddie" href="tel:+34918905111"><span class="call-mark" aria-hidden="true"></span>Club</a>
+            <a id="scCallCaddie" href="tel:+34918905111"><span class="call-mark" aria-hidden="true"></span>Caddie master</a>
             <a id="scCallRest" href="tel:+34918905630"><span class="call-mark" aria-hidden="true"></span>Restaurante</a>
           </div>
           <div class="sc-nine-tabs" id="scNineTabs">
@@ -1733,6 +1767,7 @@
           <button class="lb-tab" data-lb="birdie" onclick="switchLb(this)">Birdie</button>
           <button class="lb-tab" data-lb="creative" onclick="switchLb(this)">Creativo</button>
         </div>
+        <div class="lb-round-pick" id="lbRoundPick"></div>
         <div class="fit-body" id="lbList" style="padding:0;overflow:hidden;"></div>
         <div class="footer-note" id="lbFoot" style="padding-bottom:4px;">El hándicap no manda aquí</div>
         <nav class="tabbar">
@@ -1848,8 +1883,9 @@ let COURSES = [{"id":"centro-nacional-de-golf","name":"Centro Nacional de Golf",
 
 let CLUB = (COURSES.find(c => c.id === "la-herreria") || COURSES[0] || {name:"Fairway"}).name || (COURSES[0] && COURSES[0].name) || "Fairway";
 let PLAYERS = [{
-  id: "p1", rp: "rp-miguel", name: "Miguel Ro", short: "Mig", initials: "MR",
-  hcp: 12.4, ph: 12, ch: 12, avatar: "", guest: false, scores: {}, putts: {}, fir: {}, gir: {}, creativePts: 0, creativeLog: []
+  id: "p1", rp: "rp-host", name: "", short: "", initials: "?",
+  hcp: null, ph: null, ch: null, avatar: "", guest: false, scores: {}, putts: {}, fir: {}, gir: {},
+  totalsGross: null, totalsPutts: null, creativePts: 0, creativeLog: []
 }];
 let HOLES = FX.holes.map(h => ({ n: h.n, par: h.par, m: h.m, hcp: h.hcp }));
 
@@ -1884,6 +1920,7 @@ let state = {
     },
   },
   lbTab: "stroke",
+  lbRoundId: null, // null = partida en curso; id = historial
   fir: "na",
   gir: "na",
   inviteTab: "code",
@@ -1905,7 +1942,7 @@ COURSES = COURSES.filter(c => c.id !== "club-ejemplo-norte");
 
 /* 8 Social Games MVP — DEMO-fixture-social.json · no oficiales */
 const SOCIAL_TEMPLATES = [
-  { id: "Putting King", sub: "1-putt +2 · 3-putt −2", badge: "Stats" },
+  { id: "Putting King", sub: "1P +3 · 2P +1 · 3P −1", badge: "Stats" },
   { id: "GIR King", sub: "GIR +1 · GIR+birdie +4", badge: "Stats" },
   { id: "Birdie Hunt", sub: "Birdie neto o mejor · bounty", badge: "" },
   { id: "Chaos Golf", sub: "Bonus, caos y ruleta", badge: "Stats" },
@@ -1935,8 +1972,9 @@ const MODALITY_RULES = {
     title: "Putting King",
     official: false,
     how: [
-      "1-putt +2 · 2-putt 0 · 3-putt −2 · 4+ −4",
-      "Bonus: 1-putt en par 3 +1 extra",
+      "1 putt = 3 puntos",
+      "2 putts = 1 punto",
+      "3 putts (o más) = −1",
       "Sin putts registrados → 0 ese hoyo",
       "Desempate: más 1-putts → menos 3-putts+",
     ],
@@ -1977,7 +2015,7 @@ const MODALITY_RULES = {
     official: false,
     how: [
       "Birdie +3 · Par 0 · Bogey −1 · Doble+ −3",
-      "Si hay putts: 1-putt +2 · 3-putt+ −2",
+      "Si hay putts: 1P +3 · 2P +1 · 3P −1",
       "Si hay GIR: GIR +1 · Si hay penalties: cada una −2",
       "Ruleta/hoyo (seed fija): 50% nada · 20% ángel +3 · 20% serpiente −3 · 10% ×2 el hoyo",
       "Score-only: solo strokes + ruleta",
@@ -2065,10 +2103,15 @@ function isRoundInProgress() {
   let hasStored = false;
   try { hasStored = !!localStorage.getItem(ACTIVE_KEY); } catch (e) {}
   if (!hasStored) return false;
-  return PLAYERS.some(p => Object.keys(p.scores || {}).length > 0);
+  return PLAYERS.some(p =>
+    Object.keys(p.scores || {}).length > 0 ||
+    p.totalsGross != null ||
+    p.totalsPutts != null
+  );
 }
 
 function updateHomeThru() {
+  if (typeof updateHomeGreeting === "function") updateHomeGreeting();
   const p = PLAYERS[0];
   let gross = 0, par = 0, thru = 0;
   const live = isRoundInProgress();
@@ -2108,7 +2151,10 @@ function updateHomeThru() {
     btn.textContent = "Continuar · Hoyo " + (state.hole || 1);
     btn.style.display = live ? "" : "none";
   });
-  // Card always on Home (fits under greeting); Continuar only when live
+  document.querySelectorAll("[data-finish-round]").forEach(btn => {
+    btn.style.display = live ? "" : "none";
+  });
+  // Card always on Home; Continuar/Cerrar only when live
   const roundCard = document.querySelector("#screen-home .round-card");
   if (roundCard) {
     roundCard.style.display = "";
@@ -2117,24 +2163,8 @@ function updateHomeThru() {
 }
 
 function updateNetBadge() {
-  const b = document.getElementById("netBadge");
-  if (!b) return;
-  if (state.offline) {
-    b.className = "badge badge-offline";
-    b.style.cssText = "pointer-events:auto;cursor:pointer;";
-    b.textContent = "Offline";
-  } else {
-    b.className = "badge badge-online";
-    b.style.cssText = "pointer-events:auto;cursor:pointer;";
-    b.textContent = "Online";
-  }
+  /* offline/online UI removed — app is local-only */
 }
-
-document.getElementById("netBadge").addEventListener("click", () => {
-  state.offline = !state.offline;
-  updateNetBadge();
-  if (state.offline) showToast("Sin conexión — se sincroniza al volver");
-});
 
 function activePlayers() {
   return PLAYERS.filter((_, i) => state.setup.players[i]);
@@ -2174,13 +2204,13 @@ function applyCourseData(course, teeName, clearScores) {
     mByTee: h.mByTee,
   }));
   if (clearScores) {
-    PLAYERS.forEach(p => { p.scores = {}; p.putts = {}; p.fir = {}; p.gir = {}; p.creativePts = 0; p.creativeLog = []; });
+    PLAYERS.forEach(p => { p.scores = {}; p.putts = {}; p.fir = {}; p.gir = {}; p.totalsGross = null; p.totalsPutts = null; p.creativePts = 0; p.creativeLog = []; });
     state.hole = 1;
   }
   const homeClub = document.getElementById("homeClub");
   if (homeClub) homeClub.textContent = CLUB;
   const homeMeta = document.getElementById("homeMeta");
-  if (homeMeta) homeMeta.textContent = FX.layout + " · " + tee + " · Par " + FX.par;
+  if (homeMeta) homeMeta.textContent = ((state.setup && state.setup.holes) || 18) + " hoyos · " + tee + " · Par " + FX.par;
   const badge = document.getElementById("homeCourseBadge");
   if (badge) {
     badge.textContent = course.badge || (course.official ? "OFICIAL" : "FICTICIO");
@@ -2249,16 +2279,111 @@ function removeRosterPlayer(id) {
 function loadHostHcp() {
   try {
     const h = JSON.parse(localStorage.getItem(HOST_KEY) || "null");
-    if (h && h.hcp != null && PLAYERS[0]) {
+    if (!PLAYERS[0]) return;
+    if (!h) {
+      // Visitante nuevo / otro iPhone: perfil vacío (no hay Miguel en el HTML)
+      PLAYERS[0].name = "";
+      PLAYERS[0].short = "";
+      PLAYERS[0].initials = "?";
+      PLAYERS[0].hcp = null;
+      PLAYERS[0].ph = null;
+      PLAYERS[0].ch = null;
+      return;
+    }
+    if (h.hcp != null && h.hcp !== "") {
       PLAYERS[0].hcp = clampHcp(h.hcp);
       PLAYERS[0].ph = Math.round(PLAYERS[0].hcp);
       PLAYERS[0].ch = Math.round(PLAYERS[0].hcp);
+    } else {
+      PLAYERS[0].hcp = null;
+      PLAYERS[0].ph = null;
+      PLAYERS[0].ch = null;
     }
+    applyHostName(h.name ? String(h.name).trim() : "", false);
   } catch (e) {}
 }
 
+function applyHostName(name, persist) {
+  const p = PLAYERS[0];
+  if (!p) return;
+  const n = String(name || "").trim();
+  p.name = n;
+  p.short = n ? n.slice(0, 3) : "";
+  p.initials = n ? ((typeof guestInitials === "function") ? guestInitials(n) : n.slice(0, 2).toUpperCase()) : "?";
+  if (persist !== false) saveHostProfile();
+  updateHomeGreeting();
+}
+
 function saveHostHcp() {
-  try { localStorage.setItem(HOST_KEY, JSON.stringify({ hcp: PLAYERS[0].hcp })); } catch (e) {}
+  saveHostProfile();
+}
+
+function saveHostProfile() {
+  try {
+    const p = PLAYERS[0] || {};
+    // Solo en este dispositivo — nunca viaja en el HTML público
+    localStorage.setItem(HOST_KEY, JSON.stringify({
+      name: String(p.name || "").trim(),
+      hcp: (p.hcp != null && p.hcp !== "") ? clampHcp(p.hcp) : null
+    }));
+  } catch (e) {}
+}
+
+function hostFirstName() {
+  const n = (PLAYERS[0] && PLAYERS[0].name) ? String(PLAYERS[0].name).trim() : "";
+  if (!n) return "";
+  return n.split(/\s+/)[0] || "";
+}
+
+function hostHasProfile() {
+  const p = PLAYERS[0];
+  return !!(p && String(p.name || "").trim());
+}
+
+function updateHomeGreeting() {
+  const el = document.querySelector("#screen-home .greeting");
+  if (!el) return;
+  const hour = new Date().getHours();
+  const hello = hour < 12 ? "Buenos días" : (hour < 20 ? "Buenas tardes" : "Buenas noches");
+  const first = hostFirstName();
+  el.textContent = first ? (hello + ", " + first) : hello;
+  const sub = document.querySelector("#screen-home .greeting-sub");
+  if (sub) {
+    sub.textContent = first ? "¿Listo para el campo?" : "Pon tu nombre y HCP en Perfil";
+  }
+}
+
+function setHostNameFromPerfil(raw) {
+  applyHostName(raw, true);
+  if (typeof refreshPlayerHandicaps === "function") refreshPlayerHandicaps();
+}
+
+function adjHostHcpFromPerfil(delta) {
+  const p = PLAYERS[0];
+  if (!p) return;
+  const base = (p.hcp != null && p.hcp !== "") ? Number(p.hcp) : 18;
+  setHostHcpFromPerfil(base + delta);
+}
+
+function setHostHcpFromPerfil(raw) {
+  const p = PLAYERS[0];
+  if (!p) return;
+  const cleaned = String(raw).trim().replace(",", ".");
+  if (cleaned === "" || cleaned === ".") {
+    p.hcp = null;
+    p.ph = null;
+    p.ch = null;
+    saveHostProfile();
+    renderPerfil();
+    return;
+  }
+  const h = clampHcp(cleaned);
+  p.hcp = h;
+  p.ph = Math.round(h);
+  p.ch = Math.round(h);
+  saveHostProfile();
+  if (typeof refreshPlayerHandicaps === "function") refreshPlayerHandicaps();
+  renderPerfil();
 }
 
 const ROUNDS_KEY = "fairway.rounds.v1";
@@ -2285,6 +2410,8 @@ function snapshotPlayers() {
     putts: Object.assign({}, p.putts),
     fir: Object.assign({}, p.fir || {}),
     gir: Object.assign({}, p.gir || {}),
+    totalsGross: (p.totalsGross != null ? Number(p.totalsGross) : null),
+    totalsPutts: (p.totalsPutts != null ? Number(p.totalsPutts) : null),
     creativePts: Number(p.creativePts) || 0,
     creativeLog: Array.isArray(p.creativeLog) ? p.creativeLog.slice() : []
   }));
@@ -2321,6 +2448,8 @@ function endActiveRoundMemory() {
     p.putts = {};
     p.fir = {};
     p.gir = {};
+    p.totalsGross = null;
+    p.totalsPutts = null;
     p.creativePts = 0;
     p.creativeLog = [];
   });
@@ -2330,6 +2459,9 @@ function endActiveRoundMemory() {
     document.querySelectorAll("[data-continue-hole]").forEach(btn => {
       btn.style.display = "none";
       btn.textContent = "Continuar · Hoyo 1";
+    });
+    document.querySelectorAll("[data-finish-round]").forEach(btn => {
+      btn.style.display = "none";
     });
     const card = document.querySelector("#screen-home .round-card");
     if (card) {
@@ -2361,6 +2493,8 @@ function restoreActiveRound() {
         hcp: p.hcp, ch: p.ch, ph: p.ph, guest: !!p.guest,
         avatar: "", scores: p.scores || {}, putts: p.putts || {},
         fir: p.fir || {}, gir: p.gir || {},
+        totalsGross: (p.totalsGross != null ? Number(p.totalsGross) : null),
+        totalsPutts: (p.totalsPutts != null ? Number(p.totalsPutts) : null),
         creativePts: Number(p.creativePts) || 0,
         creativeLog: Array.isArray(p.creativeLog) ? p.creativeLog.slice() : []
       });
@@ -2435,7 +2569,7 @@ function buildRoundRecord() {
     date: formatRoundDate(now.toISOString()),
     club: (course && course.name) || CLUB || "Fairway",
     courseId: state.setup.courseId,
-    layout: (course && course.layout) || "18 hoyos",
+    layout: (typeof roundLayoutLabel === "function" ? roundLayoutLabel() : (((state.setup && state.setup.holes) || 18) + " hoyos")),
     tee: state.setup.tee,
     par: (course && course.par) || 72,
     holes: state.setup.holes || 18,
@@ -2509,7 +2643,7 @@ function addFromRoster(id) {
     id: row.id, rp: "rp-" + row.id, name: row.name,
     short: row.short || row.name.slice(0, 3), initials: row.initials || guestInitials(row.name),
     hcp: h, ph: Math.round(h), ch: Math.round(h),
-    avatar: "", guest: true, scores: {}, putts: {}, fir: {}, gir: {}, creativePts: 0, creativeLog: []
+    avatar: "", guest: true, scores: {}, putts: {}, fir: {}, gir: {}, totalsGross: null, totalsPutts: null, creativePts: 0, creativeLog: []
   });
   state.setup.players.push(true);
   showToast("Añadido", true);
@@ -2528,13 +2662,13 @@ function addGuestPlayer() {
     id, rp: "rp-guest-" + id, name,
     short: name.slice(0, 3), initials: guestInitials(name),
     hcp: h, ph: Math.round(h), ch: Math.round(h),
-    avatar: "", guest: true, scores: {}, putts: {}, fir: {}, gir: {}, creativePts: 0, creativeLog: []
+    avatar: "", guest: true, scores: {}, putts: {}, fir: {}, gir: {}, totalsGross: null, totalsPutts: null, creativePts: 0, creativeLog: []
   });
   state.setup.players.push(true);
   if (input) input.value = "";
   state.guestDraftHcp = 18.0;
   upsertRosterPlayer(name, h);
-  showToast("Guardado · invitado añadido", true);
+  showToast("Jugador guardado", true);
   refreshPlayerHandicaps();
   renderSetup();
 }
@@ -2647,7 +2781,7 @@ function renderSetup() {
       PLAYERS.map((p, i) => `
         <div class="player-row">
           <div class="avatar ${p.avatar||""}">${p.initials}</div>
-          <div class="name">${p.name}${p.guest?' <span class="guest-chip">INVITADO</span>':''}</div>
+          <div class="name">${p.name}</div>
           <div class="hcp-step" aria-label="Hándicap">
             <button type="button" aria-label="Bajar hándicap" onclick="adjPlayerHcp(${i}, -0.1)">−</button>
             <input class="val hcp-input" type="text" inputmode="decimal" enterkeyhint="done"
@@ -3195,7 +3329,7 @@ function setupNext() {
     state.hole = 1;
     state.activePlayer = 0;
     refreshPlayerHandicaps();
-    PLAYERS.forEach(p => { p.scores = {}; p.putts = {}; p.fir = {}; p.gir = {}; p.creativePts = 0; p.creativeLog = []; });
+    PLAYERS.forEach(p => { p.scores = {}; p.putts = {}; p.fir = {}; p.gir = {}; p.totalsGross = null; p.totalsPutts = null; p.creativePts = 0; p.creativeLog = []; });
     state.hole = 1;
     state.activePlayer = 0;
     state._roundSaved = null;
@@ -3229,10 +3363,9 @@ function renderLobby() {
       <div class="player-row">
         <div class="avatar ${s.p.avatar||""}">${s.p.initials}</div>
         <div class="name">${s.p.name}${s.role==='host'?' · host':''}
-          ${s.p.guest?' <span class="guest-chip">INVITADO</span>':''}
           ${s.away?' <span class="guest-chip">Ausente</span>':''}
         </div>
-        <div class="hcp">${s.p.guest ? '—' : 'PH ' + s.p.ph}</div>
+        <div class="hcp">PH ${s.p.ph != null ? s.p.ph : '—'}</div>
       </div>`).join("")}
     <div class="row gap-8 mt-16">
       <button class="btn btn-secondary" style="flex:1" onclick="openInvite()">Añadir</button>
@@ -3635,8 +3768,10 @@ function adjScore(idx, delta) {
     // Primer +: arranca en par. Primer −: par−1 (mín 1).
     cur = delta > 0 ? par : Math.max(1, par - 1);
     p.scores[state.hole] = cur;
+    p.totalsGross = null;
   } else {
     p.scores[state.hole] = Math.max(1, Math.min(15, cur + delta));
+    p.totalsGross = null;
   }
   state.activePlayer = idx;
   persistActiveRound();
@@ -3647,6 +3782,7 @@ function setScore(idx, v) {
   const p = activePlayers()[idx];
   if (!p) return;
   p.scores[state.hole] = v;
+  p.totalsGross = null;
   state.activePlayer = idx;
   persistActiveRound();
   // Chip de golpes: NUNCA salta solo — hace falta putts también (y putts no van precargados)
@@ -3724,6 +3860,12 @@ function jumpToHole(n) {
   closeHoleSheet();
   renderHole({ instant: true });
   updateHomeThru();
+}
+
+/** Smoke / mid-round: ir a cierre con los hoyos ya jugados (sin rellenar 18) */
+function finishRoundEarly() {
+  if (!isRoundInProgress()) { showToast("No hay ronda en curso"); return; }
+  go("close");
 }
 
 function changeHole(d) {
@@ -3831,14 +3973,16 @@ function setScNine(nine) {
 
 const CLUB_CONTACTS = {
   "la-herreria": {
-    caddie: { label: "Club", tel: "+34918905111" },
+    caddie: { label: "Caddie master", tel: "+34918905111" },
     restaurant: { label: "Restaurante", tel: "+34918905630" }
   }
 };
 
 function getClubContacts() {
   const id = state.setup && state.setup.courseId;
-  return (id && CLUB_CONTACTS[id]) || null;
+  // Solo La Herrería — el resto de campos no muestran llamadas
+  if (id !== "la-herreria") return null;
+  return CLUB_CONTACTS["la-herreria"] || null;
 }
 
 function updateClubCalls() {
@@ -3855,14 +3999,20 @@ function updateClubCalls() {
   if (!show || !contacts) return;
   if (caddie) {
     caddie.href = "tel:" + contacts.caddie.tel;
-    caddie.innerHTML = '<span class="call-mark" aria-hidden="true"></span>Club';
+    caddie.innerHTML = '<span class="call-mark" aria-hidden="true"></span>' + (contacts.caddie.label || "Caddie master");
   }
   if (rest) {
     rest.href = "tel:" + contacts.restaurant.tel;
     rest.innerHTML = '<span class="call-mark" aria-hidden="true"></span>Restaurante';
   }
-  if (hC) hC.href = "tel:" + contacts.caddie.tel;
-  if (hR) hR.href = "tel:" + contacts.restaurant.tel;
+  if (hC) {
+    hC.href = "tel:" + contacts.caddie.tel;
+    hC.innerHTML = '<span class="call-mark" aria-hidden="true"></span>' + (contacts.caddie.label || "Caddie master");
+  }
+  if (hR) {
+    hR.href = "tel:" + contacts.restaurant.tel;
+    hR.innerHTML = '<span class="call-mark" aria-hidden="true"></span>' + (contacts.restaurant.label || "Restaurante");
+  }
 }
 
 function renderScorecard() {
@@ -3872,7 +4022,7 @@ function renderScorecard() {
   const list = activePlayers();
   const course = (typeof getSelectedCourse === "function" ? getSelectedCourse() : null);
   const clubName = (course && course.name) || FX.club;
-  const layout = (course && course.layout) || FX.layout;
+  const layout = roundLayoutLabel();
   document.getElementById("scClub").textContent = clubName + " — " + layout;
   const badge = document.querySelector("#screen-scorecard .badge-demo");
   if (badge) badge.textContent = (course && course.official) ? "OFICIAL" : "FICTICIO";
@@ -3933,6 +4083,9 @@ function renderScorecard() {
     if (HOLES[i]) parAll += HOLES[i].par;
     list.forEach((p, pi) => { if (p.scores[i+1] != null) totAll[pi] += p.scores[i+1]; });
   }
+  list.forEach((p, pi) => {
+    if (!totAll[pi] && p.totalsGross != null) totAll[pi] = Number(p.totalsGross) || 0;
+  });
   rows += `<tr class="sc-totals"><td class="hole-label">TOT</td><td>${parAll}</td>`;
   totAll.forEach(t => { rows += `<td>${t || "—"}</td>`; });
   rows += `</tr>`;
@@ -3965,11 +4118,15 @@ function renderScorecard() {
     if (HOLES[k-1]) parIn += HOLES[k-1].par;
     if (me && me.scores[k]!=null) migIn += me.scores[k];
   }
-  document.getElementById("scOut").textContent = migOut || "—";
+  // Prefer manual totals for host summary when no hole marks
+  let sumGross = migOut + migIn;
+  if (!sumGross && me && me.totalsGross != null) sumGross = Number(me.totalsGross) || 0;
+  document.getElementById("scOut").textContent = migOut || (me && me.totalsGross != null ? "—" : "—");
   document.getElementById("scIn").textContent = migIn || "—";
-  const gross = migOut + migIn;
+  const gross = sumGross;
   const d = gross - (parOut + parIn);
   document.getElementById("scToPar").textContent = gross ? ((d>0?"+":"")+d) : "—";
+  if (typeof renderTotalsEntry === "function") renderTotalsEntry();
 }
 
 /* —— Leader —— */
@@ -3981,19 +4138,108 @@ function switchLb(btn) {
 }
 
 /* —— Live scoring from activePlayers (no fixture winners) —— */
+function playerHasMarkedHoles(p) {
+  const s = (p && p.scores) || {};
+  return Object.keys(s).some(k => s[k] != null);
+}
+
 function playerGross(p, maxH) {
   let g = 0, thru = 0;
   for (let i = 1; i <= maxH; i++) {
     if (p.scores[i] != null) { g += p.scores[i]; thru = i; }
   }
-  return { gross: g, thru };
+  if (thru === 0 && p.totalsGross != null && Number.isFinite(Number(p.totalsGross))) {
+    return { gross: Number(p.totalsGross), thru: maxH, totalsOnly: true };
+  }
+  return { gross: g, thru, totalsOnly: false };
 }
 function playerParPlayed(p, maxH) {
   let par = 0;
+  let any = false;
   for (let i = 1; i <= maxH; i++) {
-    if (p.scores[i] != null && HOLES[i - 1]) par += HOLES[i - 1].par;
+    if (p.scores[i] != null && HOLES[i - 1]) { par += HOLES[i - 1].par; any = true; }
+  }
+  if (!any && p.totalsGross != null) {
+    for (let i = 1; i <= maxH; i++) {
+      if (HOLES[i - 1]) par += HOLES[i - 1].par;
+    }
   }
   return par;
+}
+
+function setPlayerTotalsGross(pi, raw) {
+  const list = activePlayers();
+  const p = list[pi];
+  if (!p) return;
+  if (playerHasMarkedHoles(p)) {
+    showToast("Ya hay hoyos marcados — edita en Hoyo");
+    renderScorecard();
+    return;
+  }
+  const cleaned = String(raw).trim().replace(",", ".");
+  if (cleaned === "") { p.totalsGross = null; }
+  else {
+    let n = Math.round(Number(cleaned));
+    if (!Number.isFinite(n)) { renderScorecard(); return; }
+    if (n < 1) n = 1;
+    if (n > 200) n = 200;
+    p.totalsGross = n;
+  }
+  persistActiveRound();
+  updateHomeThru();
+}
+
+function setPlayerTotalsPutts(pi, raw) {
+  const list = activePlayers();
+  const p = list[pi];
+  if (!p) return;
+  // Allow putts totals even with holes, but if hole putts exist prefer those for scoring
+  const cleaned = String(raw).trim().replace(",", ".");
+  if (cleaned === "") { p.totalsPutts = null; }
+  else {
+    let n = Math.round(Number(cleaned));
+    if (!Number.isFinite(n)) { renderScorecard(); return; }
+    if (n < 0) n = 0;
+    if (n > 100) n = 100;
+    p.totalsPutts = n;
+  }
+  persistActiveRound();
+  updateHomeThru();
+}
+
+function renderTotalsEntry() {
+  let box = document.getElementById("scTotalsEntry");
+  const fit = document.querySelector("#screen-scorecard .fit");
+  if (!fit) return;
+  if (!box) {
+    box = document.createElement("div");
+    box.id = "scTotalsEntry";
+    box.className = "totals-entry";
+    const wa = document.getElementById("scWhatsApp");
+    if (wa && wa.parentNode === fit) fit.insertBefore(box, wa);
+    else fit.appendChild(box);
+  }
+  const list = activePlayers();
+  const rows = list.map((p, pi) => {
+    const marked = playerHasMarkedHoles(p);
+    const gVal = p.totalsGross != null ? p.totalsGross : "";
+    const ptVal = p.totalsPutts != null ? p.totalsPutts : "";
+    const disabled = marked ? "disabled" : "";
+    const hint = marked ? "Hoyos marcados" : "Si no marcas hoyos";
+    return `<div class="te-row">
+      <div><div class="te-name">${p.name || ("Jugador " + (pi+1))}</div><div class="te-hint">${hint}</div></div>
+      <input type="number" inputmode="numeric" ${disabled} placeholder="Golpes" aria-label="Golpes totales ${p.name||""}"
+        value="${gVal}" onchange="setPlayerTotalsGross(${pi}, this.value)" onblur="setPlayerTotalsGross(${pi}, this.value)" />
+      <input type="number" inputmode="numeric" placeholder="Putts" aria-label="Putts totales ${p.name||""}"
+        value="${ptVal}" onchange="setPlayerTotalsPutts(${pi}, this.value)" onblur="setPlayerTotalsPutts(${pi}, this.value)" />
+    </div>`;
+  }).join("");
+  box.innerHTML = `<div class="te-title">Entrada rápida · golpes y putts totales</div>
+    <p class="micro" style="margin-bottom:4px;">Úsalo si no marcas hoyo a hoyo. Golpes se bloquean si ya hay hoyos.</p>
+    <div class="te-row" style="margin-top:0;opacity:0.55;font-size:11px;">
+      <div></div><div style="text-align:center;">Golpes</div><div style="text-align:center;">Putts</div>
+    </div>
+    ${rows}`;
 }
 function stablefordHole(score, par, strokesReceived) {
   const netDiff = score - par - strokesReceived;
@@ -4058,10 +4304,13 @@ function liveStandings() {
   const mods = state.setup.modalities || [];
   if (typeof recalculateAllCreativePts === "function") recalculateAllCreativePts();
   const rows = list.map(p => {
-    const { gross, thru } = playerGross(p, maxH);
+    const pg = playerGross(p, maxH);
+    const { gross, thru } = pg;
+    const totalsOnly = !!pg.totalsOnly;
     const parP = playerParPlayed(p, maxH);
     const ph = Number(p.ch != null ? p.ch : p.ph) || courseHandicapFor(p);
     let sf = 0, puttPts = 0, holeWins = 0, birdies = 0;
+    let puttSum = 0, puttN = 0;
     for (let i = 1; i <= maxH; i++) {
       const h = HOLES[i - 1];
       if (!h) continue;
@@ -4069,11 +4318,14 @@ function liveStandings() {
       if (s == null) continue;
       sf += stablefordHole(s, h.par, strokesOnHole(ph, h.hcp));
       const _recvB = strokesOnHole(ph, h.hcp);
-      if ((s - _recvB) <= h.par - 1) birdies++; // Birdie Hunt · netos
+      if ((s - _recvB) <= h.par - 1) birdies++;
       const pt = p.putts[i];
       if (pt != null) {
-        if (pt <= 1) puttPts += 2;
-        else if (pt >= 3) puttPts -= 2;
+        puttSum += Number(pt) || 0;
+        puttN++;
+        if (pt === 1) puttPts += 3;
+        else if (pt === 2) puttPts += 1;
+        else if (pt >= 3) puttPts -= 1;
       }
     }
     for (let i = 1; i <= maxH; i++) {
@@ -4084,18 +4336,26 @@ function liveStandings() {
       if (winners.length === 1 && winners[0] === p) holeWins += 2;
     }
     let strokesUsed = 0;
-    for (let i = 1; i <= maxH; i++) {
-      const h = HOLES[i - 1];
-      if (!h || p.scores[i] == null) continue;
-      strokesUsed += strokesOnHole(ph, h.hcp);
+    if (totalsOnly) {
+      // Total-only round: apply full course handicap as strokes
+      strokesUsed = ph;
+    } else {
+      for (let i = 1; i <= maxH; i++) {
+        const h = HOLES[i - 1];
+        if (!h || p.scores[i] == null) continue;
+        strokesUsed += strokesOnHole(ph, h.hcp);
+      }
     }
     const net = thru ? (gross - strokesUsed) : null;
+    const puttsTotal = puttN ? puttSum : (p.totalsPutts != null ? Number(p.totalsPutts) : null);
     return {
       p, name: p.name, initials: p.initials, avatar: p.avatar || "",
       guest: !!p.guest, me: p === list[0] || p.id === PLAYERS[0].id,
       gross, net, strokesUsed, thru, toPar: parP ? (gross - parP) : null,
       sf, puttPts, holeWins, birdies, ph, ch: ph,
-      creativePts: Number(p.creativePts) || 0
+      creativePts: Number(p.creativePts) || 0,
+      puttsTotal, puttsHoles: puttN || (p.totalsPutts != null ? maxH : 0),
+      totalsOnly
     };
   });
   // me = host Miguel if present else first active
@@ -4111,11 +4371,157 @@ function pickWinner(rows, key, preferLow) {
   return pool[0];
 }
 
+
+function setLbRound(id) {
+  state.lbRoundId = id || null;
+  renderLeader();
+}
+
+function openLeaderForRound(id) {
+  state.lbRoundId = id || null;
+  state.lbTab = state.lbTab || "stroke";
+  go("leader");
+}
+
+function renderLbRoundPick() {
+  const el = document.getElementById("lbRoundPick");
+  if (!el) return;
+  const rounds = (typeof loadRounds === "function" ? loadRounds() : []).filter(r => !state.deletedRounds[r.id]).slice(0, 12);
+  const live = !state.lbRoundId;
+  let html = `<button type="button" class="chip ${live ? "selected" : ""}" onclick="setLbRound(null)">En curso</button>`;
+  rounds.forEach(r => {
+    const sel = state.lbRoundId === r.id ? "selected" : "";
+    const label = (r.club || "Partida").split(" ").slice(0, 2).join(" ") + " · " + (r.date || "");
+    html += `<button type="button" class="chip ${sel}" onclick="setLbRound('${r.id}')">${label.replace(/</g, "")}</button>`;
+  });
+  if (!rounds.length) {
+    html += `<span class="micro" style="align-self:center;padding:0 4px;">Sin historial aún</span>`;
+  }
+  el.innerHTML = html;
+}
+
+/** Standings from a saved round (recomputes puttPts etc. from hole data) */
+function standingsFromSavedRound(d) {
+  if (!d) return [];
+  const maxH = d.holes || 18;
+  const course = COURSES.find(c => c.id === d.courseId);
+  const holes = (course && course.holes) ? course.holes : HOLES;
+  const hostName = (PLAYERS[0] && PLAYERS[0].name) ? String(PLAYERS[0].name).toLowerCase() : "";
+  const list = (d.players || []).slice();
+
+  function strokesRecv(ch, holeHcp) {
+    if (typeof strokesOnHole === "function") return strokesOnHole(Number(ch) || 0, holeHcp);
+    let n = 0;
+    const idx = Number(holeHcp) || 18;
+    const c = Number(ch) || 0;
+    if (idx <= c) n += 1;
+    if (c > 18 && idx <= (c - 18)) n += 1;
+    if (c > 36 && idx <= (c - 36)) n += 1;
+    return n;
+  }
+
+  return list.map(p => {
+    const scores = p.scores || {};
+    const putts = p.putts || {};
+    const fir = p.fir || {};
+    const gir = p.gir || {};
+    const ch = Number(p.ch != null ? p.ch : p.ph != null ? p.ph : p.hcp) || 0;
+    let gross = 0, thru = 0, parP = 0, sf = 0, puttPts = 0, holeWins = 0, birdies = 0;
+    let puttSum = 0, puttN = 0, firHit = 0, firAtt = 0, girYes = 0, girAtt = 0, strokesUsed = 0;
+    for (let i = 1; i <= maxH; i++) {
+      const s = scores[i];
+      if (s == null) continue;
+      const h = holes[i - 1] || { par: 4, hcp: i };
+      gross += Number(s) || 0;
+      thru = i;
+      parP += Number(h.par) || 4;
+      const recv = strokesRecv(ch, h.hcp);
+      strokesUsed += recv;
+      if (typeof stablefordHole === "function") sf += stablefordHole(s, h.par, recv);
+      if ((s - recv) <= h.par - 1) birdies++;
+      const pt = putts[i];
+      if (pt != null) {
+        puttSum += Number(pt) || 0;
+        puttN++;
+        if (pt === 1) puttPts += 3;
+        else if (pt === 2) puttPts += 1;
+        else if (pt >= 3) puttPts -= 1;
+      }
+      if (fir[i] === "hit" || fir[i] === "miss") { firAtt++; if (fir[i] === "hit") firHit++; }
+      if (gir[i] === "yes" || gir[i] === "no") { girAtt++; if (gir[i] === "yes") girYes++; }
+    }
+    for (let i = 1; i <= maxH; i++) {
+      const scored = list.filter(q => q.scores && q.scores[i] != null);
+      if (!scored.length || scores[i] == null) continue;
+      const best = Math.min(...scored.map(q => q.scores[i]));
+      const winners = scored.filter(q => q.scores[i] === best);
+      if (winners.length === 1 && winners[0] === p) holeWins += 2;
+    }
+    const net = thru ? (gross - strokesUsed) : null;
+    const me = hostName && String(p.name || "").toLowerCase() === hostName;
+    return {
+      p, name: p.name, initials: p.initials || (p.name || "?").slice(0, 2).toUpperCase(),
+      avatar: p.avatar || "", guest: !!p.guest, me,
+      gross, net, strokesUsed, thru, toPar: parP ? (gross - parP) : null,
+      sf, puttPts, holeWins, birdies, ph: ch, ch,
+      creativePts: Number(p.creativePts) || 0,
+      puttsTotal: puttN ? puttSum : null,
+      puttsHoles: puttN,
+      firHit, firAtt, girYes, girAtt,
+      firPct: firAtt ? Math.round(100 * firHit / firAtt) : null,
+      girPct: girAtt ? Math.round(100 * girYes / girAtt) : null
+    };
+  });
+}
+
+function leaderboardRows() {
+  if (state.lbRoundId) {
+    const d = getRoundById(state.lbRoundId);
+    if (d) return { rows: standingsFromSavedRound(d), meta: d, live: false };
+  }
+  const { rows } = liveStandings();
+  // enrich live with putt totals
+  rows.forEach(r => {
+    if (!r.p) return;
+    let puttSum = 0, puttN = 0, firHit = 0, firAtt = 0, girYes = 0, girAtt = 0;
+    const maxH = state.setup.holes || 18;
+    for (let i = 1; i <= maxH; i++) {
+      if (r.p.putts && r.p.putts[i] != null) { puttSum += Number(r.p.putts[i]) || 0; puttN++; }
+      if (r.p.fir && (r.p.fir[i] === "hit" || r.p.fir[i] === "miss")) { firAtt++; if (r.p.fir[i] === "hit") firHit++; }
+      if (r.p.gir && (r.p.gir[i] === "yes" || r.p.gir[i] === "no")) { girAtt++; if (r.p.gir[i] === "yes") girYes++; }
+    }
+    r.puttsTotal = puttN ? puttSum : null;
+    r.puttsHoles = puttN;
+    r.firHit = firHit; r.firAtt = firAtt; r.girYes = girYes; r.girAtt = girAtt;
+    r.firPct = firAtt ? Math.round(100 * firHit / firAtt) : null;
+    r.girPct = girAtt ? Math.round(100 * girYes / girAtt) : null;
+  });
+  return { rows, meta: null, live: true };
+}
+
 function renderLeader() {
+  renderLbRoundPick();
   const listEl = document.getElementById("lbList");
   const foot = document.getElementById("lbFoot");
   const tab = state.lbTab;
-  const { rows } = liveStandings();
+  const { rows, meta, live } = leaderboardRows();
+  const scope = live
+    ? "partida actual"
+    : ((meta && meta.club ? meta.club : "Partida") + " · " + (meta && meta.date ? meta.date : ""));
+
+  function subStats(d) {
+    const bits = [];
+    if (d.puttsTotal != null) bits.push(d.puttsTotal + " putts");
+    if (d.firPct != null) bits.push("FIR " + d.firPct + "%");
+    if (d.girPct != null) bits.push("GIR " + d.girPct + "%");
+    return bits.length ? bits.join(" · ") : "";
+  }
+
+  if (!rows.length) {
+    foot.textContent = live ? "Sin jugadores en curso" : "Sin datos en esta partida";
+    listEl.innerHTML = `<p class="muted" style="padding:16px;">${live ? "Empieza una ronda o elige una del historial." : "Esta partida no tiene jugadores guardados."}</p>`;
+    return;
+  }
 
   if (tab === "stroke") {
     const data = rows.slice().sort((a, b) => {
@@ -4124,43 +4530,61 @@ function renderLeader() {
       if (!b.thru) return -1;
       return a.net - b.net || a.gross - b.gross;
     });
-    foot.textContent = "Stroke · net calculado en vivo";
-    listEl.innerHTML = `<p class="micro mb-8" style="padding:0 16px;">Stroke · gross / net · partida actual</p><div class="lb-list-wrap">` +
+    foot.textContent = "Stroke · net · " + scope;
+    listEl.innerHTML = `<p class="micro mb-8" style="padding:0 16px;">Stroke · gross / net · ${scope}</p><div class="lb-list-wrap">` +
       data.map((d, i) => {
         const tp = d.toPar == null ? "—" : ((d.toPar > 0 ? "+" : "") + d.toPar);
+        const extra = subStats(d);
         return `<div class="lb-row ${d.me?"me":""}">
           <div class="lb-pos">${i+1}</div>
-          <div class="avatar ${d.avatar}" style="width:32px;height:32px;font-size:11px;">${d.initials}</div>
-          <div class="lb-info"><div class="n">${d.name}${d.me?" · tú":""}${d.guest?" · invitado":""}</div><div class="s">Gross ${d.thru?d.gross:"—"} · al par ${tp}</div></div>
+          <div class="avatar ${d.avatar||""}" style="width:32px;height:32px;font-size:11px;">${d.initials||"?"}</div>
+          <div class="lb-info"><div class="n">${d.name}${d.me?" · tú":""}</div><div class="s">Gross ${d.thru?d.gross:"—"} · al par ${tp}${extra?" · "+extra:""}</div></div>
           <div class="lb-pts"><div class="big">${d.thru?d.net:"—"}</div><div class="sub">net</div></div>
         </div>`;
       }).join("") + `</div>`;
   } else if (tab === "stableford") {
     const data = rows.slice().sort((a, b) => b.sf - a.sf || a.gross - b.gross);
-    foot.textContent = "Stableford · calculado en vivo";
-    listEl.innerHTML = `<p class="micro mb-8" style="padding:0 16px;">Stableford · partida actual</p><div class="lb-list-wrap">` +
-      data.map((d, i) => `
-        <div class="lb-row ${d.me?"me":""}">
+    foot.textContent = "Stableford · " + scope;
+    listEl.innerHTML = `<p class="micro mb-8" style="padding:0 16px;">Stableford · ${scope}</p><div class="lb-list-wrap">` +
+      data.map((d, i) => {
+        const extra = subStats(d);
+        return `<div class="lb-row ${d.me?"me":""}">
           <div class="lb-pos">${i+1}</div>
-          <div class="avatar ${d.avatar}" style="width:32px;height:32px;font-size:11px;">${d.initials}</div>
-          <div class="lb-info"><div class="n">${d.name}${d.me?" · tú":""}</div><div class="s">Thru ${d.thru||0}</div></div>
+          <div class="avatar ${d.avatar||""}" style="width:32px;height:32px;font-size:11px;">${d.initials||"?"}</div>
+          <div class="lb-info"><div class="n">${d.name}${d.me?" · tú":""}</div><div class="s">Thru ${d.thru||0}${extra?" · "+extra:""}</div></div>
           <div class="lb-pts"><div class="big">${d.sf}</div><div class="sub">pts</div></div>
-        </div>`).join("") + `</div>`;
-  } else {
-    const keyMap = { putting: "puttPts", rey: "holeWins", birdie: "birdies", creative: "creativePts" };
-    const key = keyMap[tab] || "puttPts";
-    const titles = { putting: "Putting King", rey: "Rey del Hoyo", birdie: "Birdie Hunt", creative: "Creativo" };
-    const micros = { putting: "1P +2 · 2P 0 · 3P −2", rey: "Gana el hoyo · +2", birdie: "Birdie neto o mejor", creative: "Puntos de tus normas" };
-    const data = rows.slice().sort((a, b) => b[key] - a[key]);
-    foot.textContent = "Social Games · partida actual";
-    listEl.innerHTML = `<p class="micro mb-8" style="padding:0 16px;">${titles[tab]||tab} · ${micros[tab]||""}</p><div class="lb-list-wrap">` +
-      data.map((d, i) => `
-        <div class="lb-row ${d.me?"me":""}">
+        </div>`;
+      }).join("") + `</div>`;
+  } else if (tab === "putting") {
+    const data = rows.slice().sort((a, b) => (b.puttPts||0) - (a.puttPts||0) || (a.puttsTotal||999) - (b.puttsTotal||999));
+    foot.textContent = "Putting King · " + scope;
+    listEl.innerHTML = `<p class="micro mb-8" style="padding:0 16px;">Putting · 1P +3 · 2P +1 · 3P −1 · ${scope}</p><div class="lb-list-wrap">` +
+      data.map((d, i) => {
+        const puttLine = d.puttsTotal != null ? (d.puttsTotal + " putts · " + (d.puttsHoles||0) + " hoyos") : "sin putts";
+        return `<div class="lb-row ${d.me?"me":""}">
           <div class="lb-pos">${i+1}</div>
-          <div class="avatar ${d.avatar}" style="width:32px;height:32px;font-size:11px;">${d.initials}</div>
-          <div class="lb-info"><div class="n">${d.name}${d.me?" · tú":""}</div><div class="s">puntos</div></div>
-          <div class="lb-pts"><div class="big">${d[key]}</div><div class="sub">puntos</div></div>
-        </div>`).join("") + `</div>`;
+          <div class="avatar ${d.avatar||""}" style="width:32px;height:32px;font-size:11px;">${d.initials||"?"}</div>
+          <div class="lb-info"><div class="n">${d.name}${d.me?" · tú":""}</div><div class="s">${puttLine}</div></div>
+          <div class="lb-pts"><div class="big">${d.puttPts||0}</div><div class="sub">pts</div></div>
+        </div>`;
+      }).join("") + `</div>`;
+  } else {
+    const keyMap = { rey: "holeWins", birdie: "birdies", creative: "creativePts" };
+    const key = keyMap[tab] || "holeWins";
+    const titles = { rey: "Rey del Hoyo", birdie: "Birdie Hunt", creative: "Creativo" };
+    const micros = { rey: "Gana el hoyo · +2", birdie: "Birdie neto o mejor", creative: "Puntos de tus normas" };
+    const data = rows.slice().sort((a, b) => (b[key]||0) - (a[key]||0));
+    foot.textContent = (titles[tab]||tab) + " · " + scope;
+    listEl.innerHTML = `<p class="micro mb-8" style="padding:0 16px;">${titles[tab]||tab} · ${micros[tab]||""} · ${scope}</p><div class="lb-list-wrap">` +
+      data.map((d, i) => {
+        const extra = subStats(d);
+        return `<div class="lb-row ${d.me?"me":""}">
+          <div class="lb-pos">${i+1}</div>
+          <div class="avatar ${d.avatar||""}" style="width:32px;height:32px;font-size:11px;">${d.initials||"?"}</div>
+          <div class="lb-info"><div class="n">${d.name}${d.me?" · tú":""}</div><div class="s">${extra || "puntos"}</div></div>
+          <div class="lb-pts"><div class="big">${d[key]||0}</div><div class="sub">puntos</div></div>
+        </div>`;
+      }).join("") + `</div>`;
   }
 }
 
@@ -4195,7 +4619,7 @@ function collectScorecardPayload(fromRound) {
         name: p.name,
         short: (p.short || p.name || "?").toString().slice(0, 3),
         hcp: p.hcp,
-        ch: p.ch,
+        ch: (p.ch != null ? p.ch : (p.ph != null ? p.ph : Math.round(Number(p.hcp) || 0))),
         scores: p.scores || {}
       })),
       holes: holesMeta
@@ -4231,49 +4655,62 @@ function drawClassicScorecard(payload) {
   const serif = '"Palatino Linotype", Palatino, "Book Antiqua", "Iowan Old Style", "Times New Roman", Georgia, serif';
   const sans = '-apple-system, "SF Pro Text", system-ui, sans-serif';
   const rowH = 32;
-  const margin = 28; // outer cream margin so WhatsApp no corta el borde
+  const margin = 28;
   const pad = 20;
   const colW = [42, 40].concat(players.map(() => 58));
   const tableW = colW.reduce((a, b) => a + b, 0);
   const nine = Math.min(9, holes.length);
   const hasIn = holes.length > 9;
   const sectionRows = (n) => n + 1 + 1; // holes + header + subtotal
-  const rowsCount = sectionRows(nine) + (hasIn ? sectionRows(holes.length - nine) : 0) + 1; // + TOT
+  // + TOT gross + NET
+  const rowsCount = sectionRows(nine) + (hasIn ? sectionRows(holes.length - nine) : 0) + 2;
   const headH = 100;
-  const footH = 56;
+  const footH = 64;
   const innerW = Math.max(tableW + pad * 2, 320);
   const W = margin * 2 + innerW;
   const contentH = headH + rowsCount * rowH + footH;
   const H = margin * 2 + contentH + 8;
   const canvas = document.createElement("canvas");
-  const scale = 3; // nítido en Retina / WhatsApp
+  const scale = 3;
   canvas.width = Math.ceil(W * scale);
   canvas.height = Math.ceil(H * scale);
   const ctx = canvas.getContext("2d");
   ctx.scale(scale, scale);
   ctx.textBaseline = "middle";
 
-  // Full bleed cream (safe area)
+  function strokesRecv(p, holeHcp) {
+    const ch = Number(p.ch != null ? p.ch : p.hcp) || 0;
+    if (typeof strokesOnHole === "function") return strokesOnHole(ch, holeHcp);
+    // fallback WHS-style allocation
+    let n = 0;
+    const idx = Number(holeHcp) || 18;
+    if (idx <= ch) n += 1;
+    if (ch > 18 && idx <= (ch - 18)) n += 1;
+    if (ch > 36 && idx <= (ch - 36)) n += 1;
+    return n;
+  }
+  function netHole(p, h) {
+    const s = p.scores[h.n];
+    if (s == null) return null;
+    return s - strokesRecv(p, h.hcp);
+  }
+
   ctx.fillStyle = "#F7F1E4";
   ctx.fillRect(0, 0, W, H);
 
-  // Card panel
   const cardX = margin, cardY = margin, cardW = W - margin * 2, cardH = H - margin * 2;
   ctx.fillStyle = "#F3EBDA";
   ctx.fillRect(cardX, cardY, cardW, cardH);
 
-  // Double frame (complete corners)
   ctx.strokeStyle = "#1B3329";
   ctx.lineWidth = 2.5;
   ctx.strokeRect(cardX + 6, cardY + 6, cardW - 12, cardH - 12);
   ctx.lineWidth = 0.75;
   ctx.strokeRect(cardX + 11, cardY + 11, cardW - 22, cardH - 22);
 
-  // Header
   const hx = cardX + 16, hy = cardY + 16, hw = cardW - 32;
   ctx.fillStyle = "#1B3329";
   ctx.fillRect(hx, hy, hw, 58);
-  // gold hairline
   ctx.strokeStyle = "#C4A574";
   ctx.lineWidth = 1;
   ctx.beginPath();
@@ -4286,11 +4723,8 @@ function drawClassicScorecard(payload) {
   ctx.font = "600 20px " + serif;
   ctx.fillText(payload.club || "Fairway", W / 2, hy + 24);
   ctx.font = "400 11px " + serif;
-  ctx.letterSpacing = "2px";
-  ctx.fillText("T A R J E T A   D E   J U E G O", W / 2, hy + 44);
-  ctx.letterSpacing = "0px";
+  ctx.fillText("T A R J E T A   ·   G R O S S   /   N E T", W / 2, hy + 44);
 
-  // Meta line
   ctx.fillStyle = "#3D4F45";
   ctx.font = "400 12px " + serif;
   ctx.textAlign = "left";
@@ -4331,12 +4765,23 @@ function drawClassicScorecard(payload) {
     ctx.textAlign = "center";
     const t = (val == null || val === "") ? "·" : String(val);
     ctx.fillText(t, x + w / 2, yi + rowH / 2 + 0.5);
+    // stroke received dots (handicap)
+    if (opts.dots && opts.dots > 0) {
+      ctx.fillStyle = "#C4A574";
+      for (let d = 0; d < Math.min(opts.dots, 3); d++) {
+        ctx.beginPath();
+        ctx.arc(x + w - 7 - d * 6, yi + 7, 2.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
   }
 
   function drawNine(start, end, title, subLabel) {
     drawSectionHeader(title);
-    const totals = players.map(() => 0);
+    const totalsG = players.map(() => 0);
+    const totalsN = players.map(() => 0);
     let parSum = 0;
+    let counted = players.map(() => 0);
     for (let i = start; i < end; i++) {
       const h = holes[i];
       let x = originX;
@@ -4346,8 +4791,13 @@ function drawClassicScorecard(payload) {
       parSum += h.par;
       players.forEach((p, pi) => {
         const s = p.scores[h.n];
-        if (s != null) totals[pi] += s;
-        cell(s != null ? s : "·", x, y, colW[2 + pi], { bg: zebra, size: 14 });
+        const recv = strokesRecv(p, h.hcp);
+        if (s != null) {
+          totalsG[pi] += s;
+          totalsN[pi] += (s - recv);
+          counted[pi]++;
+        }
+        cell(s != null ? s : "·", x, y, colW[2 + pi], { bg: zebra, size: 14, dots: s != null ? recv : 0 });
         x += colW[2 + pi];
       });
       y += rowH;
@@ -4356,18 +4806,18 @@ function drawClassicScorecard(payload) {
     cell(subLabel, x, y, colW[0], { bold: true, serif: true, bg: "#E8DFC8" }); x += colW[0];
     cell(parSum, x, y, colW[1], { bold: true, serif: true, bg: "#E8DFC8" }); x += colW[1];
     players.forEach((_, pi) => {
-      cell(totals[pi] || "—", x, y, colW[2 + pi], { bold: true, bg: "#E8DFC8", size: 14 });
+      cell(counted[pi] ? totalsG[pi] : "—", x, y, colW[2 + pi], { bold: true, bg: "#E8DFC8", size: 14 });
       x += colW[2 + pi];
     });
     y += rowH;
-    return { totals, parSum };
+    return { totalsG, totalsN, parSum, counted };
   }
 
   const out = drawNine(0, nine, "Ida", "OUT");
-  let inn = { totals: players.map(() => 0), parSum: 0 };
+  let inn = { totalsG: players.map(() => 0), totalsN: players.map(() => 0), parSum: 0, counted: players.map(() => 0) };
   if (hasIn) inn = drawNine(nine, holes.length, "Vuelta", "IN");
 
-  // TOTAL
+  // TOT gross
   let x = originX;
   ctx.fillStyle = "#1B3329";
   ctx.fillRect(originX, y, tableW, rowH);
@@ -4375,16 +4825,37 @@ function drawClassicScorecard(payload) {
   ctx.font = "600 13px " + serif;
   ctx.textAlign = "center";
   const totPar = out.parSum + inn.parSum;
-  const labs = ["TOT", String(totPar)].concat(
-    players.map((_, pi) => String((out.totals[pi] || 0) + (inn.totals[pi] || 0) || "—"))
+  const labsG = ["TOT", String(totPar)].concat(
+    players.map((_, pi) => {
+      const c = (out.counted[pi] || 0) + (inn.counted[pi] || 0);
+      return c ? String((out.totalsG[pi] || 0) + (inn.totalsG[pi] || 0)) : "—";
+    })
   );
-  labs.forEach((lab, i) => {
+  labsG.forEach((lab, i) => {
     ctx.fillText(lab, x + colW[i] / 2, y + rowH / 2);
     x += colW[i];
   });
-  y += rowH + 18;
+  y += rowH;
 
-  // Footer
+  // NET row (resultado neto)
+  x = originX;
+  ctx.fillStyle = "#2F5D46";
+  ctx.fillRect(originX, y, tableW, rowH);
+  ctx.fillStyle = "#F7F1E4";
+  ctx.font = "600 13px " + serif;
+  ctx.textAlign = "center";
+  const labsN = ["NET", ""].concat(
+    players.map((_, pi) => {
+      const c = (out.counted[pi] || 0) + (inn.counted[pi] || 0);
+      return c ? String((out.totalsN[pi] || 0) + (inn.totalsN[pi] || 0)) : "—";
+    })
+  );
+  labsN.forEach((lab, i) => {
+    ctx.fillText(lab, x + colW[i] / 2, y + rowH / 2);
+    x += colW[i];
+  });
+  y += rowH + 16;
+
   ctx.fillStyle = "#3D4F45";
   ctx.font = "400 11px " + serif;
   ctx.textAlign = "left";
@@ -4392,14 +4863,17 @@ function drawClassicScorecard(payload) {
     const hi = (typeof fmtHcp === "function" && p.hcp != null) ? fmtHcp(p.hcp) : (p.hcp != null ? p.hcp : "—");
     return p.short + "  HI " + hi + " · CH " + (p.ch != null ? p.ch : "—");
   }).join("      ");
-  ctx.fillText(chLine, cardX + 18, Math.min(y, cardY + cardH - 22));
+  ctx.fillText(chLine, cardX + 18, Math.min(y, cardY + cardH - 28));
+  ctx.font = "400 10px " + serif;
+  ctx.fillStyle = "#6B7A70";
+  ctx.fillText("Puntos dorados = golpes de hándicap · NET = gross − CH", cardX + 18, Math.min(y + 14, cardY + cardH - 14));
   ctx.textAlign = "right";
   ctx.font = "italic 11px " + serif;
-  ctx.fillText("Fairway", cardX + cardW - 18, Math.min(y, cardY + cardH - 22));
+  ctx.fillStyle = "#3D4F45";
+  ctx.fillText("Fairway", cardX + cardW - 18, Math.min(y, cardY + cardH - 28));
 
   return canvas;
 }
-
 
 /** Placas de ganador por modalidad (imagen para WhatsApp) */
 function buildLivePodium() {
@@ -4721,6 +5195,11 @@ function shareRoundWhatsApp(id) {
 }
 
 
+function roundLayoutLabel() {
+  const n = (state.setup && state.setup.holes) || 18;
+  return n + " hoyos";
+}
+
 function renderClose() {
   const body = document.getElementById("closeBody");
   // Snapshot standings/podium BEFORE wiping active memory (P05 + placas)
@@ -4731,7 +5210,7 @@ function renderClose() {
   persistCompletedRound();
   const me = rows.find(r => r.me) || rows[0];
   const course = (typeof getSelectedCourse === "function" ? getSelectedCourse() : null);
-  const layout = (course && course.layout) || FX.layout;
+  const layout = roundLayoutLabel();
   const par = (course && course.par) || FX.par;
   const officialBadge = course && course.official ? "OFICIAL" : "FICTICIO";
 
@@ -4885,10 +5364,18 @@ function mergeFairwayBackup(remote) {
     });
     saveRoster(Object.keys(map).map(k => map[k]));
   }
-  if (remote.host && remote.host.hcp != null) {
+  if (remote.host && typeof remote.host === "object") {
     try {
       localStorage.setItem(HOST_KEY, JSON.stringify(remote.host));
-      if (PLAYERS[0]) PLAYERS[0].hcp = remote.host.hcp;
+      if (PLAYERS[0]) {
+        if (remote.host.hcp != null) {
+          PLAYERS[0].hcp = clampHcp(remote.host.hcp);
+          PLAYERS[0].ph = Math.round(PLAYERS[0].hcp);
+          PLAYERS[0].ch = Math.round(PLAYERS[0].hcp);
+        }
+        if (remote.host.name) applyHostName(remote.host.name, false);
+      }
+      if (typeof updateHomeGreeting === "function") updateHomeGreeting();
     } catch (e) {}
   }
   if (remote.activeRound && typeof remote.activeRound === "object") {
@@ -5184,13 +5671,34 @@ function importFairwayBackup() {
 
 function renderPerfil() {
   const recordsHtml = _perfilRecordsHtml();
+  const p = PLAYERS[0] || { name: "", hcp: null, initials: "?" };
+  const hasHcp = p.hcp != null && p.hcp !== "";
+  const hi = hasHcp ? ((typeof fmtHcp === "function") ? fmtHcp(p.hcp) : String(p.hcp)) : "";
+  const initials = (p.name && p.initials) ? p.initials : "?";
   document.getElementById("perfilBody").innerHTML = `
     <div class="profile-hero">
-      <div class="avatar-lg">MR</div>
-      <h1 style="font-size:22px;">Miguel Ro</h1>
-      <p class="muted">Fairway · ES · metros · Amarillas</p>
-      <div class="row gap-8 mt-12" style="justify-content:center;">
-        <span class="badge badge-tier">HI 12.4</span>
+      <div class="avatar-lg">${initials}</div>
+      <p class="muted" style="margin-top:8px;">Solo en este iPhone · no va en la web pública</p>
+    </div>
+    <div class="card mb-16">
+      <div class="eyebrow">Nombre</div>
+      <input class="perfil-input" type="text" maxlength="40" value="${String(p.name || "").replace(/"/g, "&quot;")}"
+        onchange="setHostNameFromPerfil(this.value)"
+        onblur="setHostNameFromPerfil(this.value);renderPerfil()"
+        placeholder="Tu nombre (solo en este iPhone)" autocomplete="name" />
+      <div class="eyebrow mt-16">Handicap Index (HI)</div>
+      <div class="row gap-8" style="align-items:center;">
+        <button type="button" class="btn-icon" onclick="adjHostHcpFromPerfil(-0.1)" aria-label="Bajar HCP">−</button>
+        <input class="perfil-input perfil-hcp" type="text" inputmode="decimal"
+          value="${hi}" placeholder="ej. 12.4"
+          onchange="setHostHcpFromPerfil(this.value)"
+          onblur="setHostHcpFromPerfil(this.value)"
+          aria-label="Handicap Index" />
+        <button type="button" class="btn-icon" onclick="adjHostHcpFromPerfil(0.1)" aria-label="Subir HCP">+</button>
+      </div>
+      <p class="micro mt-8">Se usa en CH, neto y Stableford de tus partidas.</p>
+      <div class="row gap-8 mt-12" style="justify-content:flex-start;">
+        <span class="badge badge-tier">${hasHcp ? ("HI " + hi) : "HI —"}</span>
         <span class="badge badge-demo">Historial · Solo yo</span>
       </div>
     </div>
@@ -5318,7 +5826,8 @@ function renderDetalle() {
       <div class="winners-head">Ganadores</div>
       ${winners}
     </div>
-    <button class="btn btn-primary" onclick="shareRoundWhatsApp('${d.id}')">Compartir tarjeta</button>
+    <button class="btn btn-primary" onclick="openLeaderForRound('${d.id}')">Ver clasificación</button>
+    <button class="btn btn-ghost" onclick="shareRoundWhatsApp('${d.id}')">Compartir tarjeta</button>
     <button class="btn btn-ghost" onclick="deleteRound('${d.id}')">Borrar de este iPhone</button>
     <button class="btn btn-ghost" onclick="go('historial')">Volver</button>`;
 }
