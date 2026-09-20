@@ -1,0 +1,27 @@
+name: Apply player tees patch
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - patches/player-tees.patch
+      - .github/workflows/apply-player-tees.yml
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply patch if needed
+        run: |
+          set -euo pipefail
+          if grep -q "function setPlayerTee" index.html; then
+            echo already applied
+            exit 0
+          fi
+          git apply patches/player-tees.patch
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Tee de salida individual por jugador"
+          git push

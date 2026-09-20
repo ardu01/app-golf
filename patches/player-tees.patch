@@ -1,0 +1,193 @@
+--- a/index.html
++++ b/index.html
+@@ -494,6 +494,17 @@
+     min-width: 38px; text-align: center; font-size: 13px; font-weight: 600;
+     font-variant-numeric: tabular-nums; color: var(--text);
+   }
++  .player-row-wrap { border-bottom: 1px solid var(--border); }
++  .player-row-wrap:first-of-type .player-row { border-radius: var(--r-md) var(--r-md) 0 0; border-top: 1px solid var(--border); }
++  .player-row-wrap:last-of-type { margin-bottom: 8px; }
++  .player-row-wrap:last-of-type .player-tee-row { border-radius: 0 0 var(--r-md) var(--r-md); }
++  .player-tee-row {
++    display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
++    padding: 0 14px 10px; background: var(--surface);
++    border-left: 1px solid var(--border); border-right: 1px solid var(--border);
++  }
++  .player-tee-row .micro { margin-right: 4px; }
++  .player-tee-row .chip { height: 28px; padding: 0 10px; font-size: 12px; }
+ 
+   .toggle {
+     width: 48px; height: 28px; border-radius: 14px; background: rgba(107,106,100,0.25);
+@@ -1884,7 +1895,7 @@
+ let CLUB = (COURSES.find(c => c.id === "la-herreria") || COURSES[0] || {name:"Fairway"}).name || (COURSES[0] && COURSES[0].name) || "Fairway";
+ let PLAYERS = [{
+   id: "p1", rp: "rp-host", name: "", short: "", initials: "?",
+-  hcp: null, ph: null, ch: null, avatar: "", guest: false, scores: {}, putts: {}, fir: {}, gir: {},
++  hcp: null, ph: null, ch: null, tee: FX.tee, avatar: "", guest: false, scores: {}, putts: {}, fir: {}, gir: {},
+   totalsGross: null, totalsPutts: null, creativePts: 0, creativeLog: []
+ }];
+ let HOLES = FX.holes.map(h => ({ n: h.n, par: h.par, m: h.m, hcp: h.hcp }));
+@@ -2233,10 +2244,38 @@
+ function selectTee(tee) {
+   const course = getSelectedCourse();
+   applyCourseData(course, tee, false);
++  PLAYERS.forEach(p => { p.tee = tee; });
++  refreshPlayerHandicaps();
++  renderSetup();
++}
++
++function playerTeeName(player) {
++  const course = typeof getSelectedCourse === "function" ? getSelectedCourse() : null;
++  const names = course && course.tees ? course.tees.map(t => t.name) : [];
++  let tee = (player && player.tee) || (state.setup && state.setup.tee) || FX.tee;
++  if (names.length && !names.includes(tee)) {
++    tee = names.includes("Amarillas") ? "Amarillas" : names[0];
++  }
++  return tee;
++}
++
++function setPlayerTee(i, tee) {
++  const p = PLAYERS[i];
++  if (!p) return;
++  p.tee = tee;
+   refreshPlayerHandicaps();
+   renderSetup();
+ }
+ 
++function metersForTee(hole, teeName) {
++  if (!hole) return 0;
++  if (hole.mByTee && teeName != null && hole.mByTee[teeName] != null) return hole.mByTee[teeName];
++  const course = typeof getSelectedCourse === "function" ? getSelectedCourse() : null;
++  const src = course && course.holes && course.holes.find(x => x.n === hole.n);
++  if (src && src.mByTee && teeName != null && src.mByTee[teeName] != null) return src.mByTee[teeName];
++  return hole.m;
++}
++
+ 
+ function guestInitials(name) {
+   const parts = name.trim().split(/\s+/).filter(Boolean);
+@@ -2405,7 +2444,7 @@
+ function snapshotPlayers() {
+   return PLAYERS.map(p => ({
+     id: p.id, name: p.name, short: p.short, initials: p.initials,
+-    hcp: p.hcp, ch: p.ch, ph: p.ph, guest: !!p.guest,
++    hcp: p.hcp, ch: p.ch, ph: p.ph, tee: p.tee || (state.setup && state.setup.tee) || "", guest: !!p.guest,
+     scores: Object.assign({}, p.scores),
+     putts: Object.assign({}, p.putts),
+     fir: Object.assign({}, p.fir || {}),
+@@ -2490,7 +2529,7 @@
+         id: p.id, rp: "rp-" + p.id, name: p.name,
+         short: p.short || (p.name || "?").slice(0, 3),
+         initials: p.initials || (p.name || "?").slice(0, 2).toUpperCase(),
+-        hcp: p.hcp, ch: p.ch, ph: p.ph, guest: !!p.guest,
++        hcp: p.hcp, ch: p.ch, ph: p.ph, tee: p.tee || (state.setup && state.setup.tee) || "", guest: !!p.guest,
+         avatar: "", scores: p.scores || {}, putts: p.putts || {},
+         fir: p.fir || {}, gir: p.gir || {},
+         totalsGross: (p.totalsGross != null ? Number(p.totalsGross) : null),
+@@ -2642,7 +2681,7 @@
+   PLAYERS.push({
+     id: row.id, rp: "rp-" + row.id, name: row.name,
+     short: row.short || row.name.slice(0, 3), initials: row.initials || guestInitials(row.name),
+-    hcp: h, ph: Math.round(h), ch: Math.round(h),
++    hcp: h, ph: Math.round(h), ch: Math.round(h), tee: (state.setup && state.setup.tee) || FX.tee,
+     avatar: "", guest: true, scores: {}, putts: {}, fir: {}, gir: {}, totalsGross: null, totalsPutts: null, creativePts: 0, creativeLog: []
+   });
+   state.setup.players.push(true);
+@@ -2661,7 +2700,7 @@
+   PLAYERS.push({
+     id, rp: "rp-guest-" + id, name,
+     short: name.slice(0, 3), initials: guestInitials(name),
+-    hcp: h, ph: Math.round(h), ch: Math.round(h),
++    hcp: h, ph: Math.round(h), ch: Math.round(h), tee: (state.setup && state.setup.tee) || FX.tee,
+     avatar: "", guest: true, scores: {}, putts: {}, fir: {}, gir: {}, totalsGross: null, totalsPutts: null, creativePts: 0, creativeLog: []
+   });
+   state.setup.players.push(true);
+@@ -2762,7 +2801,7 @@
+   } else if (step === 1) {
+     const course = getSelectedCourse();
+     const tees = course.tees.map(t => t.name);
+-    html = `<p class="muted mb-16">Tee de salida · ${course.name}</p><div class="chip-row">` +
++    html = `<p class="muted mb-16">Tee por defecto · ${course.name}. Luego puedes cambiarlo jugador a jugador.</p><div class="chip-row">` +
+       tees.map(t => {
+         const teeMeta = course.tees.find(x => x.name === t);
+         const sub = teeMeta && teeMeta.cr != null ? ` · CR ${teeMeta.cr}` : "";
+@@ -2778,7 +2817,11 @@
+   } else if (step === 3) {
+     html = `<p class="muted mb-8">Quién juega hoy</p>
+       <p class="micro mb-16">Misma tarjeta · captura A o B · HI en pasos de 0,1</p>` +
+-      PLAYERS.map((p, i) => `
++      PLAYERS.map((p, i) => {
++        const tees = (getSelectedCourse().tees || []).map(t => t.name);
++        const ptee = playerTeeName(p);
++        return `
++        <div class="player-row-wrap">
+         <div class="player-row">
+           <div class="avatar ${p.avatar||""}">${p.initials}</div>
+           <div class="name">${p.name}</div>
+@@ -2792,7 +2835,13 @@
+             <button type="button" aria-label="Subir hándicap" onclick="adjPlayerHcp(${i}, 0.1)">+</button>
+           </div>
+           <button class="toggle ${state.setup.players[i]?"on":""}" aria-label="Incluir" onclick="state.setup.players[${i}]=!state.setup.players[${i}];renderSetup()"></button>
+-        </div>`).join("") +
++        </div>
++        <div class="player-tee-row">
++          <span class="micro">Salida</span>
++          ${tees.map(t => `<button type="button" class="chip ${ptee===t?"selected":""}" onclick="setPlayerTee(${i}, '${t}')">${t}</button>`).join("")}
++        </div>
++        </div>`;
++      }).join("") +
+       `<div class="write-mode mt-16">
+         <button class="option ${state.setup.writeMode==='single_device'?'selected':''}" type="button" onclick="state.setup.writeMode='single_device';renderSetup()">
+           <span class="radio"></span>
+@@ -2942,7 +2991,7 @@
+         <div class="mt-8"><span class="badge ${course.official?'badge-oficial':'badge-demo'}">${course.badge}</span></div>
+         <div class="divider"></div>
+         <p class="micro mb-8">Jugadores (${active.length})</p>
+-        ${active.map(p => `<div class="row mb-8"><div class="avatar ${p.avatar||""}" style="width:28px;height:28px;font-size:10px;">${p.initials}</div><span style="font-size:14px;">${p.name} · HI ${fmtHcp(p.hcp)}</span></div>`).join("")}
++        ${active.map(p => `<div class="row mb-8"><div class="avatar ${p.avatar||""}" style="width:28px;height:28px;font-size:10px;">${p.initials}</div><span style="font-size:14px;">${p.name} · HI ${fmtHcp(p.hcp)} · ${playerTeeName(p)}</span></div>`).join("")}
+         <div class="divider"></div>
+         <p class="micro mb-8">Modalidades</p>
+         <div class="chip-row">${state.setup.modalities.map(m => `<span class="chip selected" style="cursor:default;padding:0 12px;height:32px;font-size:12px;">${m}</span>`).join("")}</div>
+@@ -3608,9 +3657,12 @@
+   setHoleTab(state.holeTab);
+   document.getElementById("holeNum").textContent = h.n;
+   document.getElementById("holePar").textContent = h.par;
+-  document.getElementById("holeYards").textContent = h.m + " m";
++  const listPreview = activePlayers();
++  const focusP = listPreview[state.activePlayer] || listPreview[0];
++  const focusTee = playerTeeName(focusP);
++  document.getElementById("holeYards").textContent = metersForTee(h, focusTee) + " m";
+   refreshPlayerHandicaps();
+-  document.getElementById("holeHcpLine").textContent = `SI ${h.hcp} · ${state.setup.tee}`;
++  document.getElementById("holeHcpLine").textContent = `SI ${h.hcp} · ${focusTee}`;
+   const _siB = document.getElementById("holeSiBanner");
+   if (_siB) _siB.remove();
+   document.getElementById("holeClubBadge").textContent = CLUB;
+@@ -3663,7 +3715,8 @@
+     const strokeHint = recv > 0
+       ? `<span class="stroke-badge${recv>=2?" two":""}" title="SI ${h.hcp} · CH ${ch}">−${recv}</span>`
+       : "";
+-    const subLine = hasScore ? `${netLabel} · CH ${ch}` : `CH ${ch}`;
++    const ptee = playerTeeName(p);
++    const subLine = hasScore ? `${netLabel} · CH ${ch} · ${ptee}` : `CH ${ch} · ${ptee}`;
+     const scoreOnChip = hasScore && scoreChips.includes(score);
+     return `
+       <div class="player-card ${active} ${flash}" data-idx="${idx}" onclick="selectPlayer(${idx})">
+@@ -4267,7 +4320,7 @@
+   const hi = Number(player && player.hcp);
+   if (!Number.isFinite(hi)) return 0;
+   const course = typeof getSelectedCourse === "function" ? getSelectedCourse() : null;
+-  const teeName = resolveSetupTee(course);
++  const teeName = playerTeeName(player);
+   const tee = course && course.tees && course.tees.find(x => x.name === teeName);
+   if (!tee || tee.slope == null || tee.cr == null) {
+     return Math.round(hi); // fallback if tee meta missing
+@@ -5309,7 +5362,7 @@
+     // Normalize: guarantee putts/fir/gir objects on each player
+     const players = (r.players || []).map(p => ({
+       id: p.id, name: p.name, short: p.short, initials: p.initials,
+-      hcp: p.hcp, ch: p.ch, ph: p.ph, guest: !!p.guest,
++      hcp: p.hcp, ch: p.ch, ph: p.ph, tee: p.tee || (state.setup && state.setup.tee) || "", guest: !!p.guest,
+       scores: Object.assign({}, p.scores || {}),
+       putts: Object.assign({}, p.putts || {}),
+       fir: Object.assign({}, p.fir || {}),
