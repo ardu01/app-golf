@@ -1,0 +1,49 @@
+name: Apply Fairway multi-course patch
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "ops/fairway-multicourse-patch/**"
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply patch to index.html
+        run: |
+          set -euo pipefail
+          python3 ops/fairway-multicourse-patch/apply.py
+          # Keep sw.js at v159 if present in patch folder
+          if [ -f ops/fairway-multicourse-patch/sw.js ]; then
+            cp ops/fairway-multicourse-patch/sw.js sw.js
+          fi
+          wc -c index.html sw.js
+          # Guard: embeds still 18
+          python3 - <<'PY'
+          import re
+          t=open("index.html",encoding="utf-8").read()
+          m=re.search(r"const HOLE_MAPS_EMBEDDED\s*=\s*\{", t)
+          chunk=t[m.start():m.start()+2000000]
+          end=re.search(r"\n\};", chunk)
+          obj=chunk[:end.end()]
+          n=obj.count("data:image")
+          assert n==18, n
+          assert "Fotos disponibles en La Herrería" not in t
+          assert "COURSES_WITH_EXTERNAL_MAPS" in t
+          print("guards OK", n)
+          PY
+      - name: Commit
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html sw.js
+          git status
+          if git diff --cached --quiet; then
+            echo "Nothing to commit"
+            exit 0
+          fi
+          git commit -m "Fairway v159: multi-course hole maps + Madrid/P&P (keep Herrería embeds)"
+          git push
