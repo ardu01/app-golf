@@ -1357,6 +1357,13 @@
 
 
   /* Club call chips — subtle, non-intrusive */
+  .lb-round-pick {
+    display: flex; gap: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    padding: 0 16px 10px; flex-shrink: 0;
+  }
+  .lb-round-pick .chip {
+    flex: 0 0 auto; white-space: nowrap;
+  }
   .club-calls {
     display: flex; gap: 8px; flex-shrink: 0;
     margin: 0 0 8px; padding: 0;
@@ -1744,6 +1751,7 @@
           <button class="lb-tab" data-lb="birdie" onclick="switchLb(this)">Birdie</button>
           <button class="lb-tab" data-lb="creative" onclick="switchLb(this)">Creativo</button>
         </div>
+        <div class="lb-round-pick" id="lbRoundPick"></div>
         <div class="fit-body" id="lbList" style="padding:0;overflow:hidden;"></div>
         <div class="footer-note" id="lbFoot" style="padding-bottom:4px;">El hándicap no manda aquí</div>
         <nav class="tabbar">
@@ -1895,6 +1903,7 @@ let state = {
     },
   },
   lbTab: "stroke",
+  lbRoundId: null, // null = partida en curso; id = historial
   fir: "na",
   gir: "na",
   inviteTab: "code",
@@ -1916,7 +1925,7 @@ COURSES = COURSES.filter(c => c.id !== "club-ejemplo-norte");
 
 /* 8 Social Games MVP — DEMO-fixture-social.json · no oficiales */
 const SOCIAL_TEMPLATES = [
-  { id: "Putting King", sub: "1-putt +2 · 3-putt −2", badge: "Stats" },
+  { id: "Putting King", sub: "1P +3 · 2P +1 · 3P −1", badge: "Stats" },
   { id: "GIR King", sub: "GIR +1 · GIR+birdie +4", badge: "Stats" },
   { id: "Birdie Hunt", sub: "Birdie neto o mejor · bounty", badge: "" },
   { id: "Chaos Golf", sub: "Bonus, caos y ruleta", badge: "Stats" },
@@ -1946,8 +1955,9 @@ const MODALITY_RULES = {
     title: "Putting King",
     official: false,
     how: [
-      "1-putt +2 · 2-putt 0 · 3-putt −2 · 4+ −4",
-      "Bonus: 1-putt en par 3 +1 extra",
+      "1 putt = 3 puntos",
+      "2 putts = 1 punto",
+      "3 putts (o más) = −1",
       "Sin putts registrados → 0 ese hoyo",
       "Desempate: más 1-putts → menos 3-putts+",
     ],
@@ -1988,7 +1998,7 @@ const MODALITY_RULES = {
     official: false,
     how: [
       "Birdie +3 · Par 0 · Bogey −1 · Doble+ −3",
-      "Si hay putts: 1-putt +2 · 3-putt+ −2",
+      "Si hay putts: 1P +3 · 2P +1 · 3P −1",
       "Si hay GIR: GIR +1 · Si hay penalties: cada una −2",
       "Ruleta/hoyo (seed fija): 50% nada · 20% ángel +3 · 20% serpiente −3 · 10% ×2 el hoyo",
       "Score-only: solo strokes + ruleta",
@@ -4183,8 +4193,9 @@ function liveStandings() {
       if ((s - _recvB) <= h.par - 1) birdies++; // Birdie Hunt · netos
       const pt = p.putts[i];
       if (pt != null) {
-        if (pt <= 1) puttPts += 2;
-        else if (pt >= 3) puttPts -= 2;
+        if (pt === 1) puttPts += 3;
+        else if (pt === 2) puttPts += 1;
+        else if (pt >= 3) puttPts -= 1;
       }
     }
     for (let i = 1; i <= maxH; i++) {
@@ -4222,11 +4233,157 @@ function pickWinner(rows, key, preferLow) {
   return pool[0];
 }
 
+
+function setLbRound(id) {
+  state.lbRoundId = id || null;
+  renderLeader();
+}
+
+function openLeaderForRound(id) {
+  state.lbRoundId = id || null;
+  state.lbTab = state.lbTab || "stroke";
+  go("leader");
+}
+
+function renderLbRoundPick() {
+  const el = document.getElementById("lbRoundPick");
+  if (!el) return;
+  const rounds = (typeof loadRounds === "function" ? loadRounds() : []).filter(r => !state.deletedRounds[r.id]).slice(0, 12);
+  const live = !state.lbRoundId;
+  let html = `<button type="button" class="chip ${live ? "selected" : ""}" onclick="setLbRound(null)">En curso</button>`;
+  rounds.forEach(r => {
+    const sel = state.lbRoundId === r.id ? "selected" : "";
+    const label = (r.club || "Partida").split(" ").slice(0, 2).join(" ") + " · " + (r.date || "");
+    html += `<button type="button" class="chip ${sel}" onclick="setLbRound('${r.id}')">${label.replace(/</g, "")}</button>`;
+  });
+  if (!rounds.length) {
+    html += `<span class="micro" style="align-self:center;padding:0 4px;">Sin historial aún</span>`;
+  }
+  el.innerHTML = html;
+}
+
+/** Standings from a saved round (recomputes puttPts etc. from hole data) */
+function standingsFromSavedRound(d) {
+  if (!d) return [];
+  const maxH = d.holes || 18;
+  const course = COURSES.find(c => c.id === d.courseId);
+  const holes = (course && course.holes) ? course.holes : HOLES;
+  const hostName = (PLAYERS[0] && PLAYERS[0].name) ? String(PLAYERS[0].name).toLowerCase() : "";
+  const list = (d.players || []).slice();
+
+  function strokesRecv(ch, holeHcp) {
+    if (typeof strokesOnHole === "function") return strokesOnHole(Number(ch) || 0, holeHcp);
+    let n = 0;
+    const idx = Number(holeHcp) || 18;
+    const c = Number(ch) || 0;
+    if (idx <= c) n += 1;
+    if (c > 18 && idx <= (c - 18)) n += 1;
+    if (c > 36 && idx <= (c - 36)) n += 1;
+    return n;
+  }
+
+  return list.map(p => {
+    const scores = p.scores || {};
+    const putts = p.putts || {};
+    const fir = p.fir || {};
+    const gir = p.gir || {};
+    const ch = Number(p.ch != null ? p.ch : p.ph != null ? p.ph : p.hcp) || 0;
+    let gross = 0, thru = 0, parP = 0, sf = 0, puttPts = 0, holeWins = 0, birdies = 0;
+    let puttSum = 0, puttN = 0, firHit = 0, firAtt = 0, girYes = 0, girAtt = 0, strokesUsed = 0;
+    for (let i = 1; i <= maxH; i++) {
+      const s = scores[i];
+      if (s == null) continue;
+      const h = holes[i - 1] || { par: 4, hcp: i };
+      gross += Number(s) || 0;
+      thru = i;
+      parP += Number(h.par) || 4;
+      const recv = strokesRecv(ch, h.hcp);
+      strokesUsed += recv;
+      if (typeof stablefordHole === "function") sf += stablefordHole(s, h.par, recv);
+      if ((s - recv) <= h.par - 1) birdies++;
+      const pt = putts[i];
+      if (pt != null) {
+        puttSum += Number(pt) || 0;
+        puttN++;
+        if (pt === 1) puttPts += 3;
+        else if (pt === 2) puttPts += 1;
+        else if (pt >= 3) puttPts -= 1;
+      }
+      if (fir[i] === "hit" || fir[i] === "miss") { firAtt++; if (fir[i] === "hit") firHit++; }
+      if (gir[i] === "yes" || gir[i] === "no") { girAtt++; if (gir[i] === "yes") girYes++; }
+    }
+    for (let i = 1; i <= maxH; i++) {
+      const scored = list.filter(q => q.scores && q.scores[i] != null);
+      if (!scored.length || scores[i] == null) continue;
+      const best = Math.min(...scored.map(q => q.scores[i]));
+      const winners = scored.filter(q => q.scores[i] === best);
+      if (winners.length === 1 && winners[0] === p) holeWins += 2;
+    }
+    const net = thru ? (gross - strokesUsed) : null;
+    const me = hostName && String(p.name || "").toLowerCase() === hostName;
+    return {
+      p, name: p.name, initials: p.initials || (p.name || "?").slice(0, 2).toUpperCase(),
+      avatar: p.avatar || "", guest: !!p.guest, me,
+      gross, net, strokesUsed, thru, toPar: parP ? (gross - parP) : null,
+      sf, puttPts, holeWins, birdies, ph: ch, ch,
+      creativePts: Number(p.creativePts) || 0,
+      puttsTotal: puttN ? puttSum : null,
+      puttsHoles: puttN,
+      firHit, firAtt, girYes, girAtt,
+      firPct: firAtt ? Math.round(100 * firHit / firAtt) : null,
+      girPct: girAtt ? Math.round(100 * girYes / girAtt) : null
+    };
+  });
+}
+
+function leaderboardRows() {
+  if (state.lbRoundId) {
+    const d = getRoundById(state.lbRoundId);
+    if (d) return { rows: standingsFromSavedRound(d), meta: d, live: false };
+  }
+  const { rows } = liveStandings();
+  // enrich live with putt totals
+  rows.forEach(r => {
+    if (!r.p) return;
+    let puttSum = 0, puttN = 0, firHit = 0, firAtt = 0, girYes = 0, girAtt = 0;
+    const maxH = state.setup.holes || 18;
+    for (let i = 1; i <= maxH; i++) {
+      if (r.p.putts && r.p.putts[i] != null) { puttSum += Number(r.p.putts[i]) || 0; puttN++; }
+      if (r.p.fir && (r.p.fir[i] === "hit" || r.p.fir[i] === "miss")) { firAtt++; if (r.p.fir[i] === "hit") firHit++; }
+      if (r.p.gir && (r.p.gir[i] === "yes" || r.p.gir[i] === "no")) { girAtt++; if (r.p.gir[i] === "yes") girYes++; }
+    }
+    r.puttsTotal = puttN ? puttSum : null;
+    r.puttsHoles = puttN;
+    r.firHit = firHit; r.firAtt = firAtt; r.girYes = girYes; r.girAtt = girAtt;
+    r.firPct = firAtt ? Math.round(100 * firHit / firAtt) : null;
+    r.girPct = girAtt ? Math.round(100 * girYes / girAtt) : null;
+  });
+  return { rows, meta: null, live: true };
+}
+
 function renderLeader() {
+  renderLbRoundPick();
   const listEl = document.getElementById("lbList");
   const foot = document.getElementById("lbFoot");
   const tab = state.lbTab;
-  const { rows } = liveStandings();
+  const { rows, meta, live } = leaderboardRows();
+  const scope = live
+    ? "partida actual"
+    : ((meta && meta.club ? meta.club : "Partida") + " · " + (meta && meta.date ? meta.date : ""));
+
+  function subStats(d) {
+    const bits = [];
+    if (d.puttsTotal != null) bits.push(d.puttsTotal + " putts");
+    if (d.firPct != null) bits.push("FIR " + d.firPct + "%");
+    if (d.girPct != null) bits.push("GIR " + d.girPct + "%");
+    return bits.length ? bits.join(" · ") : "";
+  }
+
+  if (!rows.length) {
+    foot.textContent = live ? "Sin jugadores en curso" : "Sin datos en esta partida";
+    listEl.innerHTML = `<p class="muted" style="padding:16px;">${live ? "Empieza una ronda o elige una del historial." : "Esta partida no tiene jugadores guardados."}</p>`;
+    return;
+  }
 
   if (tab === "stroke") {
     const data = rows.slice().sort((a, b) => {
@@ -4235,43 +4392,61 @@ function renderLeader() {
       if (!b.thru) return -1;
       return a.net - b.net || a.gross - b.gross;
     });
-    foot.textContent = "Stroke · net calculado en vivo";
-    listEl.innerHTML = `<p class="micro mb-8" style="padding:0 16px;">Stroke · gross / net · partida actual</p><div class="lb-list-wrap">` +
+    foot.textContent = "Stroke · net · " + scope;
+    listEl.innerHTML = `<p class="micro mb-8" style="padding:0 16px;">Stroke · gross / net · ${scope}</p><div class="lb-list-wrap">` +
       data.map((d, i) => {
         const tp = d.toPar == null ? "—" : ((d.toPar > 0 ? "+" : "") + d.toPar);
+        const extra = subStats(d);
         return `<div class="lb-row ${d.me?"me":""}">
           <div class="lb-pos">${i+1}</div>
-          <div class="avatar ${d.avatar}" style="width:32px;height:32px;font-size:11px;">${d.initials}</div>
-          <div class="lb-info"><div class="n">${d.name}${d.me?" · tú":""}${d.guest?" · invitado":""}</div><div class="s">Gross ${d.thru?d.gross:"—"} · al par ${tp}</div></div>
+          <div class="avatar ${d.avatar||""}" style="width:32px;height:32px;font-size:11px;">${d.initials||"?"}</div>
+          <div class="lb-info"><div class="n">${d.name}${d.me?" · tú":""}${d.guest?" · invitado":""}</div><div class="s">Gross ${d.thru?d.gross:"—"} · al par ${tp}${extra?" · "+extra:""}</div></div>
           <div class="lb-pts"><div class="big">${d.thru?d.net:"—"}</div><div class="sub">net</div></div>
         </div>`;
       }).join("") + `</div>`;
   } else if (tab === "stableford") {
     const data = rows.slice().sort((a, b) => b.sf - a.sf || a.gross - b.gross);
-    foot.textContent = "Stableford · calculado en vivo";
-    listEl.innerHTML = `<p class="micro mb-8" style="padding:0 16px;">Stableford · partida actual</p><div class="lb-list-wrap">` +
-      data.map((d, i) => `
-        <div class="lb-row ${d.me?"me":""}">
+    foot.textContent = "Stableford · " + scope;
+    listEl.innerHTML = `<p class="micro mb-8" style="padding:0 16px;">Stableford · ${scope}</p><div class="lb-list-wrap">` +
+      data.map((d, i) => {
+        const extra = subStats(d);
+        return `<div class="lb-row ${d.me?"me":""}">
           <div class="lb-pos">${i+1}</div>
-          <div class="avatar ${d.avatar}" style="width:32px;height:32px;font-size:11px;">${d.initials}</div>
-          <div class="lb-info"><div class="n">${d.name}${d.me?" · tú":""}</div><div class="s">Thru ${d.thru||0}</div></div>
+          <div class="avatar ${d.avatar||""}" style="width:32px;height:32px;font-size:11px;">${d.initials||"?"}</div>
+          <div class="lb-info"><div class="n">${d.name}${d.me?" · tú":""}</div><div class="s">Thru ${d.thru||0}${extra?" · "+extra:""}</div></div>
           <div class="lb-pts"><div class="big">${d.sf}</div><div class="sub">pts</div></div>
-        </div>`).join("") + `</div>`;
-  } else {
-    const keyMap = { putting: "puttPts", rey: "holeWins", birdie: "birdies", creative: "creativePts" };
-    const key = keyMap[tab] || "puttPts";
-    const titles = { putting: "Putting King", rey: "Rey del Hoyo", birdie: "Birdie Hunt", creative: "Creativo" };
-    const micros = { putting: "1P +2 · 2P 0 · 3P −2", rey: "Gana el hoyo · +2", birdie: "Birdie neto o mejor", creative: "Puntos de tus normas" };
-    const data = rows.slice().sort((a, b) => b[key] - a[key]);
-    foot.textContent = "Social Games · partida actual";
-    listEl.innerHTML = `<p class="micro mb-8" style="padding:0 16px;">${titles[tab]||tab} · ${micros[tab]||""}</p><div class="lb-list-wrap">` +
-      data.map((d, i) => `
-        <div class="lb-row ${d.me?"me":""}">
+        </div>`;
+      }).join("") + `</div>`;
+  } else if (tab === "putting") {
+    const data = rows.slice().sort((a, b) => (b.puttPts||0) - (a.puttPts||0) || (a.puttsTotal||999) - (b.puttsTotal||999));
+    foot.textContent = "Putting King · " + scope;
+    listEl.innerHTML = `<p class="micro mb-8" style="padding:0 16px;">Putting · 1P +3 · 2P +1 · 3P −1 · ${scope}</p><div class="lb-list-wrap">` +
+      data.map((d, i) => {
+        const puttLine = d.puttsTotal != null ? (d.puttsTotal + " putts · " + (d.puttsHoles||0) + " hoyos") : "sin putts";
+        return `<div class="lb-row ${d.me?"me":""}">
           <div class="lb-pos">${i+1}</div>
-          <div class="avatar ${d.avatar}" style="width:32px;height:32px;font-size:11px;">${d.initials}</div>
-          <div class="lb-info"><div class="n">${d.name}${d.me?" · tú":""}</div><div class="s">puntos</div></div>
-          <div class="lb-pts"><div class="big">${d[key]}</div><div class="sub">puntos</div></div>
-        </div>`).join("") + `</div>`;
+          <div class="avatar ${d.avatar||""}" style="width:32px;height:32px;font-size:11px;">${d.initials||"?"}</div>
+          <div class="lb-info"><div class="n">${d.name}${d.me?" · tú":""}</div><div class="s">${puttLine}</div></div>
+          <div class="lb-pts"><div class="big">${d.puttPts||0}</div><div class="sub">pts</div></div>
+        </div>`;
+      }).join("") + `</div>`;
+  } else {
+    const keyMap = { rey: "holeWins", birdie: "birdies", creative: "creativePts" };
+    const key = keyMap[tab] || "holeWins";
+    const titles = { rey: "Rey del Hoyo", birdie: "Birdie Hunt", creative: "Creativo" };
+    const micros = { rey: "Gana el hoyo · +2", birdie: "Birdie neto o mejor", creative: "Puntos de tus normas" };
+    const data = rows.slice().sort((a, b) => (b[key]||0) - (a[key]||0));
+    foot.textContent = (titles[tab]||tab) + " · " + scope;
+    listEl.innerHTML = `<p class="micro mb-8" style="padding:0 16px;">${titles[tab]||tab} · ${micros[tab]||""} · ${scope}</p><div class="lb-list-wrap">` +
+      data.map((d, i) => {
+        const extra = subStats(d);
+        return `<div class="lb-row ${d.me?"me":""}">
+          <div class="lb-pos">${i+1}</div>
+          <div class="avatar ${d.avatar||""}" style="width:32px;height:32px;font-size:11px;">${d.initials||"?"}</div>
+          <div class="lb-info"><div class="n">${d.name}${d.me?" · tú":""}</div><div class="s">${extra || "puntos"}</div></div>
+          <div class="lb-pts"><div class="big">${d[key]||0}</div><div class="sub">puntos</div></div>
+        </div>`;
+      }).join("") + `</div>`;
   }
 }
 
@@ -5513,7 +5688,8 @@ function renderDetalle() {
       <div class="winners-head">Ganadores</div>
       ${winners}
     </div>
-    <button class="btn btn-primary" onclick="shareRoundWhatsApp('${d.id}')">Compartir tarjeta</button>
+    <button class="btn btn-primary" onclick="openLeaderForRound('${d.id}')">Ver clasificación</button>
+    <button class="btn btn-ghost" onclick="shareRoundWhatsApp('${d.id}')">Compartir tarjeta</button>
     <button class="btn btn-ghost" onclick="deleteRound('${d.id}')">Borrar de este iPhone</button>
     <button class="btn btn-ghost" onclick="go('historial')">Volver</button>`;
 }
