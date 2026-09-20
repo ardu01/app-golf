@@ -1392,11 +1392,15 @@
 
   #screen-scorecard .club-calls,
   #screen-hole .club-calls {
-    display: flex !important;
+    display: flex;
     gap: 10px;
     flex-shrink: 0;
     margin: 2px 0 8px;
     justify-content: flex-end;
+  }
+  #screen-scorecard .club-calls[hidden],
+  #screen-hole .club-calls[hidden] {
+    display: none !important;
   }
   #screen-scorecard .club-calls a,
   #screen-hole .club-calls a {
@@ -1524,7 +1528,6 @@
         <div class="fit">
           <div class="home-hero">
             <div class="home-top">
-              <span id="netBadge" class="badge badge-offline" style="pointer-events:auto;cursor:pointer;">Offline</span>
             </div>
             <div class="greeting">Buenos días</div>
             <div class="greeting-sub">¿Listo para el campo?</div>
@@ -1536,7 +1539,6 @@
               <div class="meta">
                 <span class="badge badge-oficial" id="homeCourseBadge">OFICIAL</span>
                 <span class="badge badge-tier">tier: score</span>
-                <span class="badge badge-offline">Sin sync</span>
               </div>
               <button class="btn btn-ghost" data-continue-hole onclick="go('hole')">Continuar · Hoyo 1</button>
               <button class="btn btn-ghost" data-finish-round onclick="finishRoundEarly()" style="display:none">Cerrar ronda</button>
@@ -1621,7 +1623,7 @@
           <div class="progress-holes" id="holeProgress" aria-hidden="true"></div>
         </div>
         <div class="club-calls" id="holeClubCalls" hidden style="margin:0 16px 6px;justify-content:flex-end;">
-          <a id="holeCallCaddie" href="tel:+34918905111"><span class="call-mark" aria-hidden="true"></span>Club</a>
+          <a id="holeCallCaddie" href="tel:+34918905111"><span class="call-mark" aria-hidden="true"></span>Caddie master</a>
           <a id="holeCallRest" href="tel:+34918905630"><span class="call-mark" aria-hidden="true"></span>Restaurante</a>
         </div>
         <div id="holePlayPane" class="hole-tab-pane active" role="tabpanel">
@@ -1695,7 +1697,7 @@
             <span class="badge badge-oficial">OFICIAL</span>
           </div>
           <div class="club-calls" id="scClubCalls" hidden>
-            <a id="scCallCaddie" href="tel:+34918905111"><span class="call-mark" aria-hidden="true"></span>Club</a>
+            <a id="scCallCaddie" href="tel:+34918905111"><span class="call-mark" aria-hidden="true"></span>Caddie master</a>
             <a id="scCallRest" href="tel:+34918905630"><span class="call-mark" aria-hidden="true"></span>Restaurante</a>
           </div>
           <div class="sc-nine-tabs" id="scNineTabs">
@@ -2130,24 +2132,8 @@ function updateHomeThru() {
 }
 
 function updateNetBadge() {
-  const b = document.getElementById("netBadge");
-  if (!b) return;
-  if (state.offline) {
-    b.className = "badge badge-offline";
-    b.style.cssText = "pointer-events:auto;cursor:pointer;";
-    b.textContent = "Offline";
-  } else {
-    b.className = "badge badge-online";
-    b.style.cssText = "pointer-events:auto;cursor:pointer;";
-    b.textContent = "Online";
-  }
+  /* offline/online UI removed — app is local-only */
 }
-
-document.getElementById("netBadge").addEventListener("click", () => {
-  state.offline = !state.offline;
-  updateNetBadge();
-  if (state.offline) showToast("Sin conexión — se sincroniza al volver");
-});
 
 function activePlayers() {
   return PLAYERS.filter((_, i) => state.setup.players[i]);
@@ -3948,14 +3934,16 @@ function setScNine(nine) {
 
 const CLUB_CONTACTS = {
   "la-herreria": {
-    caddie: { label: "Club", tel: "+34918905111" },
+    caddie: { label: "Caddie master", tel: "+34918905111" },
     restaurant: { label: "Restaurante", tel: "+34918905630" }
   }
 };
 
 function getClubContacts() {
   const id = state.setup && state.setup.courseId;
-  return (id && CLUB_CONTACTS[id]) || null;
+  // Solo La Herrería — el resto de campos no muestran llamadas
+  if (id !== "la-herreria") return null;
+  return CLUB_CONTACTS["la-herreria"] || null;
 }
 
 function updateClubCalls() {
@@ -3972,14 +3960,20 @@ function updateClubCalls() {
   if (!show || !contacts) return;
   if (caddie) {
     caddie.href = "tel:" + contacts.caddie.tel;
-    caddie.innerHTML = '<span class="call-mark" aria-hidden="true"></span>Club';
+    caddie.innerHTML = '<span class="call-mark" aria-hidden="true"></span>' + (contacts.caddie.label || "Caddie master");
   }
   if (rest) {
     rest.href = "tel:" + contacts.restaurant.tel;
     rest.innerHTML = '<span class="call-mark" aria-hidden="true"></span>Restaurante';
   }
-  if (hC) hC.href = "tel:" + contacts.caddie.tel;
-  if (hR) hR.href = "tel:" + contacts.restaurant.tel;
+  if (hC) {
+    hC.href = "tel:" + contacts.caddie.tel;
+    hC.innerHTML = '<span class="call-mark" aria-hidden="true"></span>' + (contacts.caddie.label || "Caddie master");
+  }
+  if (hR) {
+    hR.href = "tel:" + contacts.restaurant.tel;
+    hR.innerHTML = '<span class="call-mark" aria-hidden="true"></span>' + (contacts.restaurant.label || "Restaurante");
+  }
 }
 
 function renderScorecard() {
