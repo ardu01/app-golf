@@ -1,0 +1,44 @@
+name: Assemble Fairway index
+on:
+  workflow_dispatch:
+jobs:
+  assemble:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assemble index.html and decode b64 binaries
+        run: |
+          set -euo pipefail
+          if [ -d index.parts ]; then
+            > index.html
+            for f in $(ls index.parts/part-* | sort); do
+              base64 -d "$f" >> index.html
+              echo "appended $f"
+            done
+            rm -rf index.parts
+            wc -c index.html
+          fi
+          count=0
+          while IFS= read -r -d '' f; do
+            out="${f%.b64}"
+            base64 -d "$f" > "$out"
+            rm -f "$f"
+            count=$((count+1))
+            echo "decoded $out"
+          done < <(find . -name '*.b64' -print0 | sort -z)
+          echo "Decoded $count b64 files"
+      - name: Commit assembled assets
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git status
+          if git diff --cached --quiet; then
+            echo "Nothing to commit"
+            exit 0
+          fi
+          git commit -m "Fairway lote1: assemble index.html (~9.6MB) + decode icon binaries"
+          git push
