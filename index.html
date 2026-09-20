@@ -1121,6 +1121,14 @@
     border-color: var(--border-fairway);
   }
   .profile-hero { text-align: center; padding: 8px 0 20px; }
+  .perfil-input {
+    width: 100%; height: 44px; border-radius: 10px; border: 1px solid var(--separator);
+    background: var(--bg-paper-elevated); padding: 0 12px; font-size: 17px; font-weight: 600;
+    color: var(--ink); margin-top: 6px;
+  }
+  .perfil-hcp {
+    flex: 1; text-align: center; font-variant-numeric: tabular-nums;
+  }
   .avatar-lg {
     width: 72px; height: 72px; border-radius: 50%; margin: 0 auto 12px;
     display: grid; place-items: center; font-size: 22px; font-weight: 700;
@@ -1531,6 +1539,7 @@
                 <span class="badge badge-offline">Sin sync</span>
               </div>
               <button class="btn btn-ghost" data-continue-hole onclick="go('hole')">Continuar · Hoyo 1</button>
+              <button class="btn btn-ghost" data-finish-round onclick="finishRoundEarly()" style="display:none">Cerrar ronda</button>
               <div class="stat-row">
                 <div class="stat-pill"><div class="v" id="homeToPar">—</div><div class="l">Al par</div></div>
                 <div class="stat-pill"><div class="v" id="homeThru">0</div><div class="l">Thru</div></div>
@@ -2069,6 +2078,7 @@ function isRoundInProgress() {
 }
 
 function updateHomeThru() {
+  if (typeof updateHomeGreeting === "function") updateHomeGreeting();
   const p = PLAYERS[0];
   let gross = 0, par = 0, thru = 0;
   const live = isRoundInProgress();
@@ -2108,7 +2118,10 @@ function updateHomeThru() {
     btn.textContent = "Continuar · Hoyo " + (state.hole || 1);
     btn.style.display = live ? "" : "none";
   });
-  // Card always on Home (fits under greeting); Continuar only when live
+  document.querySelectorAll("[data-finish-round]").forEach(btn => {
+    btn.style.display = live ? "" : "none";
+  });
+  // Card always on Home; Continuar/Cerrar only when live
   const roundCard = document.querySelector("#screen-home .round-card");
   if (roundCard) {
     roundCard.style.display = "";
@@ -2249,16 +2262,80 @@ function removeRosterPlayer(id) {
 function loadHostHcp() {
   try {
     const h = JSON.parse(localStorage.getItem(HOST_KEY) || "null");
-    if (h && h.hcp != null && PLAYERS[0]) {
+    if (!h || !PLAYERS[0]) return;
+    if (h.hcp != null) {
       PLAYERS[0].hcp = clampHcp(h.hcp);
       PLAYERS[0].ph = Math.round(PLAYERS[0].hcp);
       PLAYERS[0].ch = Math.round(PLAYERS[0].hcp);
     }
+    if (h.name && String(h.name).trim()) {
+      applyHostName(String(h.name).trim(), false);
+    }
   } catch (e) {}
 }
 
+function applyHostName(name, persist) {
+  const p = PLAYERS[0];
+  if (!p) return;
+  const n = String(name || "").trim() || "Jugador";
+  p.name = n;
+  p.short = n.slice(0, 3);
+  p.initials = (typeof guestInitials === "function") ? guestInitials(n) : n.slice(0, 2).toUpperCase();
+  if (persist !== false) saveHostProfile();
+  updateHomeGreeting();
+}
+
 function saveHostHcp() {
-  try { localStorage.setItem(HOST_KEY, JSON.stringify({ hcp: PLAYERS[0].hcp })); } catch (e) {}
+  saveHostProfile();
+}
+
+function saveHostProfile() {
+  try {
+    const p = PLAYERS[0] || {};
+    localStorage.setItem(HOST_KEY, JSON.stringify({
+      name: p.name || "Miguel Ro",
+      hcp: p.hcp != null ? p.hcp : 12.4
+    }));
+  } catch (e) {}
+}
+
+function hostFirstName() {
+  const n = (PLAYERS[0] && PLAYERS[0].name) || "Miguel";
+  const part = String(n).trim().split(/\s+/)[0];
+  return part || "Miguel";
+}
+
+function updateHomeGreeting() {
+  const el = document.querySelector("#screen-home .greeting");
+  if (!el) return;
+  const hour = new Date().getHours();
+  const hello = hour < 12 ? "Buenos días" : (hour < 20 ? "Buenas tardes" : "Buenas noches");
+  el.textContent = hello + ", " + hostFirstName();
+}
+
+function setHostNameFromPerfil(raw) {
+  applyHostName(raw, true);
+  if (typeof refreshPlayerHandicaps === "function") refreshPlayerHandicaps();
+}
+
+function setHostHcpFromPerfil(raw) {
+  const p = PLAYERS[0];
+  if (!p) return;
+  const cleaned = String(raw).trim().replace(",", ".");
+  if (cleaned === "" || cleaned === ".") return;
+  const h = clampHcp(cleaned);
+  p.hcp = h;
+  p.ph = Math.round(h);
+  p.ch = Math.round(h);
+  saveHostProfile();
+  if (typeof refreshPlayerHandicaps === "function") refreshPlayerHandicaps();
+  renderPerfil();
+}
+
+function adjHostHcpFromPerfil(delta) {
+  const p = PLAYERS[0];
+  if (!p) return;
+  setHostHcpFromPerfil((Number(p.hcp) || 0) + delta);
 }
 
 const ROUNDS_KEY = "fairway.rounds.v1";
@@ -2330,6 +2407,9 @@ function endActiveRoundMemory() {
     document.querySelectorAll("[data-continue-hole]").forEach(btn => {
       btn.style.display = "none";
       btn.textContent = "Continuar · Hoyo 1";
+    });
+    document.querySelectorAll("[data-finish-round]").forEach(btn => {
+      btn.style.display = "none";
     });
     const card = document.querySelector("#screen-home .round-card");
     if (card) {
@@ -3726,6 +3806,12 @@ function jumpToHole(n) {
   updateHomeThru();
 }
 
+/** Smoke / mid-round: ir a cierre con los hoyos ya jugados (sin rellenar 18) */
+function finishRoundEarly() {
+  if (!isRoundInProgress()) { showToast("No hay ronda en curso"); return; }
+  go("close");
+}
+
 function changeHole(d) {
   const maxH = state.setup.holes || 18;
   const next = state.hole + d;
@@ -4195,7 +4281,7 @@ function collectScorecardPayload(fromRound) {
         name: p.name,
         short: (p.short || p.name || "?").toString().slice(0, 3),
         hcp: p.hcp,
-        ch: p.ch,
+        ch: (p.ch != null ? p.ch : (p.ph != null ? p.ph : Math.round(Number(p.hcp) || 0))),
         scores: p.scores || {}
       })),
       holes: holesMeta
@@ -4231,49 +4317,62 @@ function drawClassicScorecard(payload) {
   const serif = '"Palatino Linotype", Palatino, "Book Antiqua", "Iowan Old Style", "Times New Roman", Georgia, serif';
   const sans = '-apple-system, "SF Pro Text", system-ui, sans-serif';
   const rowH = 32;
-  const margin = 28; // outer cream margin so WhatsApp no corta el borde
+  const margin = 28;
   const pad = 20;
   const colW = [42, 40].concat(players.map(() => 58));
   const tableW = colW.reduce((a, b) => a + b, 0);
   const nine = Math.min(9, holes.length);
   const hasIn = holes.length > 9;
   const sectionRows = (n) => n + 1 + 1; // holes + header + subtotal
-  const rowsCount = sectionRows(nine) + (hasIn ? sectionRows(holes.length - nine) : 0) + 1; // + TOT
+  // + TOT gross + NET
+  const rowsCount = sectionRows(nine) + (hasIn ? sectionRows(holes.length - nine) : 0) + 2;
   const headH = 100;
-  const footH = 56;
+  const footH = 64;
   const innerW = Math.max(tableW + pad * 2, 320);
   const W = margin * 2 + innerW;
   const contentH = headH + rowsCount * rowH + footH;
   const H = margin * 2 + contentH + 8;
   const canvas = document.createElement("canvas");
-  const scale = 3; // nítido en Retina / WhatsApp
+  const scale = 3;
   canvas.width = Math.ceil(W * scale);
   canvas.height = Math.ceil(H * scale);
   const ctx = canvas.getContext("2d");
   ctx.scale(scale, scale);
   ctx.textBaseline = "middle";
 
-  // Full bleed cream (safe area)
+  function strokesRecv(p, holeHcp) {
+    const ch = Number(p.ch != null ? p.ch : p.hcp) || 0;
+    if (typeof strokesOnHole === "function") return strokesOnHole(ch, holeHcp);
+    // fallback WHS-style allocation
+    let n = 0;
+    const idx = Number(holeHcp) || 18;
+    if (idx <= ch) n += 1;
+    if (ch > 18 && idx <= (ch - 18)) n += 1;
+    if (ch > 36 && idx <= (ch - 36)) n += 1;
+    return n;
+  }
+  function netHole(p, h) {
+    const s = p.scores[h.n];
+    if (s == null) return null;
+    return s - strokesRecv(p, h.hcp);
+  }
+
   ctx.fillStyle = "#F7F1E4";
   ctx.fillRect(0, 0, W, H);
 
-  // Card panel
   const cardX = margin, cardY = margin, cardW = W - margin * 2, cardH = H - margin * 2;
   ctx.fillStyle = "#F3EBDA";
   ctx.fillRect(cardX, cardY, cardW, cardH);
 
-  // Double frame (complete corners)
   ctx.strokeStyle = "#1B3329";
   ctx.lineWidth = 2.5;
   ctx.strokeRect(cardX + 6, cardY + 6, cardW - 12, cardH - 12);
   ctx.lineWidth = 0.75;
   ctx.strokeRect(cardX + 11, cardY + 11, cardW - 22, cardH - 22);
 
-  // Header
   const hx = cardX + 16, hy = cardY + 16, hw = cardW - 32;
   ctx.fillStyle = "#1B3329";
   ctx.fillRect(hx, hy, hw, 58);
-  // gold hairline
   ctx.strokeStyle = "#C4A574";
   ctx.lineWidth = 1;
   ctx.beginPath();
@@ -4286,11 +4385,8 @@ function drawClassicScorecard(payload) {
   ctx.font = "600 20px " + serif;
   ctx.fillText(payload.club || "Fairway", W / 2, hy + 24);
   ctx.font = "400 11px " + serif;
-  ctx.letterSpacing = "2px";
-  ctx.fillText("T A R J E T A   D E   J U E G O", W / 2, hy + 44);
-  ctx.letterSpacing = "0px";
+  ctx.fillText("T A R J E T A   ·   G R O S S   /   N E T", W / 2, hy + 44);
 
-  // Meta line
   ctx.fillStyle = "#3D4F45";
   ctx.font = "400 12px " + serif;
   ctx.textAlign = "left";
@@ -4331,12 +4427,23 @@ function drawClassicScorecard(payload) {
     ctx.textAlign = "center";
     const t = (val == null || val === "") ? "·" : String(val);
     ctx.fillText(t, x + w / 2, yi + rowH / 2 + 0.5);
+    // stroke received dots (handicap)
+    if (opts.dots && opts.dots > 0) {
+      ctx.fillStyle = "#C4A574";
+      for (let d = 0; d < Math.min(opts.dots, 3); d++) {
+        ctx.beginPath();
+        ctx.arc(x + w - 7 - d * 6, yi + 7, 2.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
   }
 
   function drawNine(start, end, title, subLabel) {
     drawSectionHeader(title);
-    const totals = players.map(() => 0);
+    const totalsG = players.map(() => 0);
+    const totalsN = players.map(() => 0);
     let parSum = 0;
+    let counted = players.map(() => 0);
     for (let i = start; i < end; i++) {
       const h = holes[i];
       let x = originX;
@@ -4346,8 +4453,13 @@ function drawClassicScorecard(payload) {
       parSum += h.par;
       players.forEach((p, pi) => {
         const s = p.scores[h.n];
-        if (s != null) totals[pi] += s;
-        cell(s != null ? s : "·", x, y, colW[2 + pi], { bg: zebra, size: 14 });
+        const recv = strokesRecv(p, h.hcp);
+        if (s != null) {
+          totalsG[pi] += s;
+          totalsN[pi] += (s - recv);
+          counted[pi]++;
+        }
+        cell(s != null ? s : "·", x, y, colW[2 + pi], { bg: zebra, size: 14, dots: s != null ? recv : 0 });
         x += colW[2 + pi];
       });
       y += rowH;
@@ -4356,18 +4468,18 @@ function drawClassicScorecard(payload) {
     cell(subLabel, x, y, colW[0], { bold: true, serif: true, bg: "#E8DFC8" }); x += colW[0];
     cell(parSum, x, y, colW[1], { bold: true, serif: true, bg: "#E8DFC8" }); x += colW[1];
     players.forEach((_, pi) => {
-      cell(totals[pi] || "—", x, y, colW[2 + pi], { bold: true, bg: "#E8DFC8", size: 14 });
+      cell(counted[pi] ? totalsG[pi] : "—", x, y, colW[2 + pi], { bold: true, bg: "#E8DFC8", size: 14 });
       x += colW[2 + pi];
     });
     y += rowH;
-    return { totals, parSum };
+    return { totalsG, totalsN, parSum, counted };
   }
 
   const out = drawNine(0, nine, "Ida", "OUT");
-  let inn = { totals: players.map(() => 0), parSum: 0 };
+  let inn = { totalsG: players.map(() => 0), totalsN: players.map(() => 0), parSum: 0, counted: players.map(() => 0) };
   if (hasIn) inn = drawNine(nine, holes.length, "Vuelta", "IN");
 
-  // TOTAL
+  // TOT gross
   let x = originX;
   ctx.fillStyle = "#1B3329";
   ctx.fillRect(originX, y, tableW, rowH);
@@ -4375,16 +4487,37 @@ function drawClassicScorecard(payload) {
   ctx.font = "600 13px " + serif;
   ctx.textAlign = "center";
   const totPar = out.parSum + inn.parSum;
-  const labs = ["TOT", String(totPar)].concat(
-    players.map((_, pi) => String((out.totals[pi] || 0) + (inn.totals[pi] || 0) || "—"))
+  const labsG = ["TOT", String(totPar)].concat(
+    players.map((_, pi) => {
+      const c = (out.counted[pi] || 0) + (inn.counted[pi] || 0);
+      return c ? String((out.totalsG[pi] || 0) + (inn.totalsG[pi] || 0)) : "—";
+    })
   );
-  labs.forEach((lab, i) => {
+  labsG.forEach((lab, i) => {
     ctx.fillText(lab, x + colW[i] / 2, y + rowH / 2);
     x += colW[i];
   });
-  y += rowH + 18;
+  y += rowH;
 
-  // Footer
+  // NET row (resultado neto)
+  x = originX;
+  ctx.fillStyle = "#2F5D46";
+  ctx.fillRect(originX, y, tableW, rowH);
+  ctx.fillStyle = "#F7F1E4";
+  ctx.font = "600 13px " + serif;
+  ctx.textAlign = "center";
+  const labsN = ["NET", ""].concat(
+    players.map((_, pi) => {
+      const c = (out.counted[pi] || 0) + (inn.counted[pi] || 0);
+      return c ? String((out.totalsN[pi] || 0) + (inn.totalsN[pi] || 0)) : "—";
+    })
+  );
+  labsN.forEach((lab, i) => {
+    ctx.fillText(lab, x + colW[i] / 2, y + rowH / 2);
+    x += colW[i];
+  });
+  y += rowH + 16;
+
   ctx.fillStyle = "#3D4F45";
   ctx.font = "400 11px " + serif;
   ctx.textAlign = "left";
@@ -4392,14 +4525,17 @@ function drawClassicScorecard(payload) {
     const hi = (typeof fmtHcp === "function" && p.hcp != null) ? fmtHcp(p.hcp) : (p.hcp != null ? p.hcp : "—");
     return p.short + "  HI " + hi + " · CH " + (p.ch != null ? p.ch : "—");
   }).join("      ");
-  ctx.fillText(chLine, cardX + 18, Math.min(y, cardY + cardH - 22));
+  ctx.fillText(chLine, cardX + 18, Math.min(y, cardY + cardH - 28));
+  ctx.font = "400 10px " + serif;
+  ctx.fillStyle = "#6B7A70";
+  ctx.fillText("Puntos dorados = golpes de hándicap · NET = gross − CH", cardX + 18, Math.min(y + 14, cardY + cardH - 14));
   ctx.textAlign = "right";
   ctx.font = "italic 11px " + serif;
-  ctx.fillText("Fairway", cardX + cardW - 18, Math.min(y, cardY + cardH - 22));
+  ctx.fillStyle = "#3D4F45";
+  ctx.fillText("Fairway", cardX + cardW - 18, Math.min(y, cardY + cardH - 28));
 
   return canvas;
 }
-
 
 /** Placas de ganador por modalidad (imagen para WhatsApp) */
 function buildLivePodium() {
@@ -5184,13 +5320,33 @@ function importFairwayBackup() {
 
 function renderPerfil() {
   const recordsHtml = _perfilRecordsHtml();
+  const p = PLAYERS[0] || { name: "Miguel Ro", hcp: 12.4, initials: "MR" };
+  const hi = (typeof fmtHcp === "function") ? fmtHcp(p.hcp) : String(p.hcp);
+  const initials = p.initials || (typeof guestInitials === "function" ? guestInitials(p.name) : "MR");
   document.getElementById("perfilBody").innerHTML = `
     <div class="profile-hero">
-      <div class="avatar-lg">MR</div>
-      <h1 style="font-size:22px;">Miguel Ro</h1>
-      <p class="muted">Fairway · ES · metros · Amarillas</p>
-      <div class="row gap-8 mt-12" style="justify-content:center;">
-        <span class="badge badge-tier">HI 12.4</span>
+      <div class="avatar-lg">${initials}</div>
+      <p class="muted" style="margin-top:8px;">Tu perfil · se guarda en este iPhone</p>
+    </div>
+    <div class="card mb-16">
+      <div class="eyebrow">Nombre</div>
+      <input class="perfil-input" type="text" maxlength="40" value="${String(p.name || "").replace(/"/g, "&quot;")}"
+        onchange="setHostNameFromPerfil(this.value)"
+        onblur="setHostNameFromPerfil(this.value);renderPerfil()"
+        placeholder="Tu nombre" autocomplete="name" />
+      <div class="eyebrow mt-16">Handicap Index (HI)</div>
+      <div class="row gap-8" style="align-items:center;">
+        <button type="button" class="btn-icon" onclick="adjHostHcpFromPerfil(-0.1)" aria-label="Bajar HCP">−</button>
+        <input class="perfil-input perfil-hcp" type="text" inputmode="decimal"
+          value="${hi}"
+          onchange="setHostHcpFromPerfil(this.value)"
+          onblur="setHostHcpFromPerfil(this.value)"
+          aria-label="Handicap Index" />
+        <button type="button" class="btn-icon" onclick="adjHostHcpFromPerfil(0.1)" aria-label="Subir HCP">+</button>
+      </div>
+      <p class="micro mt-8">Se usa en CH, neto y Stableford de tus partidas.</p>
+      <div class="row gap-8 mt-12" style="justify-content:flex-start;">
+        <span class="badge badge-tier">HI ${hi}</span>
         <span class="badge badge-demo">Historial · Solo yo</span>
       </div>
     </div>
