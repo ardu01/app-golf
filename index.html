@@ -1357,6 +1357,22 @@
 
 
   /* Club call chips — subtle, non-intrusive */
+  .totals-entry {
+    margin-top: 12px; padding: 12px; border-radius: 12px;
+    background: var(--bg-paper-elevated);
+  }
+  .totals-entry .te-title { font-size: 13px; font-weight: 600; color: var(--ink-secondary); margin-bottom: 8px; }
+  .totals-entry .te-row {
+    display: grid; grid-template-columns: 1fr 72px 72px; gap: 8px;
+    align-items: center; margin-top: 8px;
+  }
+  .totals-entry .te-name { font-size: 15px; font-weight: 600; }
+  .totals-entry .te-hint { font-size: 11px; color: var(--ink-secondary); }
+  .totals-entry input {
+    width: 100%; height: 40px; border-radius: 10px; border: 1px solid var(--separator);
+    background: #fff; text-align: center; font-size: 16px; font-weight: 600;
+    font-variant-numeric: tabular-nums; color: var(--ink);
+  }
   .lb-round-pick {
     display: flex; gap: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch;
     padding: 0 16px 10px; flex-shrink: 0;
@@ -1868,7 +1884,8 @@ let COURSES = [{"id":"centro-nacional-de-golf","name":"Centro Nacional de Golf",
 let CLUB = (COURSES.find(c => c.id === "la-herreria") || COURSES[0] || {name:"Fairway"}).name || (COURSES[0] && COURSES[0].name) || "Fairway";
 let PLAYERS = [{
   id: "p1", rp: "rp-host", name: "", short: "", initials: "?",
-  hcp: null, ph: null, ch: null, avatar: "", guest: false, scores: {}, putts: {}, fir: {}, gir: {}, creativePts: 0, creativeLog: []
+  hcp: null, ph: null, ch: null, avatar: "", guest: false, scores: {}, putts: {}, fir: {}, gir: {},
+  totalsGross: null, totalsPutts: null, creativePts: 0, creativeLog: []
 }];
 let HOLES = FX.holes.map(h => ({ n: h.n, par: h.par, m: h.m, hcp: h.hcp }));
 
@@ -2086,7 +2103,11 @@ function isRoundInProgress() {
   let hasStored = false;
   try { hasStored = !!localStorage.getItem(ACTIVE_KEY); } catch (e) {}
   if (!hasStored) return false;
-  return PLAYERS.some(p => Object.keys(p.scores || {}).length > 0);
+  return PLAYERS.some(p =>
+    Object.keys(p.scores || {}).length > 0 ||
+    p.totalsGross != null ||
+    p.totalsPutts != null
+  );
 }
 
 function updateHomeThru() {
@@ -2183,7 +2204,7 @@ function applyCourseData(course, teeName, clearScores) {
     mByTee: h.mByTee,
   }));
   if (clearScores) {
-    PLAYERS.forEach(p => { p.scores = {}; p.putts = {}; p.fir = {}; p.gir = {}; p.creativePts = 0; p.creativeLog = []; });
+    PLAYERS.forEach(p => { p.scores = {}; p.putts = {}; p.fir = {}; p.gir = {}; p.totalsGross = null; p.totalsPutts = null; p.creativePts = 0; p.creativeLog = []; });
     state.hole = 1;
   }
   const homeClub = document.getElementById("homeClub");
@@ -2389,6 +2410,8 @@ function snapshotPlayers() {
     putts: Object.assign({}, p.putts),
     fir: Object.assign({}, p.fir || {}),
     gir: Object.assign({}, p.gir || {}),
+    totalsGross: (p.totalsGross != null ? Number(p.totalsGross) : null),
+    totalsPutts: (p.totalsPutts != null ? Number(p.totalsPutts) : null),
     creativePts: Number(p.creativePts) || 0,
     creativeLog: Array.isArray(p.creativeLog) ? p.creativeLog.slice() : []
   }));
@@ -2425,6 +2448,8 @@ function endActiveRoundMemory() {
     p.putts = {};
     p.fir = {};
     p.gir = {};
+    p.totalsGross = null;
+    p.totalsPutts = null;
     p.creativePts = 0;
     p.creativeLog = [];
   });
@@ -2468,6 +2493,8 @@ function restoreActiveRound() {
         hcp: p.hcp, ch: p.ch, ph: p.ph, guest: !!p.guest,
         avatar: "", scores: p.scores || {}, putts: p.putts || {},
         fir: p.fir || {}, gir: p.gir || {},
+        totalsGross: (p.totalsGross != null ? Number(p.totalsGross) : null),
+        totalsPutts: (p.totalsPutts != null ? Number(p.totalsPutts) : null),
         creativePts: Number(p.creativePts) || 0,
         creativeLog: Array.isArray(p.creativeLog) ? p.creativeLog.slice() : []
       });
@@ -2616,7 +2643,7 @@ function addFromRoster(id) {
     id: row.id, rp: "rp-" + row.id, name: row.name,
     short: row.short || row.name.slice(0, 3), initials: row.initials || guestInitials(row.name),
     hcp: h, ph: Math.round(h), ch: Math.round(h),
-    avatar: "", guest: true, scores: {}, putts: {}, fir: {}, gir: {}, creativePts: 0, creativeLog: []
+    avatar: "", guest: true, scores: {}, putts: {}, fir: {}, gir: {}, totalsGross: null, totalsPutts: null, creativePts: 0, creativeLog: []
   });
   state.setup.players.push(true);
   showToast("Añadido", true);
@@ -2635,13 +2662,13 @@ function addGuestPlayer() {
     id, rp: "rp-guest-" + id, name,
     short: name.slice(0, 3), initials: guestInitials(name),
     hcp: h, ph: Math.round(h), ch: Math.round(h),
-    avatar: "", guest: true, scores: {}, putts: {}, fir: {}, gir: {}, creativePts: 0, creativeLog: []
+    avatar: "", guest: true, scores: {}, putts: {}, fir: {}, gir: {}, totalsGross: null, totalsPutts: null, creativePts: 0, creativeLog: []
   });
   state.setup.players.push(true);
   if (input) input.value = "";
   state.guestDraftHcp = 18.0;
   upsertRosterPlayer(name, h);
-  showToast("Guardado · invitado añadido", true);
+  showToast("Jugador guardado", true);
   refreshPlayerHandicaps();
   renderSetup();
 }
@@ -2754,7 +2781,7 @@ function renderSetup() {
       PLAYERS.map((p, i) => `
         <div class="player-row">
           <div class="avatar ${p.avatar||""}">${p.initials}</div>
-          <div class="name">${p.name}${p.guest?' <span class="guest-chip">INVITADO</span>':''}</div>
+          <div class="name">${p.name}</div>
           <div class="hcp-step" aria-label="Hándicap">
             <button type="button" aria-label="Bajar hándicap" onclick="adjPlayerHcp(${i}, -0.1)">−</button>
             <input class="val hcp-input" type="text" inputmode="decimal" enterkeyhint="done"
@@ -3302,7 +3329,7 @@ function setupNext() {
     state.hole = 1;
     state.activePlayer = 0;
     refreshPlayerHandicaps();
-    PLAYERS.forEach(p => { p.scores = {}; p.putts = {}; p.fir = {}; p.gir = {}; p.creativePts = 0; p.creativeLog = []; });
+    PLAYERS.forEach(p => { p.scores = {}; p.putts = {}; p.fir = {}; p.gir = {}; p.totalsGross = null; p.totalsPutts = null; p.creativePts = 0; p.creativeLog = []; });
     state.hole = 1;
     state.activePlayer = 0;
     state._roundSaved = null;
@@ -3336,10 +3363,9 @@ function renderLobby() {
       <div class="player-row">
         <div class="avatar ${s.p.avatar||""}">${s.p.initials}</div>
         <div class="name">${s.p.name}${s.role==='host'?' · host':''}
-          ${s.p.guest?' <span class="guest-chip">INVITADO</span>':''}
           ${s.away?' <span class="guest-chip">Ausente</span>':''}
         </div>
-        <div class="hcp">${s.p.guest ? '—' : 'PH ' + s.p.ph}</div>
+        <div class="hcp">PH ${s.p.ph != null ? s.p.ph : '—'}</div>
       </div>`).join("")}
     <div class="row gap-8 mt-16">
       <button class="btn btn-secondary" style="flex:1" onclick="openInvite()">Añadir</button>
@@ -3742,8 +3768,10 @@ function adjScore(idx, delta) {
     // Primer +: arranca en par. Primer −: par−1 (mín 1).
     cur = delta > 0 ? par : Math.max(1, par - 1);
     p.scores[state.hole] = cur;
+    p.totalsGross = null;
   } else {
     p.scores[state.hole] = Math.max(1, Math.min(15, cur + delta));
+    p.totalsGross = null;
   }
   state.activePlayer = idx;
   persistActiveRound();
@@ -3754,6 +3782,7 @@ function setScore(idx, v) {
   const p = activePlayers()[idx];
   if (!p) return;
   p.scores[state.hole] = v;
+  p.totalsGross = null;
   state.activePlayer = idx;
   persistActiveRound();
   // Chip de golpes: NUNCA salta solo — hace falta putts también (y putts no van precargados)
@@ -4054,6 +4083,9 @@ function renderScorecard() {
     if (HOLES[i]) parAll += HOLES[i].par;
     list.forEach((p, pi) => { if (p.scores[i+1] != null) totAll[pi] += p.scores[i+1]; });
   }
+  list.forEach((p, pi) => {
+    if (!totAll[pi] && p.totalsGross != null) totAll[pi] = Number(p.totalsGross) || 0;
+  });
   rows += `<tr class="sc-totals"><td class="hole-label">TOT</td><td>${parAll}</td>`;
   totAll.forEach(t => { rows += `<td>${t || "—"}</td>`; });
   rows += `</tr>`;
@@ -4086,11 +4118,15 @@ function renderScorecard() {
     if (HOLES[k-1]) parIn += HOLES[k-1].par;
     if (me && me.scores[k]!=null) migIn += me.scores[k];
   }
-  document.getElementById("scOut").textContent = migOut || "—";
+  // Prefer manual totals for host summary when no hole marks
+  let sumGross = migOut + migIn;
+  if (!sumGross && me && me.totalsGross != null) sumGross = Number(me.totalsGross) || 0;
+  document.getElementById("scOut").textContent = migOut || (me && me.totalsGross != null ? "—" : "—");
   document.getElementById("scIn").textContent = migIn || "—";
-  const gross = migOut + migIn;
+  const gross = sumGross;
   const d = gross - (parOut + parIn);
   document.getElementById("scToPar").textContent = gross ? ((d>0?"+":"")+d) : "—";
+  if (typeof renderTotalsEntry === "function") renderTotalsEntry();
 }
 
 /* —— Leader —— */
@@ -4102,19 +4138,108 @@ function switchLb(btn) {
 }
 
 /* —— Live scoring from activePlayers (no fixture winners) —— */
+function playerHasMarkedHoles(p) {
+  const s = (p && p.scores) || {};
+  return Object.keys(s).some(k => s[k] != null);
+}
+
 function playerGross(p, maxH) {
   let g = 0, thru = 0;
   for (let i = 1; i <= maxH; i++) {
     if (p.scores[i] != null) { g += p.scores[i]; thru = i; }
   }
-  return { gross: g, thru };
+  if (thru === 0 && p.totalsGross != null && Number.isFinite(Number(p.totalsGross))) {
+    return { gross: Number(p.totalsGross), thru: maxH, totalsOnly: true };
+  }
+  return { gross: g, thru, totalsOnly: false };
 }
 function playerParPlayed(p, maxH) {
   let par = 0;
+  let any = false;
   for (let i = 1; i <= maxH; i++) {
-    if (p.scores[i] != null && HOLES[i - 1]) par += HOLES[i - 1].par;
+    if (p.scores[i] != null && HOLES[i - 1]) { par += HOLES[i - 1].par; any = true; }
+  }
+  if (!any && p.totalsGross != null) {
+    for (let i = 1; i <= maxH; i++) {
+      if (HOLES[i - 1]) par += HOLES[i - 1].par;
+    }
   }
   return par;
+}
+
+function setPlayerTotalsGross(pi, raw) {
+  const list = activePlayers();
+  const p = list[pi];
+  if (!p) return;
+  if (playerHasMarkedHoles(p)) {
+    showToast("Ya hay hoyos marcados — edita en Hoyo");
+    renderScorecard();
+    return;
+  }
+  const cleaned = String(raw).trim().replace(",", ".");
+  if (cleaned === "") { p.totalsGross = null; }
+  else {
+    let n = Math.round(Number(cleaned));
+    if (!Number.isFinite(n)) { renderScorecard(); return; }
+    if (n < 1) n = 1;
+    if (n > 200) n = 200;
+    p.totalsGross = n;
+  }
+  persistActiveRound();
+  updateHomeThru();
+}
+
+function setPlayerTotalsPutts(pi, raw) {
+  const list = activePlayers();
+  const p = list[pi];
+  if (!p) return;
+  // Allow putts totals even with holes, but if hole putts exist prefer those for scoring
+  const cleaned = String(raw).trim().replace(",", ".");
+  if (cleaned === "") { p.totalsPutts = null; }
+  else {
+    let n = Math.round(Number(cleaned));
+    if (!Number.isFinite(n)) { renderScorecard(); return; }
+    if (n < 0) n = 0;
+    if (n > 100) n = 100;
+    p.totalsPutts = n;
+  }
+  persistActiveRound();
+  updateHomeThru();
+}
+
+function renderTotalsEntry() {
+  let box = document.getElementById("scTotalsEntry");
+  const fit = document.querySelector("#screen-scorecard .fit");
+  if (!fit) return;
+  if (!box) {
+    box = document.createElement("div");
+    box.id = "scTotalsEntry";
+    box.className = "totals-entry";
+    const wa = document.getElementById("scWhatsApp");
+    if (wa && wa.parentNode === fit) fit.insertBefore(box, wa);
+    else fit.appendChild(box);
+  }
+  const list = activePlayers();
+  const rows = list.map((p, pi) => {
+    const marked = playerHasMarkedHoles(p);
+    const gVal = p.totalsGross != null ? p.totalsGross : "";
+    const ptVal = p.totalsPutts != null ? p.totalsPutts : "";
+    const disabled = marked ? "disabled" : "";
+    const hint = marked ? "Hoyos marcados" : "Si no marcas hoyos";
+    return `<div class="te-row">
+      <div><div class="te-name">${p.name || ("Jugador " + (pi+1))}</div><div class="te-hint">${hint}</div></div>
+      <input type="number" inputmode="numeric" ${disabled} placeholder="Golpes" aria-label="Golpes totales ${p.name||""}"
+        value="${gVal}" onchange="setPlayerTotalsGross(${pi}, this.value)" onblur="setPlayerTotalsGross(${pi}, this.value)" />
+      <input type="number" inputmode="numeric" placeholder="Putts" aria-label="Putts totales ${p.name||""}"
+        value="${ptVal}" onchange="setPlayerTotalsPutts(${pi}, this.value)" onblur="setPlayerTotalsPutts(${pi}, this.value)" />
+    </div>`;
+  }).join("");
+  box.innerHTML = `<div class="te-title">Entrada rápida · golpes y putts totales</div>
+    <p class="micro" style="margin-bottom:4px;">Úsalo si no marcas hoyo a hoyo. Golpes se bloquean si ya hay hoyos.</p>
+    <div class="te-row" style="margin-top:0;opacity:0.55;font-size:11px;">
+      <div></div><div style="text-align:center;">Golpes</div><div style="text-align:center;">Putts</div>
+    </div>
+    ${rows}`;
 }
 function stablefordHole(score, par, strokesReceived) {
   const netDiff = score - par - strokesReceived;
@@ -4179,10 +4304,13 @@ function liveStandings() {
   const mods = state.setup.modalities || [];
   if (typeof recalculateAllCreativePts === "function") recalculateAllCreativePts();
   const rows = list.map(p => {
-    const { gross, thru } = playerGross(p, maxH);
+    const pg = playerGross(p, maxH);
+    const { gross, thru } = pg;
+    const totalsOnly = !!pg.totalsOnly;
     const parP = playerParPlayed(p, maxH);
     const ph = Number(p.ch != null ? p.ch : p.ph) || courseHandicapFor(p);
     let sf = 0, puttPts = 0, holeWins = 0, birdies = 0;
+    let puttSum = 0, puttN = 0;
     for (let i = 1; i <= maxH; i++) {
       const h = HOLES[i - 1];
       if (!h) continue;
@@ -4190,9 +4318,11 @@ function liveStandings() {
       if (s == null) continue;
       sf += stablefordHole(s, h.par, strokesOnHole(ph, h.hcp));
       const _recvB = strokesOnHole(ph, h.hcp);
-      if ((s - _recvB) <= h.par - 1) birdies++; // Birdie Hunt · netos
+      if ((s - _recvB) <= h.par - 1) birdies++;
       const pt = p.putts[i];
       if (pt != null) {
+        puttSum += Number(pt) || 0;
+        puttN++;
         if (pt === 1) puttPts += 3;
         else if (pt === 2) puttPts += 1;
         else if (pt >= 3) puttPts -= 1;
@@ -4206,18 +4336,26 @@ function liveStandings() {
       if (winners.length === 1 && winners[0] === p) holeWins += 2;
     }
     let strokesUsed = 0;
-    for (let i = 1; i <= maxH; i++) {
-      const h = HOLES[i - 1];
-      if (!h || p.scores[i] == null) continue;
-      strokesUsed += strokesOnHole(ph, h.hcp);
+    if (totalsOnly) {
+      // Total-only round: apply full course handicap as strokes
+      strokesUsed = ph;
+    } else {
+      for (let i = 1; i <= maxH; i++) {
+        const h = HOLES[i - 1];
+        if (!h || p.scores[i] == null) continue;
+        strokesUsed += strokesOnHole(ph, h.hcp);
+      }
     }
     const net = thru ? (gross - strokesUsed) : null;
+    const puttsTotal = puttN ? puttSum : (p.totalsPutts != null ? Number(p.totalsPutts) : null);
     return {
       p, name: p.name, initials: p.initials, avatar: p.avatar || "",
       guest: !!p.guest, me: p === list[0] || p.id === PLAYERS[0].id,
       gross, net, strokesUsed, thru, toPar: parP ? (gross - parP) : null,
       sf, puttPts, holeWins, birdies, ph, ch: ph,
-      creativePts: Number(p.creativePts) || 0
+      creativePts: Number(p.creativePts) || 0,
+      puttsTotal, puttsHoles: puttN || (p.totalsPutts != null ? maxH : 0),
+      totalsOnly
     };
   });
   // me = host Miguel if present else first active
@@ -4400,7 +4538,7 @@ function renderLeader() {
         return `<div class="lb-row ${d.me?"me":""}">
           <div class="lb-pos">${i+1}</div>
           <div class="avatar ${d.avatar||""}" style="width:32px;height:32px;font-size:11px;">${d.initials||"?"}</div>
-          <div class="lb-info"><div class="n">${d.name}${d.me?" · tú":""}${d.guest?" · invitado":""}</div><div class="s">Gross ${d.thru?d.gross:"—"} · al par ${tp}${extra?" · "+extra:""}</div></div>
+          <div class="lb-info"><div class="n">${d.name}${d.me?" · tú":""}</div><div class="s">Gross ${d.thru?d.gross:"—"} · al par ${tp}${extra?" · "+extra:""}</div></div>
           <div class="lb-pts"><div class="big">${d.thru?d.net:"—"}</div><div class="sub">net</div></div>
         </div>`;
       }).join("") + `</div>`;
