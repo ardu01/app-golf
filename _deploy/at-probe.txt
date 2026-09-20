@@ -1,0 +1,1 @@
+@/workspace/perf-fairway-handoff/deploy_payload/icons/icon-192.png.b64
