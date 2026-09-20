@@ -25,6 +25,7 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   const url = new URL(event.request.url);
+  // Runtime-cache holes/* so install stays fast; other scoped assets too
   event.respondWith(
     caches.match(event.request).then((cached) => {
       const fetched = fetch(event.request)
