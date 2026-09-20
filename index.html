@@ -1526,7 +1526,7 @@
             <div class="home-top">
               <span id="netBadge" class="badge badge-offline" style="pointer-events:auto;cursor:pointer;">Offline</span>
             </div>
-            <div class="greeting">Buenos días, Miguel</div>
+            <div class="greeting">Buenos días</div>
             <div class="greeting-sub">¿Listo para el campo?</div>
             <button class="btn btn-primary mb-8" onclick="setupStart()">Nueva partida</button>
             <div class="round-card">
@@ -1857,8 +1857,8 @@ let COURSES = [{"id":"centro-nacional-de-golf","name":"Centro Nacional de Golf",
 
 let CLUB = (COURSES.find(c => c.id === "la-herreria") || COURSES[0] || {name:"Fairway"}).name || (COURSES[0] && COURSES[0].name) || "Fairway";
 let PLAYERS = [{
-  id: "p1", rp: "rp-miguel", name: "Miguel Ro", short: "Mig", initials: "MR",
-  hcp: 12.4, ph: 12, ch: 12, avatar: "", guest: false, scores: {}, putts: {}, fir: {}, gir: {}, creativePts: 0, creativeLog: []
+  id: "p1", rp: "rp-host", name: "", short: "", initials: "?",
+  hcp: null, ph: null, ch: null, avatar: "", guest: false, scores: {}, putts: {}, fir: {}, gir: {}, creativePts: 0, creativeLog: []
 }];
 let HOLES = FX.holes.map(h => ({ n: h.n, par: h.par, m: h.m, hcp: h.hcp }));
 
@@ -2193,7 +2193,7 @@ function applyCourseData(course, teeName, clearScores) {
   const homeClub = document.getElementById("homeClub");
   if (homeClub) homeClub.textContent = CLUB;
   const homeMeta = document.getElementById("homeMeta");
-  if (homeMeta) homeMeta.textContent = FX.layout + " · " + tee + " · Par " + FX.par;
+  if (homeMeta) homeMeta.textContent = ((state.setup && state.setup.holes) || 18) + " hoyos · " + tee + " · Par " + FX.par;
   const badge = document.getElementById("homeCourseBadge");
   if (badge) {
     badge.textContent = course.badge || (course.official ? "OFICIAL" : "FICTICIO");
@@ -2262,25 +2262,37 @@ function removeRosterPlayer(id) {
 function loadHostHcp() {
   try {
     const h = JSON.parse(localStorage.getItem(HOST_KEY) || "null");
-    if (!h || !PLAYERS[0]) return;
-    if (h.hcp != null) {
+    if (!PLAYERS[0]) return;
+    if (!h) {
+      // Visitante nuevo / otro iPhone: perfil vacío (no hay Miguel en el HTML)
+      PLAYERS[0].name = "";
+      PLAYERS[0].short = "";
+      PLAYERS[0].initials = "?";
+      PLAYERS[0].hcp = null;
+      PLAYERS[0].ph = null;
+      PLAYERS[0].ch = null;
+      return;
+    }
+    if (h.hcp != null && h.hcp !== "") {
       PLAYERS[0].hcp = clampHcp(h.hcp);
       PLAYERS[0].ph = Math.round(PLAYERS[0].hcp);
       PLAYERS[0].ch = Math.round(PLAYERS[0].hcp);
+    } else {
+      PLAYERS[0].hcp = null;
+      PLAYERS[0].ph = null;
+      PLAYERS[0].ch = null;
     }
-    if (h.name && String(h.name).trim()) {
-      applyHostName(String(h.name).trim(), false);
-    }
+    applyHostName(h.name ? String(h.name).trim() : "", false);
   } catch (e) {}
 }
 
 function applyHostName(name, persist) {
   const p = PLAYERS[0];
   if (!p) return;
-  const n = String(name || "").trim() || "Jugador";
+  const n = String(name || "").trim();
   p.name = n;
-  p.short = n.slice(0, 3);
-  p.initials = (typeof guestInitials === "function") ? guestInitials(n) : n.slice(0, 2).toUpperCase();
+  p.short = n ? n.slice(0, 3) : "";
+  p.initials = n ? ((typeof guestInitials === "function") ? guestInitials(n) : n.slice(0, 2).toUpperCase()) : "?";
   if (persist !== false) saveHostProfile();
   updateHomeGreeting();
 }
@@ -2292,17 +2304,23 @@ function saveHostHcp() {
 function saveHostProfile() {
   try {
     const p = PLAYERS[0] || {};
+    // Solo en este dispositivo — nunca viaja en el HTML público
     localStorage.setItem(HOST_KEY, JSON.stringify({
-      name: p.name || "Miguel Ro",
-      hcp: p.hcp != null ? p.hcp : 12.4
+      name: String(p.name || "").trim(),
+      hcp: (p.hcp != null && p.hcp !== "") ? clampHcp(p.hcp) : null
     }));
   } catch (e) {}
 }
 
 function hostFirstName() {
-  const n = (PLAYERS[0] && PLAYERS[0].name) || "Miguel";
-  const part = String(n).trim().split(/\s+/)[0];
-  return part || "Miguel";
+  const n = (PLAYERS[0] && PLAYERS[0].name) ? String(PLAYERS[0].name).trim() : "";
+  if (!n) return "";
+  return n.split(/\s+/)[0] || "";
+}
+
+function hostHasProfile() {
+  const p = PLAYERS[0];
+  return !!(p && String(p.name || "").trim());
 }
 
 function updateHomeGreeting() {
@@ -2310,7 +2328,12 @@ function updateHomeGreeting() {
   if (!el) return;
   const hour = new Date().getHours();
   const hello = hour < 12 ? "Buenos días" : (hour < 20 ? "Buenas tardes" : "Buenas noches");
-  el.textContent = hello + ", " + hostFirstName();
+  const first = hostFirstName();
+  el.textContent = first ? (hello + ", " + first) : hello;
+  const sub = document.querySelector("#screen-home .greeting-sub");
+  if (sub) {
+    sub.textContent = first ? "¿Listo para el campo?" : "Pon tu nombre y HCP en Perfil";
+  }
 }
 
 function setHostNameFromPerfil(raw) {
@@ -2318,11 +2341,25 @@ function setHostNameFromPerfil(raw) {
   if (typeof refreshPlayerHandicaps === "function") refreshPlayerHandicaps();
 }
 
+function adjHostHcpFromPerfil(delta) {
+  const p = PLAYERS[0];
+  if (!p) return;
+  const base = (p.hcp != null && p.hcp !== "") ? Number(p.hcp) : 18;
+  setHostHcpFromPerfil(base + delta);
+}
+
 function setHostHcpFromPerfil(raw) {
   const p = PLAYERS[0];
   if (!p) return;
   const cleaned = String(raw).trim().replace(",", ".");
-  if (cleaned === "" || cleaned === ".") return;
+  if (cleaned === "" || cleaned === ".") {
+    p.hcp = null;
+    p.ph = null;
+    p.ch = null;
+    saveHostProfile();
+    renderPerfil();
+    return;
+  }
   const h = clampHcp(cleaned);
   p.hcp = h;
   p.ph = Math.round(h);
@@ -2330,12 +2367,6 @@ function setHostHcpFromPerfil(raw) {
   saveHostProfile();
   if (typeof refreshPlayerHandicaps === "function") refreshPlayerHandicaps();
   renderPerfil();
-}
-
-function adjHostHcpFromPerfil(delta) {
-  const p = PLAYERS[0];
-  if (!p) return;
-  setHostHcpFromPerfil((Number(p.hcp) || 0) + delta);
 }
 
 const ROUNDS_KEY = "fairway.rounds.v1";
@@ -2515,7 +2546,7 @@ function buildRoundRecord() {
     date: formatRoundDate(now.toISOString()),
     club: (course && course.name) || CLUB || "Fairway",
     courseId: state.setup.courseId,
-    layout: (course && course.layout) || "18 hoyos",
+    layout: (typeof roundLayoutLabel === "function" ? roundLayoutLabel() : (((state.setup && state.setup.holes) || 18) + " hoyos")),
     tee: state.setup.tee,
     par: (course && course.par) || 72,
     holes: state.setup.holes || 18,
@@ -3958,7 +3989,7 @@ function renderScorecard() {
   const list = activePlayers();
   const course = (typeof getSelectedCourse === "function" ? getSelectedCourse() : null);
   const clubName = (course && course.name) || FX.club;
-  const layout = (course && course.layout) || FX.layout;
+  const layout = roundLayoutLabel();
   document.getElementById("scClub").textContent = clubName + " — " + layout;
   const badge = document.querySelector("#screen-scorecard .badge-demo");
   if (badge) badge.textContent = (course && course.official) ? "OFICIAL" : "FICTICIO";
@@ -4857,6 +4888,11 @@ function shareRoundWhatsApp(id) {
 }
 
 
+function roundLayoutLabel() {
+  const n = (state.setup && state.setup.holes) || 18;
+  return n + " hoyos";
+}
+
 function renderClose() {
   const body = document.getElementById("closeBody");
   // Snapshot standings/podium BEFORE wiping active memory (P05 + placas)
@@ -4867,7 +4903,7 @@ function renderClose() {
   persistCompletedRound();
   const me = rows.find(r => r.me) || rows[0];
   const course = (typeof getSelectedCourse === "function" ? getSelectedCourse() : null);
-  const layout = (course && course.layout) || FX.layout;
+  const layout = roundLayoutLabel();
   const par = (course && course.par) || FX.par;
   const officialBadge = course && course.official ? "OFICIAL" : "FICTICIO";
 
@@ -5021,10 +5057,18 @@ function mergeFairwayBackup(remote) {
     });
     saveRoster(Object.keys(map).map(k => map[k]));
   }
-  if (remote.host && remote.host.hcp != null) {
+  if (remote.host && typeof remote.host === "object") {
     try {
       localStorage.setItem(HOST_KEY, JSON.stringify(remote.host));
-      if (PLAYERS[0]) PLAYERS[0].hcp = remote.host.hcp;
+      if (PLAYERS[0]) {
+        if (remote.host.hcp != null) {
+          PLAYERS[0].hcp = clampHcp(remote.host.hcp);
+          PLAYERS[0].ph = Math.round(PLAYERS[0].hcp);
+          PLAYERS[0].ch = Math.round(PLAYERS[0].hcp);
+        }
+        if (remote.host.name) applyHostName(remote.host.name, false);
+      }
+      if (typeof updateHomeGreeting === "function") updateHomeGreeting();
     } catch (e) {}
   }
   if (remote.activeRound && typeof remote.activeRound === "object") {
@@ -5320,25 +5364,26 @@ function importFairwayBackup() {
 
 function renderPerfil() {
   const recordsHtml = _perfilRecordsHtml();
-  const p = PLAYERS[0] || { name: "Miguel Ro", hcp: 12.4, initials: "MR" };
-  const hi = (typeof fmtHcp === "function") ? fmtHcp(p.hcp) : String(p.hcp);
-  const initials = p.initials || (typeof guestInitials === "function" ? guestInitials(p.name) : "MR");
+  const p = PLAYERS[0] || { name: "", hcp: null, initials: "?" };
+  const hasHcp = p.hcp != null && p.hcp !== "";
+  const hi = hasHcp ? ((typeof fmtHcp === "function") ? fmtHcp(p.hcp) : String(p.hcp)) : "";
+  const initials = (p.name && p.initials) ? p.initials : "?";
   document.getElementById("perfilBody").innerHTML = `
     <div class="profile-hero">
       <div class="avatar-lg">${initials}</div>
-      <p class="muted" style="margin-top:8px;">Tu perfil · se guarda en este iPhone</p>
+      <p class="muted" style="margin-top:8px;">Solo en este iPhone · no va en la web pública</p>
     </div>
     <div class="card mb-16">
       <div class="eyebrow">Nombre</div>
       <input class="perfil-input" type="text" maxlength="40" value="${String(p.name || "").replace(/"/g, "&quot;")}"
         onchange="setHostNameFromPerfil(this.value)"
         onblur="setHostNameFromPerfil(this.value);renderPerfil()"
-        placeholder="Tu nombre" autocomplete="name" />
+        placeholder="Tu nombre (solo en este iPhone)" autocomplete="name" />
       <div class="eyebrow mt-16">Handicap Index (HI)</div>
       <div class="row gap-8" style="align-items:center;">
         <button type="button" class="btn-icon" onclick="adjHostHcpFromPerfil(-0.1)" aria-label="Bajar HCP">−</button>
         <input class="perfil-input perfil-hcp" type="text" inputmode="decimal"
-          value="${hi}"
+          value="${hi}" placeholder="ej. 12.4"
           onchange="setHostHcpFromPerfil(this.value)"
           onblur="setHostHcpFromPerfil(this.value)"
           aria-label="Handicap Index" />
@@ -5346,7 +5391,7 @@ function renderPerfil() {
       </div>
       <p class="micro mt-8">Se usa en CH, neto y Stableford de tus partidas.</p>
       <div class="row gap-8 mt-12" style="justify-content:flex-start;">
-        <span class="badge badge-tier">HI ${hi}</span>
+        <span class="badge badge-tier">${hasHcp ? ("HI " + hi) : "HI —"}</span>
         <span class="badge badge-demo">Historial · Solo yo</span>
       </div>
     </div>
