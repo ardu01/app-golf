@@ -1,0 +1,128 @@
+[
+  {
+    "n": 1,
+    "name": "El Descenso",
+    "file": "01.webp",
+    "source": "miguel-screenshot",
+    "fallback": "01.jpg"
+  },
+  {
+    "n": 2,
+    "name": "El Bosque",
+    "file": "02.webp",
+    "source": "miguel-screenshot",
+    "fallback": "02.jpg"
+  },
+  {
+    "n": 3,
+    "name": "La Ermita",
+    "file": "03.webp",
+    "source": "miguel-screenshot",
+    "fallback": "03.jpg"
+  },
+  {
+    "n": 4,
+    "name": "El Lago",
+    "file": "04.webp",
+    "source": "miguel-screenshot",
+    "fallback": "04.jpg"
+  },
+  {
+    "n": 5,
+    "name": "La Romería",
+    "file": "05.webp",
+    "source": "miguel-screenshot",
+    "fallback": "05.jpg"
+  },
+  {
+    "n": 6,
+    "name": "El Cerro",
+    "file": "06.webp",
+    "source": "miguel-screenshot",
+    "fallback": "06.jpg"
+  },
+  {
+    "n": 7,
+    "name": "El Puente",
+    "file": "07.webp",
+    "source": "miguel-screenshot",
+    "fallback": "07.jpg"
+  },
+  {
+    "n": 8,
+    "name": "El Monasterio",
+    "file": "08.webp",
+    "source": "miguel-screenshot",
+    "fallback": "08.jpg"
+  },
+  {
+    "n": 9,
+    "name": "La Tapia",
+    "file": "09.webp",
+    "source": "miguel-screenshot",
+    "fallback": "09.jpg"
+  },
+  {
+    "n": 10,
+    "name": "La Encina",
+    "file": "10.webp",
+    "source": "miguel-screenshot",
+    "fallback": "10.jpg"
+  },
+  {
+    "n": 11,
+    "name": "El Monte Abantos",
+    "file": "11.webp",
+    "source": "miguel-screenshot",
+    "fallback": "11.jpg"
+  },
+  {
+    "n": 12,
+    "name": "El Mirador",
+    "file": "12.webp",
+    "source": "miguel-screenshot",
+    "fallback": "12.jpg"
+  },
+  {
+    "n": 13,
+    "name": "El Tenedro",
+    "file": "13.webp",
+    "source": "miguel-screenshot",
+    "fallback": "13.jpg"
+  },
+  {
+    "n": 14,
+    "name": "Los Robles",
+    "file": "14.webp",
+    "source": "miguel-screenshot",
+    "fallback": "14.jpg"
+  },
+  {
+    "n": 15,
+    "name": "La Presa",
+    "file": "15.webp",
+    "source": "miguel-screenshot",
+    "fallback": "15.jpg"
+  },
+  {
+    "n": 16,
+    "name": "El San Benito",
+    "file": "16.webp",
+    "source": "miguel-screenshot",
+    "fallback": "16.jpg"
+  },
+  {
+    "n": 17,
+    "name": "El Jabalí",
+    "file": "17.webp",
+    "source": "miguel-screenshot",
+    "fallback": "17.jpg"
+  },
+  {
+    "n": 18,
+    "name": "La Parrilla",
+    "file": "18.webp",
+    "source": "miguel-screenshot",
+    "fallback": "18.jpg"
+  }
+]
