@@ -2077,19 +2077,43 @@ function updateHomeThru() {
       if (p.scores[i] != null) { gross += p.scores[i]; par += HOLES[i-1].par; thru = i; }
     }
   }
+  // Club / meta always reflect current setup
+  try {
+    const course = (typeof getSelectedCourse === "function") ? getSelectedCourse() : null;
+    const clubEl = document.getElementById("homeClub");
+    if (clubEl) clubEl.textContent = (course && course.name) || CLUB || "Fairway";
+    const metaEl = document.getElementById("homeMeta");
+    if (metaEl) {
+      const holes = (state.setup && state.setup.holes) || 18;
+      const tee = (state.setup && state.setup.tee) || "Amarillas";
+      const parN = (course && course.par) || 72;
+      metaEl.textContent = holes + " hoyos · " + tee + " · Par " + parN;
+    }
+    const badge = document.getElementById("homeCourseBadge");
+    if (badge) {
+      const off = !!(course && course.official);
+      badge.textContent = off ? "OFICIAL" : "FICTICIO";
+      badge.className = "badge " + (off ? "badge-oficial" : "badge-demo");
+    }
+    const eye = document.querySelector("#screen-home .round-card .eyebrow");
+    if (eye) eye.textContent = live ? "Ronda en curso" : "Tu campo";
+  } catch (e) {}
   const el = document.getElementById("homeToPar");
   if (el) el.textContent = (live && par) ? ((gross - par > 0 ? "+" : "") + (gross - par)) : "—";
   const th = document.getElementById("homeThru");
   if (th) th.textContent = live ? String(thru) : "0";
   const pts = document.getElementById("homePts");
   if (pts) pts.textContent = "—";
-  const inProgress = live;
   document.querySelectorAll("[data-continue-hole]").forEach(btn => {
     btn.textContent = "Continuar · Hoyo " + (state.hole || 1);
-    btn.style.display = inProgress ? "" : "none";
+    btn.style.display = live ? "" : "none";
   });
+  // Card always on Home (fits under greeting); Continuar only when live
   const roundCard = document.querySelector("#screen-home .round-card");
-  if (roundCard) roundCard.style.display = inProgress ? "" : "none";
+  if (roundCard) {
+    roundCard.style.display = "";
+    roundCard.setAttribute("data-active", live ? "1" : "0");
+  }
 }
 
 function updateNetBadge() {
@@ -2309,7 +2333,7 @@ function endActiveRoundMemory() {
     });
     const card = document.querySelector("#screen-home .round-card");
     if (card) {
-      card.style.display = "none";
+      card.style.display = "";
       card.setAttribute("data-active", "0");
     }
   } catch (e) {}
