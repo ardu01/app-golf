@@ -1,0 +1,70 @@
+name: unpack-slim-fairway
+on:
+  workflow_dispatch:
+jobs:
+  unpack:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: perf/html-under-300kb
+      - name: Unpack slim Fairway deploy
+        run: |
+          set -euo pipefail
+          cat _deploy/index.gz.b64.* | base64 -d | gzip -dc > index.html
+          SIZE=$(wc -c < index.html | tr -d ' ')
+          echo "index.html size=$SIZE"
+          test "$SIZE" = "258731"
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("index.html")
+          assert p.stat().st_size == 258731
+          assert p.read_text(encoding="utf-8").startswith("<!DOCTYPE html>")
+          print("index.html OK")
+          PY
+
+          mkdir -p icons holes/la-herreria
+          for f in _deploy/icons/*.b64; do
+            [ -f "$f" ] || continue
+            name=$(basename "$f" .b64)
+            base64 -d "$f" > "icons/$name"
+            echo "icons/$name $(wc -c < "icons/$name")"
+          done
+
+          # holes: group by basename without .N suffix
+          # files named like 01.webp.b64.0 01.webp.b64.1
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64, re, collections
+          root = Path("_deploy/holes")
+          groups = collections.defaultdict(list)
+          for p in sorted(root.iterdir()):
+              m = re.match(r"^(.+\.(?:webp|jpg)\.b64)\.(\d+)$", p.name)
+              if not m:
+                  # single-file form name.b64
+                  if p.name.endswith(".b64") and not re.search(r"\.b64\.\d+$", p.name):
+                      groups[p.name].append((0, p))
+                  continue
+              groups[m.group(1)].append((int(m.group(2)), p))
+          for key, items in groups.items():
+              items.sort()
+              data = b"".join(base64.b64decode(p.read_text()) for _, p in items)
+              # key is like 01.webp.b64 -> 01.webp
+              out_name = key[:-4] if key.endswith(".b64") else key
+              out = Path("holes/la-herreria") / out_name
+              out.write_bytes(data)
+              print(f"{out} {len(data)}")
+          PY
+
+          rm -f IMG_1156.png IMG_1157.png .fairway-deploy-marker.txt
+          rm -rf _deploy
+          rm -f .github/workflows/unpack-slim.yml
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git status --short
+          git commit -m "perf: unpack slim Fairway assets (HTML <300KB + external holes)"
+          git push origin HEAD:perf/html-under-300kb
