@@ -768,6 +768,8 @@
     border: .5px solid rgba(60,60,67,0.18);
   }
   .stroke-badge.two { background: rgba(52,199,89,0.22); }
+  .stroke-badge.give { background: rgba(255,149,0,0.18); color: #B85C00; }
+  .sc-stroke.give { color: #B85C00; }
   .net-chip {
     display: inline-block; margin-top: 2px; font-size: 11px; font-weight: 600;
     color: rgba(60,60,67,0.55);
@@ -3304,15 +3306,17 @@ function renderSetup() {
     html = `<p class="muted mb-16">Tee de salida · ${course.name}</p><div class="chip-row">` +
       tees.map(t => {
         const teeMeta = course.tees.find(x => x.name === t);
-        const sub = teeMeta && teeMeta.cr != null ? ` · CR ${teeMeta.cr}` : "";
+        const sub = teeMeta && teeMeta.cr != null
+          ? ` · CR ${teeMeta.cr}${teeMeta.slope != null ? " · Slope " + teeMeta.slope : ""}`
+          : "";
         return `<button class="chip ${state.setup.tee===t?"selected":""}" onclick="selectTee('${t}')">${t}${sub}</button>`;
       }).join("") +
       `</div>
       <p class="micro mt-16">Hoyo 1: Par ${HOLES[0].par} · ${HOLES[0].m} m · HCP ${HOLES[0].hcp}</p>`;
   } else if (step === 2) {
     html = `<p class="muted mb-16">Longitud de la ronda.</p><div class="chip-row">
-      <button class="chip ${state.setup.holes===9?"selected":""}" onclick="state.setup.holes=9;renderSetup()">9 hoyos</button>
-      <button class="chip ${state.setup.holes===18?"selected":""}" onclick="state.setup.holes=18;renderSetup()">18 hoyos</button>
+      <button class="chip ${state.setup.holes===9?"selected":""}" onclick="state.setup.holes=9;if(typeof refreshPlayerHandicaps==='function')refreshPlayerHandicaps();renderSetup()">9 hoyos</button>
+      <button class="chip ${state.setup.holes===18?"selected":""}" onclick="state.setup.holes=18;if(typeof refreshPlayerHandicaps==='function')refreshPlayerHandicaps();renderSetup()">18 hoyos</button>
     </div>`;
   } else if (step === 3) {
     const wmOpen = !!state.setup.writeModeOpen;
@@ -3762,7 +3766,7 @@ function holeMatchesCreativeTrigger(trigger, p, holeN, list) {
   if (!h || !p) return false;
   const s = p.scores[holeN];
   if (s == null && trigger !== "hole_win") return false;
-  const ph = Number(p.ch != null ? p.ch : p.ph) || (typeof courseHandicapFor === "function" ? courseHandicapFor(p) : 0);
+  const ph = typeof playerCourseHcp === "function" ? playerCourseHcp(p) : (Number(p.ch != null ? p.ch : p.ph) || 0);
   const recv = (typeof strokesOnHole === "function") ? strokesOnHole(ph, h.hcp) : 0;
   const net = (s != null) ? (s - recv) : null;
   const putt = p.putts ? p.putts[holeN] : null;
@@ -4254,7 +4258,12 @@ function renderHole(opts) {
   document.getElementById("holePar").textContent = h.par;
   document.getElementById("holeYards").textContent = h.m + " m";
   refreshPlayerHandicaps();
-  document.getElementById("holeHcpLine").textContent = `SI ${h.hcp} · ${state.setup.tee}`;
+  document.getElementById("holeHcpLine").textContent = (() => {
+    const n = holesInRound();
+    const rel = n < 18 ? relativeStrokeIndex(h.hcp) : null;
+    const siPart = rel != null && rel !== h.hcp ? `SI ${h.hcp} · rel ${rel}` : `SI ${h.hcp}`;
+    return `${siPart} · ${state.setup.tee}`;
+  })();
   const _siB = document.getElementById("holeSiBanner");
   if (_siB) _siB.remove();
   document.getElementById("holeClubBadge").textContent = CLUB;
@@ -4285,7 +4294,7 @@ function renderHole(opts) {
     const putt = p.putts[state.hole];
     const hasScore = score != null;
     const hasPutt = putt != null;
-    const ch = Number(p.ch != null ? p.ch : p.ph) || courseHandicapFor(p);
+    const ch = playerCourseHcp(p);
     const recv = strokesOnHole(ch, h.hcp);
     const netVs = hasScore ? (score - h.par - recv) : null;
     const netLabel = netVs == null ? "" : (netVs === 0 ? "Net par" : (netVs > 0 ? "Net +" + netVs : "Net " + netVs));
@@ -4304,9 +4313,12 @@ function renderHole(opts) {
     const puttOpts = [0, 1, 2, 3];
     // 4 chips: −1 / par / +1 / +2 (el resto con ±)
     const scoreChips = [h.par - 1, h.par, h.par + 1, h.par + 2].filter(v => v >= 1);
+    const relSi = typeof relativeStrokeIndex === "function" ? relativeStrokeIndex(h.hcp) : h.hcp;
     const strokeHint = recv > 0
-      ? `<span class="stroke-badge${recv>=2?" two":""}" title="SI ${h.hcp} · CH ${ch}">−${recv}</span>`
-      : "";
+      ? `<span class="stroke-badge${recv>=2?" two":""}" title="SI ${h.hcp} · rel ${relSi} · CH ${ch}">−${recv}</span>`
+      : (recv < 0
+        ? `<span class="stroke-badge give" title="Plus · SI ${h.hcp} · CH ${ch}">+${-recv}</span>`
+        : "");
     const subLine = hasScore ? `${netLabel} · CH ${ch}` : `CH ${ch}`;
     const scoreOnChip = hasScore && scoreChips.includes(score);
     const ballRaw = (p.ball || "").trim();
@@ -4703,7 +4715,7 @@ function renderScorecard() {
   const thead = document.querySelector("#scoreTable thead tr");
   if (thead) {
     thead.innerHTML = "<th>#</th><th>Par</th>" + list.map(p => {
-      const ch = Number(p.ch != null ? p.ch : p.ph) || courseHandicapFor(p);
+      const ch = playerCourseHcp(p);
       return `<th>${(p.short || p.initials || p.name || "?").toString().slice(0, 3)}<span class="ch-mini">CH ${ch}</span></th>`;
     }).join("");
   }
@@ -4721,7 +4733,7 @@ function renderScorecard() {
     rows += `<tr${cur?' style="outline:1.5px solid var(--brand-brass);outline-offset:-1px;"':''}><td class="hole-label">${h.n}<span class="ch-mini">SI ${h.hcp}</span></td><td>${h.par}</td>`;
     list.forEach((p, pi) => {
       const s = p.scores[h.n];
-      const ch = Number(p.ch != null ? p.ch : p.ph) || courseHandicapFor(p);
+      const ch = playerCourseHcp(p);
       const recv = strokesOnHole(ch, h.hcp);
       if (s != null) {
         totalsNine[pi] += s;
@@ -4742,14 +4754,19 @@ function renderScorecard() {
           else if (diff === -1) cls += " sc-birdie";
           else if (diff === 1) cls += " sc-bogey";
           else if (diff >= 2) cls += " sc-dbl";
-          const strokeMark = recv ? `<span class="sc-stroke">${"·".repeat(Math.min(recv, 3))}</span>` : "";
-          const sf = recv > 0 ? stablefordHole(s, h.par, recv) : null;
-          const sfMark = (sf != null) ? `<span class="sc-sf">${sf} pts</span>` : "";
+          const strokeMark = recv > 0
+            ? `<span class="sc-stroke">${"·".repeat(Math.min(recv, 3))}</span>`
+            : (recv < 0 ? `<span class="sc-stroke give">${"◦".repeat(Math.min(-recv, 3))}</span>` : "");
+          const sf = stablefordHole(s, h.par, recv);
+          const sfMark = `<span class="sc-sf">${sf} pts</span>`;
           rows += `<td class="${cls}">${s}${strokeMark}${sfMark}</td>`;
         }
       } else {
         if (cardMode === "gross" && recv) {
-          rows += `<td class="score-cell sc-pending"><span class="sc-stroke">${"·".repeat(Math.min(recv, 3))}</span></td>`;
+          const strokeMark = recv > 0
+            ? `<span class="sc-stroke">${"·".repeat(Math.min(recv, 3))}</span>`
+            : `<span class="sc-stroke give">${"◦".repeat(Math.min(-recv, 3))}</span>`;
+          rows += `<td class="score-cell sc-pending">${strokeMark}</td>`;
         } else {
           rows += `<td class="score-cell">·</td>`;
         }
@@ -4776,7 +4793,7 @@ function renderScorecard() {
       const s = p.scores[i + 1];
       if (s != null) {
         totAll[pi] += s;
-        const ch = Number(p.ch != null ? p.ch : p.ph) || courseHandicapFor(p);
+        const ch = playerCourseHcp(p);
         netAll[pi] += s - strokesOnHole(ch, HOLES[i].hcp);
       }
     });
@@ -4825,7 +4842,7 @@ function renderScorecard() {
     if (me && me.scores[k] != null && HOLES[k - 1]) {
       migOut += me.scores[k];
       parPlayedOut += HOLES[k - 1].par;
-      const ch = Number(me.ch != null ? me.ch : me.ph) || courseHandicapFor(me);
+      const ch = playerCourseHcp(me);
       netOut += me.scores[k] - strokesOnHole(ch, HOLES[k - 1].hcp);
     }
   }
@@ -4834,7 +4851,7 @@ function renderScorecard() {
     if (me && me.scores[k] != null && HOLES[k - 1]) {
       migIn += me.scores[k];
       parPlayedIn += HOLES[k - 1].par;
-      const ch = Number(me.ch != null ? me.ch : me.ph) || courseHandicapFor(me);
+      const ch = playerCourseHcp(me);
       netIn += me.scores[k] - strokesOnHole(ch, HOLES[k - 1].hcp);
     }
   }
@@ -4970,7 +4987,7 @@ function stablefordHole(score, par, strokesReceived) {
   return 0;
 }
 
-/** WHS Course Handicap: round(HI × Slope/113 + (CR − Par)) */
+/** WHS Course Handicap: round(HI × Slope/113 + (CR − Par)); 9 hoyos → round(CH18/2). */
 function resolveSetupTee(course) {
   const c = course || (typeof getSelectedCourse === "function" ? getSelectedCourse() : null);
   if (!c || !c.tees || !c.tees.length) return (state.setup && state.setup.tee) || "Amarillas";
@@ -4982,38 +4999,101 @@ function resolveSetupTee(course) {
   return tee;
 }
 
-function courseHandicapFor(player) {
+function holesInRound(explicit) {
+  if (explicit != null && Number.isFinite(Number(explicit))) {
+    return Math.max(1, Math.min(18, Math.floor(Number(explicit))));
+  }
+  const n = Number(state.setup && state.setup.holes);
+  return Math.max(1, Math.min(18, Number.isFinite(n) ? n : 18));
+}
+
+/** Scale 18-hole CH when playing 9 holes of an 18-hole rated course (WHS). */
+function scaleHandicapForRound(ch18, nHoles, courseHoleCount) {
+  const n = holesInRound(nHoles);
+  const total = courseHoleCount != null
+    ? Number(courseHoleCount)
+    : ((typeof HOLES !== "undefined" && HOLES.length) ? HOLES.length : 18);
+  if (n <= 9 && total > 9) return Math.round(Number(ch18) / 2);
+  return Math.round(Number(ch18)) || 0;
+}
+
+function courseHandicapFor(player, opts) {
+  opts = opts || {};
   const hi = Number(player && player.hcp);
   if (!Number.isFinite(hi)) return 0;
-  const course = typeof getSelectedCourse === "function" ? getSelectedCourse() : null;
-  const teeName = resolveSetupTee(course);
+  const course = opts.course || (typeof getSelectedCourse === "function" ? getSelectedCourse() : null);
+  const teeName = opts.tee || resolveSetupTee(course);
   const tee = course && course.tees && course.tees.find(x => x.name === teeName);
+  const nHoles = opts.holes != null ? opts.holes : holesInRound();
+  const courseHoleCount = (course && course.holes && course.holes.length)
+    || (typeof HOLES !== "undefined" ? HOLES.length : 18);
   if (!tee || tee.slope == null || tee.cr == null) {
-    return Math.round(hi); // fallback if tee meta missing
+    return scaleHandicapForRound(Math.round(hi), nHoles, courseHoleCount);
   }
   const par = (tee.par != null ? tee.par : course.par) || 72;
-  const ch = hi * (Number(tee.slope) / 113) + (Number(tee.cr) - Number(par));
-  return Math.round(ch);
+  const ch18 = Math.round(hi * (Number(tee.slope) / 113) + (Number(tee.cr) - Number(par)));
+  return scaleHandicapForRound(ch18, nHoles, courseHoleCount);
+}
+
+/** Safe CH lookup — keeps CH 0 and plus handicaps (avoids `||` falsy bug). */
+function playerCourseHcp(p) {
+  if (p && p.ch != null && Number.isFinite(Number(p.ch))) return Number(p.ch);
+  if (p && p.ph != null && Number.isFinite(Number(p.ph))) return Number(p.ph);
+  return typeof courseHandicapFor === "function" ? courseHandicapFor(p) : 0;
 }
 
 function refreshPlayerHandicaps() {
   PLAYERS.forEach(p => {
     const ch = courseHandicapFor(p);
     p.ch = ch;
-    p.ph = ch; // playing handicap = CH for 18-hole individual (no allowance factor in personal v1)
+    p.ph = ch; // playing handicap = CH (100% allowance, individual)
   });
 }
 
-/** Strokes received on a hole from Course/Playing Handicap + stroke index (1=hardest). */
-function strokesOnHole(ph, holeHcp) {
-  const ch = Math.max(0, Math.floor(Number(ph) || 0));
-  const idx = Number(holeHcp) || 18;
-  if (ch <= 0) return 0;
+/**
+ * Relative stroke index among holes in play (1 = hardest of those holes).
+ * For 18 holes uses the scorecard SI (dolor) as-is.
+ */
+function relativeStrokeIndex(holeHcp, nHoles, holeList) {
+  const n = holesInRound(nHoles);
+  const abs = Number(holeHcp);
+  const si = Number.isFinite(abs) ? abs : n;
+  const list = holeList || (typeof HOLES !== "undefined" ? HOLES : null);
+  if (!list || !list.length || n >= 18 || n >= list.length) return si;
+  const played = list.slice(0, n);
+  const ranked = played
+    .map((h, i) => ({ si: Number(h.hcp) || 99, n: h.n || (i + 1) }))
+    .sort((a, b) => (a.si - b.si) || (a.n - b.n));
+  const pos = ranked.findIndex(x => x.si === si);
+  return pos >= 0 ? (pos + 1) : si;
+}
+
+/**
+ * Strokes received (+) or given (−) on a hole from Playing Handicap + SI (dolor).
+ * opts: { holes, holeList } for historial / export off the live setup.
+ */
+function strokesOnHole(ph, holeHcp, opts) {
+  opts = opts || {};
+  const chRaw = Number(ph);
+  if (!Number.isFinite(chRaw) || chRaw === 0) return 0;
+  const ch = chRaw < 0 ? Math.ceil(chRaw) : Math.floor(chRaw);
+  if (ch === 0) return 0;
+  const nHoles = holesInRound(opts.holes);
+  const idx = relativeStrokeIndex(holeHcp, nHoles, opts.holeList);
+  if (ch > 0) {
+    let n = 0;
+    for (let k = 0; k * nHoles < ch; k++) {
+      if (idx <= (ch - k * nHoles)) n += 1;
+    }
+    return n;
+  }
+  // Plus handicap: give strokes on easiest holes (highest relative SI)
+  const give = -ch;
   let n = 0;
-  if (idx <= ch) n += 1;
-  if (ch > 18 && idx <= (ch - 18)) n += 1;
-  if (ch > 36 && idx <= (ch - 36)) n += 1;
-  if (ch > 54 && idx <= (ch - 54)) n += 1;
+  for (let k = 0; k * nHoles < give; k++) {
+    const band = Math.min(give - k * nHoles, nHoles);
+    if (idx >= (nHoles - band + 1)) n -= 1;
+  }
   return n;
 }
 
@@ -5027,7 +5107,7 @@ function liveStandings() {
     const { gross, thru } = pg;
     const totalsOnly = !!pg.totalsOnly;
     const parP = playerParPlayed(p, maxH);
-    const ph = Number(p.ch != null ? p.ch : p.ph) || courseHandicapFor(p);
+    const ph = playerCourseHcp(p);
     let sf = 0, puttPts = 0, holeWins = 0, birdies = 0;
     let puttSum = 0, puttN = 0;
     for (let i = 1; i <= maxH; i++) {
@@ -5129,13 +5209,17 @@ function standingsFromSavedRound(d) {
   const list = (d.players || []).slice();
 
   function strokesRecv(ch, holeHcp) {
-    if (typeof strokesOnHole === "function") return strokesOnHole(Number(ch) || 0, holeHcp);
+    if (typeof strokesOnHole === "function") {
+      return strokesOnHole(ch, holeHcp, { holes: maxH, holeList: holes });
+    }
     let n = 0;
     const idx = Number(holeHcp) || 18;
     const c = Number(ch) || 0;
-    if (idx <= c) n += 1;
-    if (c > 18 && idx <= (c - 18)) n += 1;
-    if (c > 36 && idx <= (c - 36)) n += 1;
+    if (c > 0) {
+      if (idx <= c) n += 1;
+      if (c > 18 && idx <= (c - 18)) n += 1;
+      if (c > 36 && idx <= (c - 36)) n += 1;
+    }
     return n;
   }
 
@@ -5144,7 +5228,9 @@ function standingsFromSavedRound(d) {
     const putts = p.putts || {};
     const fir = p.fir || {};
     const gir = p.gir || {};
-    const ch = Number(p.ch != null ? p.ch : p.ph != null ? p.ph : p.hcp) || 0;
+    const ch = (p.ch != null && Number.isFinite(Number(p.ch)))
+      ? Number(p.ch)
+      : ((p.ph != null && Number.isFinite(Number(p.ph))) ? Number(p.ph) : (Number(p.hcp) || 0));
     let gross = 0, thru = 0, parP = 0, sf = 0, puttPts = 0, holeWins = 0, birdies = 0;
     let puttSum = 0, puttN = 0, firHit = 0, firAtt = 0, girYes = 0, girAtt = 0, strokesUsed = 0;
     for (let i = 1; i <= maxH; i++) {
@@ -5368,7 +5454,7 @@ function collectScorecardPayload(fromRound) {
       name: p.name,
       short: (p.short || p.initials || p.name || "?").toString().slice(0, 3),
       hcp: p.hcp,
-      ch: Number(p.ch != null ? p.ch : p.ph) || courseHandicapFor(p),
+      ch: playerCourseHcp(p),
       scores: p.scores || {}
     })),
     holes: Array.from({ length: maxH }, (_, i) => {
@@ -5409,14 +5495,20 @@ function drawClassicScorecard(payload) {
   ctx.textBaseline = "middle";
 
   function strokesRecv(p, holeHcp) {
-    const ch = Number(p.ch != null ? p.ch : p.hcp) || 0;
-    if (typeof strokesOnHole === "function") return strokesOnHole(ch, holeHcp);
+    const ch = (p.ch != null && Number.isFinite(Number(p.ch)))
+      ? Number(p.ch)
+      : (Number(p.hcp) || 0);
+    if (typeof strokesOnHole === "function") {
+      return strokesOnHole(ch, holeHcp, { holes: holes.length || 18, holeList: holes });
+    }
     // fallback WHS-style allocation
     let n = 0;
     const idx = Number(holeHcp) || 18;
-    if (idx <= ch) n += 1;
-    if (ch > 18 && idx <= (ch - 18)) n += 1;
-    if (ch > 36 && idx <= (ch - 36)) n += 1;
+    if (ch > 0) {
+      if (idx <= ch) n += 1;
+      if (ch > 18 && idx <= (ch - 18)) n += 1;
+      if (ch > 36 && idx <= (ch - 36)) n += 1;
+    }
     return n;
   }
   function netHole(p, h) {
@@ -6502,7 +6594,7 @@ function renderAjustes() {
   const playersHtml = PLAYERS.map((p, i) => {
     const included = !!state.setup.players[i];
     const wd = !!p.withdrawn;
-    const ch = Number(p.ch != null ? p.ch : p.ph) || courseHandicapFor(p);
+    const ch = playerCourseHcp(p);
     return `
       <div class="aj-player ${wd ? "wd" : ""}">
         <div class="row" style="justify-content:space-between;align-items:center;">
