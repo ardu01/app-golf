@@ -3204,10 +3204,10 @@ function renderSavedRoster() {
   }
   el.innerHTML = `<div class="sr-title">Guardados</div>` + list.map(x => `
     <div class="sr-row">
-      <div class="name">${x.name}</div>
+      <div class="name">${escapeHtml(x.name)}</div>
       <div class="hcp">HCP ${fmtHcp(x.hcp)}</div>
-      <button type="button" onclick="addFromRoster('${x.id}')">Añadir</button>
-      <button type="button" class="danger" onclick="removeRosterPlayer('${x.id}')">Borrar</button>
+      <button type="button" onclick="addFromRoster(${escapeHtml(JSON.stringify(String(x.id || "")))})">Añadir</button>
+      <button type="button" class="danger" onclick="removeRosterPlayer(${escapeHtml(JSON.stringify(String(x.id || "")))})">Borrar</button>
     </div>`).join("");
 }
 function addFromRoster(id) {
@@ -3387,7 +3387,7 @@ function renderSetup() {
       PLAYERS.map((p, i) => `
         <div class="plist-item">
           <div class="plist-main">
-            <div class="avatar ${p.avatar||""}">${p.initials}</div>
+            <div class="avatar ${p.avatar||""}">${escapeHtml(p.initials)}</div>
             <div class="name">${escapeHtml(playerLabel(p))}</div>
             <div class="hcp-step" aria-label="Hándicap">
               <button type="button" aria-label="Bajar hándicap" onclick="adjPlayerHcp(${i}, -0.1)">−</button>
@@ -3403,7 +3403,7 @@ function renderSetup() {
           <div class="plist-ball">
             <span class="dot" aria-hidden="true"></span>
             <input type="text" placeholder="Bola · marca · nº · color" maxlength="48"
-              value="${(p.ball||"").replace(/"/g,"&quot;")}"
+              value="${escapeHtml(p.ball||"")}"
               onchange="setPlayerBall(${i}, this.value)" onblur="setPlayerBall(${i}, this.value)" />
           </div>
         </div>`).join("") + `
@@ -3500,7 +3500,7 @@ function renderSetup() {
         <p class="micro" style="margin:-4px 0 8px;padding-left:2px;">${tr ? tr.hint : ""}</p>`;
       }).join("");
       const presetOpts = presets.length
-        ? presets.map(p => `<option value="${String(p.name).replace(/"/g, "&quot;")}">${p.name}</option>`).join("")
+        ? presets.map(p => `<option value="${escapeHtml(p.name)}">${escapeHtml(p.name)}</option>`).join("")
         : `<option value="">Sin configs guardadas</option>`;
       creativeHtml = `
         <div class="rule-card creative-editor creative-builder">
@@ -3519,7 +3519,7 @@ function renderSetup() {
 
           <div class="cb-section">Normas (texto libre)</div>
           <textarea class="creative-rules" rows="4" placeholder="Ej: Hoy premiamos FIR y castigamos 3-putts. Birdies netos valen doble el fin de semana…"
-            oninput="setCreativeRulesText(this.value)">${(c.rulesText || "").replace(/</g, "&lt;")}</textarea>
+            oninput="setCreativeRulesText(this.value)">${escapeHtml(c.rulesText || "")}</textarea>
 
           <div class="cb-section">Qué puntúa · toca para activar</div>
           <div class="creative-chip-add">${chipAdd}</div>
@@ -3555,7 +3555,7 @@ function renderSetup() {
         <div class="divider"></div>
         <p class="micro mb-8">Modalidades</p>
         <div class="chip-row">${state.setup.modalities.map(m => `<span class="chip selected" style="cursor:default;padding:0 12px;height:32px;font-size:12px;">${m}</span>`).join("")}</div>
-        ${creativeEnabled() && (state.setup.creative && state.setup.creative.rulesText) ? `<p class="micro mt-8">Creativo: ${(state.setup.creative.rulesText || "").slice(0, 120)}${(state.setup.creative.rulesText || "").length > 120 ? "…" : ""}</p>` : ""}
+        ${creativeEnabled() && (state.setup.creative && state.setup.creative.rulesText) ? `<p class="micro mt-8">Creativo: ${escapeHtml((state.setup.creative.rulesText || "").slice(0, 120))}${(state.setup.creative.rulesText || "").length > 120 ? "…" : ""}</p>` : ""}
       </div>
       <button type="button" class="link-btn" onclick="state.setupStep=5;renderSetup()">Ver reglas otra vez</button>`;
   }
@@ -4400,14 +4400,14 @@ function renderHole(opts) {
     const scoreOnChip = hasScore && scoreChips.includes(score);
     const ballRaw = (p.ball || "").trim();
     const ballLine = ballRaw
-      ? `<div class="ball-chip">${ballRaw.replace(/</g, "&lt;")}</div>`
+      ? `<div class="ball-chip">${escapeHtml(ballRaw)}</div>`
       : "";
     return `
       <div class="player-card ${active} ${flash}" data-idx="${idx}" onclick="selectPlayer(${idx})">
         <div class="pc-head">
-          <div class="avatar ${p.avatar||""}">${p.initials}${done?`<span class="done-check"></span>`:""}</div>
+          <div class="avatar ${p.avatar||""}">${escapeHtml(p.initials)}${done?`<span class="done-check"></span>`:""}</div>
           <div class="pc-id">
-            <div class="name">${playerLabel(p)}${strokeHint}</div>
+            <div class="name">${escapeHtml(playerLabel(p))}${strokeHint}</div>
             <div class="micro">${subLine}</div>
             ${ballLine}
           </div>
@@ -4445,7 +4445,7 @@ function renderHole(opts) {
   dots.innerHTML = list.map((p, idx) => {
     const on = idx === state.activePlayer ? "on" : "";
     const done = holeDone(p);
-    return `<button type="button" class="player-dot ${on}" onclick="selectPlayer(${idx})" aria-label="${p.name}">
+    return `<button type="button" class="player-dot ${on}" onclick="selectPlayer(${idx})" aria-label="${escapeHtml(p.name)}">
       ${p.initials.slice(0,2)}${done?`<span class="dot-check"></span>`:""}
     </button>`;
   }).join("");
@@ -4811,7 +4811,7 @@ function renderScorecard() {
   if (thead) {
     thead.innerHTML = "<th>#</th><th>Par</th>" + list.map(p => {
       const ch = playerCourseHcp(p);
-      return `<th>${(p.short || p.initials || p.name || "?").toString().slice(0, 3)}<span class="ch-mini">CH ${ch}</span></th>`;
+      return `<th>${escapeHtml((p.short || p.initials || p.name || "?").toString().slice(0, 3))}<span class="ch-mini">CH ${ch}</span></th>`;
     }).join("");
   }
 
@@ -5058,7 +5058,7 @@ function renderTotalsEntry() {
     const disabled = marked ? "disabled" : "";
     const hint = marked ? "Hoyos marcados" : "Si no marcas hoyos";
     return `<div class="te-row">
-      <div><div class="te-name">${playerLabel(p)}</div><div class="te-hint">${hint}</div></div>
+      <div><div class="te-name">${escapeHtml(playerLabel(p))}</div><div class="te-hint">${escapeHtml(hint)}</div></div>
       <input type="number" inputmode="numeric" ${disabled} placeholder="Golpes" aria-label="Golpes totales ${p.name||""}"
         value="${gVal}" onchange="setPlayerTotalsGross(${pi}, this.value)" onblur="setPlayerTotalsGross(${pi}, this.value)" />
       <input type="number" inputmode="numeric" placeholder="Putts" aria-label="Putts totales ${p.name||""}"
@@ -5286,7 +5286,7 @@ function renderLbRoundPick() {
   rounds.forEach(r => {
     const sel = state.lbRoundId === r.id ? "selected" : "";
     const label = (r.club || "Partida").split(" ").slice(0, 2).join(" ") + " · " + (r.date || "");
-    html += `<button type="button" class="chip ${sel}" onclick="setLbRound('${r.id}')">${label.replace(/</g, "")}</button>`;
+    html += `<button type="button" class="chip ${sel}" onclick="setLbRound(${escapeHtml(JSON.stringify(String(r.id || "")))})">${escapeHtml(label)}</button>`;
   });
   if (!rounds.length) {
     html += `<span class="micro" style="align-self:center;padding:0 4px;">Sin historial aún</span>`;
@@ -5454,8 +5454,8 @@ function renderLeader() {
       data.map((d, i) => {
         return `<div class="lb-row ${d.me?"me":""}">
           <div class="lb-pos">${i+1}</div>
-          <div class="avatar ${d.avatar||""}" style="width:32px;height:32px;font-size:11px;">${d.initials||"?"}</div>
-          <div class="lb-info"><div class="n">${standingsName(d)}</div><div class="s">${modeSubline(d, "stroke")}</div></div>
+          <div class="avatar ${d.avatar||""}" style="width:32px;height:32px;font-size:11px;">${escapeHtml(d.initials||"?")}</div>
+          <div class="lb-info"><div class="n">${escapeHtml(standingsName(d))}</div><div class="s">${escapeHtml(modeSubline(d, "stroke"))}</div></div>
           <div class="lb-pts"><div class="big">${d.thru?d.net:"—"}</div><div class="sub">net</div></div>
         </div>`;
       }).join("") + `</div>`;
@@ -5466,8 +5466,8 @@ function renderLeader() {
       data.map((d, i) => {
         return `<div class="lb-row ${d.me?"me":""}">
           <div class="lb-pos">${i+1}</div>
-          <div class="avatar ${d.avatar||""}" style="width:32px;height:32px;font-size:11px;">${d.initials||"?"}</div>
-          <div class="lb-info"><div class="n">${standingsName(d)}</div><div class="s">${modeSubline(d, "stableford")}</div></div>
+          <div class="avatar ${d.avatar||""}" style="width:32px;height:32px;font-size:11px;">${escapeHtml(d.initials||"?")}</div>
+          <div class="lb-info"><div class="n">${escapeHtml(standingsName(d))}</div><div class="s">${escapeHtml(modeSubline(d, "stableford"))}</div></div>
           <div class="lb-pts"><div class="big">${d.sf}</div><div class="sub">pts</div></div>
         </div>`;
       }).join("") + `</div>`;
@@ -5478,8 +5478,8 @@ function renderLeader() {
       data.map((d, i) => {
         return `<div class="lb-row ${d.me?"me":""}">
           <div class="lb-pos">${i+1}</div>
-          <div class="avatar ${d.avatar||""}" style="width:32px;height:32px;font-size:11px;">${d.initials||"?"}</div>
-          <div class="lb-info"><div class="n">${standingsName(d)}</div><div class="s">${modeSubline(d, "putting")}</div></div>
+          <div class="avatar ${d.avatar||""}" style="width:32px;height:32px;font-size:11px;">${escapeHtml(d.initials||"?")}</div>
+          <div class="lb-info"><div class="n">${escapeHtml(standingsName(d))}</div><div class="s">${escapeHtml(modeSubline(d, "putting"))}</div></div>
           <div class="lb-pts"><div class="big">${d.puttPts||0}</div><div class="sub">pts</div></div>
         </div>`;
       }).join("") + `</div>`;
@@ -5492,8 +5492,8 @@ function renderLeader() {
       data.map((d, i) => {
         return `<div class="lb-row ${d.me?"me":""}">
           <div class="lb-pos">${i+1}</div>
-          <div class="avatar ${d.avatar||""}" style="width:32px;height:32px;font-size:11px;">${d.initials||"?"}</div>
-          <div class="lb-info"><div class="n">${standingsName(d)}</div><div class="s">${modeSubline(d, tab)}</div></div>
+          <div class="avatar ${d.avatar||""}" style="width:32px;height:32px;font-size:11px;">${escapeHtml(d.initials||"?")}</div>
+          <div class="lb-info"><div class="n">${escapeHtml(standingsName(d))}</div><div class="s">${escapeHtml(modeSubline(d, tab))}</div></div>
           <div class="lb-pts"><div class="big">${d[key]||0}</div><div class="sub">puntos</div></div>
         </div>`;
       }).join("") + `</div>`;
@@ -6147,8 +6147,8 @@ function renderClose() {
     <div class="close-hero">
       <div class="trophy" aria-hidden="true"></div>
       <div class="eyebrow">Ronda completada</div>
-      <h1 style="font-size:22px;">${CLUB}</h1>
-      <p class="micro mt-8">${layout} · ${state.setup.tee} · Par ${par}${officialBadge}</p>
+      <h1 style="font-size:22px;">${escapeHtml(CLUB)}</h1>
+      <p class="micro mt-8">${escapeHtml(layout)} · ${escapeHtml(state.setup.tee)} · Par ${par}${officialBadge}</p>
     </div>
     <div class="close-stats">
       <div class="close-stat"><div class="v">${gross}</div><div class="l">Gross</div></div>
@@ -6162,11 +6162,11 @@ function renderClose() {
         <div class="winner-row">
           <div class="medal" aria-hidden="true"></div>
           <div>
-            <div class="mod">${row.label}</div>
-            <div class="name">${row.winner}</div>
+            <div class="mod">${escapeHtml(row.label)}</div>
+            <div class="name">${escapeHtml(row.winner)}</div>
             <button type="button" class="placa-btn" onclick="shareWinnerPlaqueAt(${i})">Compartir placa</button>
           </div>
-          <div class="detail">${row.detail}</div>
+          <div class="detail">${escapeHtml(row.detail)}</div>
         </div>`).join("") + `
         <div class="winners-actions">
           <button type="button" class="placa-link" onclick="shareAllWinnerPlaques()">Compartir todas las placas</button>
@@ -6767,12 +6767,12 @@ function renderPerfil() {
   const initials = (p.name && p.initials) ? p.initials : "?";
   document.getElementById("perfilBody").innerHTML = `
     <div class="profile-hero">
-      <div class="avatar-lg">${initials}</div>
+      <div class="avatar-lg">${escapeHtml(initials)}</div>
       <p class="muted" style="margin-top:8px;">Tu perfil en este dispositivo</p>
     </div>
     <div class="card mb-16">
       <div class="eyebrow">Nombre</div>
-      <input class="perfil-input" type="text" maxlength="40" value="${String(p.name || "").replace(/"/g, "&quot;")}"
+      <input class="perfil-input" type="text" maxlength="40" value="${escapeHtml(p.name || "")}"
         onchange="setHostNameFromPerfil(this.value)"
         onblur="setHostNameFromPerfil(this.value);renderPerfil()"
         placeholder="Tu nombre" autocomplete="name" />
@@ -6815,8 +6815,8 @@ function _perfilRecordsHtml() {
   const bestGross = rounds.slice().sort((a,b) => (a.me.gross||999) - (b.me.gross||999))[0];
   const bestSf = rounds.slice().sort((a,b) => (b.me.sf||0) - (a.me.sf||0))[0];
   return `<p class="muted mt-8">${rounds.length} vuelta${rounds.length===1?"":"s"} guardadas</p>
-      <p class="micro mt-8">Mejor gross: ${bestGross.me.gross} · ${bestGross.club}</p>
-      <p class="micro">Mejor Stableford: ${bestSf.me.sf} pts · ${bestSf.club}</p>`;
+      <p class="micro mt-8">Mejor gross: ${bestGross.me.gross} · ${escapeHtml(bestGross.club)}</p>
+      <p class="micro">Mejor Stableford: ${bestSf.me.sf} pts · ${escapeHtml(bestSf.club)}</p>`;
 }
 
 /* —— Ajustes de partida (mid-round) —— */
@@ -6855,7 +6855,7 @@ function renderAjustes() {
       <div class="aj-player ${wd ? "wd" : ""}">
         <div class="row" style="justify-content:space-between;align-items:center;">
           <div>
-            <strong>${playerLabel(p).replace(/</g, "&lt;")}</strong>
+            <strong>${escapeHtml(playerLabel(p))}</strong>
             ${wd ? '<span class="badge badge-demo" style="margin-left:6px;">RETIRADO</span>' : ""}
             ${!included ? '<span class="badge badge-demo" style="margin-left:6px;">FUERA</span>' : ""}
           </div>
@@ -6863,7 +6863,7 @@ function renderAjustes() {
         </div>
         <div class="aj-label">Nombre</div>
         <div class="aj-row">
-          <input type="text" value="${(p.name || "").replace(/"/g, "&quot;")}" maxlength="24"
+          <input type="text" value="${escapeHtml(p.name || "")}" maxlength="24"
             onchange="ajSetName(${i}, this.value)" onkeydown="if(event.key==='Enter'){this.blur();}" />
         </div>
         <div class="aj-label">Handicap Index</div>
@@ -6876,7 +6876,7 @@ function renderAjustes() {
         <div class="aj-label">Bola (marca · nº · color)</div>
         <div class="aj-row">
           <input type="text" placeholder="Titleist Pro V1 · 3 · rojo"
-            value="${(p.ball || "").replace(/"/g, "&quot;")}" maxlength="48"
+            value="${escapeHtml(p.ball || "")}" maxlength="48"
             onchange="ajSetBall(${i}, this.value)" onkeydown="if(event.key==='Enter'){this.blur();}" />
         </div>
         <div class="aj-actions">
@@ -7092,8 +7092,8 @@ function renderHistorial() {
     return `<button class="list-row" type="button" onclick="openDetalle('${r.id}')">
       <div class="lr-score">${gross}</div>
       <div class="lr-body">
-        <div class="lr-title">${r.club}</div>
-        <div class="lr-micro">${micro}</div>
+        <div class="lr-title">${escapeHtml(r.club)}</div>
+        <div class="lr-micro">${escapeHtml(micro)}</div>
       </div>
       <div class="lr-chev">›</div>
     </button>`;
@@ -7132,19 +7132,19 @@ function renderDetalle() {
   window._lastPodium = winList.slice();
   window._lastPlaqueMeta = { club: d.club, date: d.date, tee: d.tee || "", par: d.par };
   const winners = winList.length ? winList.map((w, i) =>
-    `<div class="winner-row"><div class="medal" aria-hidden="true"></div><div><div class="mod">${w.label}</div><div class="name">${w.winner}</div><button type="button" class="placa-btn" onclick="shareDetallePlaqueAt(${i})">Compartir placa</button></div><div class="detail">${w.detail}</div></div>`
+    `<div class="winner-row"><div class="medal" aria-hidden="true"></div><div><div class="mod">${escapeHtml(w.label)}</div><div class="name">${escapeHtml(w.winner)}</div><button type="button" class="placa-btn" onclick="shareDetallePlaqueAt(${i})">Compartir placa</button></div><div class="detail">${escapeHtml(w.detail)}</div></div>`
   ).join("") + `<div class="winners-actions"><button type="button" class="placa-link" onclick="shareDetalleAllPlaques()">Compartir todas las placas</button></div>` : `<p class="muted" style="padding:12px 14px;">Sin ganadores</p>`;
   const players = (d.players || []).map(p => {
     const g = Object.keys(p.scores || {}).reduce((a, k) => a + (p.scores[k] || 0), 0);
     const ball = (p.ball || "").trim();
     const wd = p.withdrawn ? " · RETIRADO" : "";
-    return `<div class="list-row static"><div class="lr-body"><div class="lr-title">${p.name}${wd}</div><div class="lr-micro">HI ${fmtHcp(p.hcp)} · CH ${p.ch != null ? p.ch : "—"} · Gross ${g || "—"}${ball ? " · ● " + ball.replace(/</g, "&lt;") : ""}</div></div></div>`;
+    return `<div class="list-row static"><div class="lr-body"><div class="lr-title">${escapeHtml(p.name)}${wd}</div><div class="lr-micro">HI ${fmtHcp(p.hcp)} · CH ${p.ch != null ? p.ch : "—"} · Gross ${g || "—"}${ball ? " · ● " + escapeHtml(ball) : ""}</div></div></div>`;
   }).join("");
   document.getElementById("detalleBody").innerHTML = `
     <div class="card mb-16">
       <div class="eyebrow">${d.date}</div>
-      <h1 style="font-size:22px;margin:4px 0;">${d.club}</h1>
-      <p class="micro">${d.layout} · ${d.tee} · Par ${d.par}</p>
+      <h1 style="font-size:22px;margin:4px 0;">${escapeHtml(d.club)}</h1>
+      <p class="micro">${escapeHtml(d.layout)} · ${escapeHtml(d.tee)} · Par ${d.par}</p>
       <div class="close-stats" style="margin-top:12px;">
         <div class="close-stat"><div class="v">${gross}</div><div class="l">Gross</div></div>
         <div class="close-stat"><div class="v">${toPar}</div><div class="l">Al par</div></div>
