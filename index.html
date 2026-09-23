@@ -285,13 +285,15 @@
     padding-bottom: 12px;
   }
   #screen-leader .lb-tabs {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 6px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
   #screen-leader .lb-tab {
-    flex: 1 1 calc(33.33% - 6px);
+    flex: 0 0 auto;
     min-width: 88px;
-    max-width: 100%;
+    max-width: none;
   }
 
 
@@ -5174,6 +5176,187 @@ function strokesOnHole(ph, holeHcp, opts) {
   return n;
 }
 
+const LB_MODES = [
+  { id: "stroke", tab: "Stroke", mod: "Stroke Play", always: true, key: "net", unit: "net" },
+  { id: "stableford", tab: "Stableford", mod: "Stableford", key: "sf", unit: "pts" },
+  { id: "putting", tab: "Putting", mod: "Putting King", key: "puttPts", unit: "pts" },
+  { id: "gir", tab: "GIR", mod: "GIR King", key: "girPts", unit: "pts" },
+  { id: "birdie", tab: "Birdie", mod: "Birdie Hunt", key: "birdiePts", unit: "pts" },
+  { id: "rey", tab: "Rey", mod: "Rey del Hoyo", key: "reyPts", unit: "pts" },
+  { id: "chaos", tab: "Chaos", mod: "Chaos Golf", key: "chaosPts", unit: "pts" },
+  { id: "brawl", tab: "Back 9", mod: "Back Nine Brawl", key: "brawlPts", unit: "pts" },
+  { id: "last", tab: "Last 3", mod: "Last Call", key: "lastPts", unit: "pts" },
+  { id: "nobogey", tab: "No bogey", mod: "No Bogey Club", key: "noBogeyPts", unit: "pts" },
+  { id: "creative", tab: "Creativo", mod: "Creativo", key: "creativePts", unit: "pts" }
+];
+
+function leaderModes(mods) {
+  const on = new Set(Array.isArray(mods) ? mods : []);
+  return LB_MODES.filter(m => m.always || on.has(m.mod));
+}
+
+function chaosSpin(seed, holeN) {
+  let h = 2166136261;
+  const s = String(seed || "fairway") + "#" + holeN;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  const bucket = (h >>> 0) % 10;
+  if (bucket < 5) return "none";
+  if (bucket < 7) return "angel";
+  if (bucket < 9) return "snake";
+  return "double";
+}
+
+function blankModeScore() {
+  return {
+    girPts: 0, girYes: 0, girBirdies: 0,
+    birdiePts: 0, birdieN: 0, eagleN: 0,
+    reyPts: 0, reyHoles: 0, reyDefenses: 0,
+    chaosPts: 0,
+    brawlPts: 0, brawlWins: 0, brawlGross: 0,
+    lastPts: 0, lastToPar: 0, lastBirdies: 0,
+    noBogeyPts: 0, bestClean: 0, doubles: 0,
+    onePutts: 0, threePutts: 0
+  };
+}
+
+/** Points for every social mode, using the rules shown in setup. */
+function applyModeScores(players, holeMeta, maxH, seed, strokesFor) {
+  const out = (players || []).map(() => blankModeScore());
+  const clean = (players || []).map(() => 0);
+  const lastFrom = Math.max(1, maxH - 2);
+  let king = -1;
+  for (let i = 1; i <= maxH; i++) {
+    const h = holeMeta && holeMeta[i - 1];
+    if (!h) continue;
+    const scored = [];
+    const gross = {};
+    const netDiff = {};
+    (players || []).forEach((p, pi) => {
+      if (!p || !p.scores || p.scores[i] == null) return;
+      scored.push(pi);
+      const s = Number(p.scores[i]) || 0;
+      const recv = strokesFor ? Number(strokesFor(p, h)) || 0 : 0;
+      gross[pi] = s;
+      netDiff[pi] = s - Number(h.par) - recv;
+    });
+    if (!scored.length) continue;
+    const bestGross = Math.min.apply(null, scored.map(pi => gross[pi]));
+    const holeWinners = scored.filter(pi => gross[pi] === bestGross);
+    if (holeWinners.length === 1) {
+      const pi = holeWinners[0];
+      if (king === pi) {
+        out[pi].reyPts += 3;
+        out[pi].reyDefenses += 1;
+      } else {
+        out[pi].reyPts += 2;
+        king = pi;
+      }
+      out[pi].reyHoles += 1;
+    } else {
+      holeWinners.forEach(pi => { out[pi].reyPts += 1; });
+    }
+    if (i >= 10) {
+      if (holeWinners.length === 1) {
+        out[holeWinners[0]].brawlPts += 3;
+        out[holeWinners[0]].brawlWins += 1;
+      } else {
+        holeWinners.forEach(pi => { out[pi].brawlPts += 1; });
+      }
+    }
+    if ((players || []).length >= 2) {
+      const hunters = scored.filter(pi => netDiff[pi] <= -1);
+      if (hunters.length) {
+        const bestNet = Math.min.apply(null, hunters.map(pi => netDiff[pi]));
+        const firsts = hunters.filter(pi => netDiff[pi] === bestNet);
+        const bonus = firsts.length === 1 ? 2 : 1;
+        firsts.forEach(pi => { out[pi].birdiePts += bonus; });
+      }
+    }
+    scored.forEach(pi => {
+      const p = players[pi];
+      const o = out[pi];
+      const s = gross[pi];
+      const diff = s - Number(h.par);
+      const gir = p.gir && p.gir[i];
+      if (gir === "yes") {
+        o.girYes += 1;
+        if (diff <= -1) {
+          o.girPts += 4;
+          o.girBirdies += 1;
+        } else o.girPts += 1;
+      } else if (gir === "no" && diff >= 1) {
+        o.girPts -= 1;
+      }
+      if (netDiff[pi] <= -2) {
+        o.birdiePts += 10;
+        o.eagleN += 1;
+        o.birdieN += 1;
+      } else if (netDiff[pi] === -1) {
+        o.birdiePts += 5;
+        o.birdieN += 1;
+      }
+      let chaos = 0;
+      if (diff <= -1) chaos += 3;
+      else if (diff === 1) chaos -= 1;
+      else if (diff >= 2) chaos -= 3;
+      const pt = p.putts && p.putts[i];
+      if (pt != null && pt !== "") {
+        const putt = Number(pt);
+        if (putt === 1) {
+          chaos += 3;
+          o.onePutts += 1;
+        } else if (putt === 2) chaos += 1;
+        else if (putt >= 3) {
+          chaos -= 1;
+          o.threePutts += 1;
+        }
+      }
+      if (gir === "yes") chaos += 1;
+      const spin = chaosSpin(seed, i);
+      if (spin === "angel") chaos += 3;
+      else if (spin === "snake") chaos -= 3;
+      else if (spin === "double") chaos *= 2;
+      o.chaosPts += chaos;
+      if (i >= lastFrom) {
+        if (diff <= -1) {
+          o.lastPts += 6;
+          o.lastBirdies += 1;
+        } else if (diff === 0) o.lastPts += 2;
+        else if (diff === 1) o.lastPts -= 2;
+        else o.lastPts -= 4;
+        o.lastToPar += diff;
+      }
+      if (diff <= 0) {
+        o.noBogeyPts += 2;
+        clean[pi] += 1;
+        if (clean[pi] > o.bestClean) o.bestClean = clean[pi];
+        if (clean[pi] % 3 === 0) o.noBogeyPts += 3;
+      } else {
+        clean[pi] = 0;
+        if (diff === 1) o.noBogeyPts -= 2;
+        else {
+          o.noBogeyPts -= 5;
+          o.doubles += 1;
+        }
+      }
+      if (i >= 10) {
+        o.brawlGross += s;
+        if (diff <= -1) o.brawlPts += 2;
+      }
+    });
+  }
+  return out;
+}
+
+function attachModeScores(rows, players, holeMeta, maxH, seed, strokesFor) {
+  const scored = applyModeScores(players, holeMeta, maxH, seed, strokesFor);
+  (rows || []).forEach((r, i) => Object.assign(r, scored[i] || blankModeScore()));
+  return rows;
+}
+
 function liveStandings() {
   const maxH = state.setup.holes || 18;
   const list = activePlayers();
@@ -5236,6 +5419,9 @@ function liveStandings() {
   });
   // me = host Miguel if present else first active
   rows.forEach(r => { r.me = (r.p.id === PLAYERS[0].id); });
+  attachModeScores(rows, list, HOLES, maxH, (state.setup && state.setup.courseId) || "fairway", function (p, h) {
+    return strokesOnHole(playerCourseHcp(p), h.hcp);
+  });
   return { rows, maxH, mods };
 }
 function pickWinner(rows, key, preferLow) {
@@ -5300,7 +5486,7 @@ function standingsFromSavedRound(d) {
     return n;
   }
 
-  return list.map(p => {
+  const rows = list.map(p => {
     const scores = p.scores || {};
     const putts = p.putts || {};
     const fir = p.fir || {};
@@ -5354,6 +5540,13 @@ function standingsFromSavedRound(d) {
       girPct: girAtt ? Math.round(100 * girYes / girAtt) : null
     };
   });
+  attachModeScores(rows, list, holes, maxH, d.courseId || d.id || "fairway", function (p, h) {
+    const ch = (p.ch != null && Number.isFinite(Number(p.ch)))
+      ? Number(p.ch)
+      : ((p.ph != null && Number.isFinite(Number(p.ph))) ? Number(p.ph) : (Number(p.hcp) || 0));
+    return strokesRecv(ch, h.hcp);
+  });
+  return rows;
 }
 
 function leaderboardRows() {
@@ -5382,104 +5575,110 @@ function leaderboardRows() {
   return { rows, meta: null, live: true };
 }
 
+function modeRankCmp(id) {
+  return function (a, b) {
+    if (!a.thru && b.thru) return 1;
+    if (a.thru && !b.thru) return -1;
+    if (id === "stroke") return (a.net - b.net) || (a.gross - b.gross) || String(a.name).localeCompare(String(b.name));
+    if (id === "stableford") return (b.sf - a.sf) || (a.gross - b.gross) || String(a.name).localeCompare(String(b.name));
+    if (id === "putting") return (b.puttPts - a.puttPts) || ((b.onePutts || 0) - (a.onePutts || 0)) || ((a.threePutts || 0) - (b.threePutts || 0)) || String(a.name).localeCompare(String(b.name));
+    if (id === "gir") return ((b.girPts || 0) - (a.girPts || 0)) || ((b.girYes || 0) - (a.girYes || 0)) || ((b.girBirdies || 0) - (a.girBirdies || 0)) || String(a.name).localeCompare(String(b.name));
+    if (id === "birdie") return ((b.birdiePts || 0) - (a.birdiePts || 0)) || ((b.eagleN || 0) - (a.eagleN || 0)) || ((b.birdieN || 0) - (a.birdieN || 0)) || String(a.name).localeCompare(String(b.name));
+    if (id === "rey") return ((b.reyPts || 0) - (a.reyPts || 0)) || ((b.reyHoles || 0) - (a.reyHoles || 0)) || ((b.reyDefenses || 0) - (a.reyDefenses || 0)) || String(a.name).localeCompare(String(b.name));
+    if (id === "chaos") return ((b.chaosPts || 0) - (a.chaosPts || 0)) || (a.gross - b.gross) || String(a.name).localeCompare(String(b.name));
+    if (id === "brawl") return ((b.brawlPts || 0) - (a.brawlPts || 0)) || ((b.brawlWins || 0) - (a.brawlWins || 0)) || ((a.brawlGross || 0) - (b.brawlGross || 0)) || String(a.name).localeCompare(String(b.name));
+    if (id === "last") return ((b.lastPts || 0) - (a.lastPts || 0)) || ((a.lastToPar || 0) - (b.lastToPar || 0)) || ((b.lastBirdies || 0) - (a.lastBirdies || 0)) || String(a.name).localeCompare(String(b.name));
+    if (id === "nobogey") return ((b.noBogeyPts || 0) - (a.noBogeyPts || 0)) || ((b.bestClean || 0) - (a.bestClean || 0)) || ((a.doubles || 0) - (b.doubles || 0)) || String(a.name).localeCompare(String(b.name));
+    if (id === "creative") return ((b.creativePts || 0) - (a.creativePts || 0)) || (a.gross - b.gross) || String(a.name).localeCompare(String(b.name));
+    return 0;
+  };
+}
+
+function modeTie(id, a, b) {
+  const named = modeRankCmp(id)(Object.assign({}, a, { name: "" }), Object.assign({}, b, { name: "" }));
+  return named === 0;
+}
+
+function modeSubline(d, id) {
+  if (id === "stroke") {
+    const tp = d.toPar == null ? "—" : ((d.toPar > 0 ? "+" : "") + d.toPar);
+    return "Gross " + (d.thru ? d.gross : "—") + " · al par " + tp;
+  }
+  if (id === "stableford") return "Thru " + (d.thru || 0) + (d.thru ? (" · gross " + d.gross) : "");
+  if (id === "putting") {
+    if (d.puttsTotal == null) return "Sin putts";
+    return d.puttsTotal + " putts · " + (d.puttsHoles || 0) + " hoyos";
+  }
+  if (id === "gir") return (d.girYes || 0) + " GIR · " + (d.girBirdies || 0) + " con birdie";
+  if (id === "birdie") return (d.birdieN || 0) + " birdies netos · " + (d.eagleN || 0) + " eagles";
+  if (id === "rey") return (d.reyHoles || 0) + " coronas · " + (d.reyDefenses || 0) + " defensas";
+  if (id === "chaos") return "Thru " + (d.thru || 0);
+  if (id === "brawl") return (d.brawlWins || 0) + " hoyos ganados del 10 al 18";
+  if (id === "last") return "Al par " + ((d.lastToPar > 0 ? "+" : "") + (d.lastToPar || 0));
+  if (id === "nobogey") return "Racha " + (d.bestClean || 0) + " · " + (d.doubles || 0) + " dobles";
+  if (id === "creative") return d.thru ? ("Thru " + d.thru) : "Sin puntos aún";
+  return "";
+}
+
+function modeDetail(id, row, maxH) {
+  if (id === "stroke") return "Net " + row.net + " · Gross " + row.gross;
+  if (id === "stableford") return row.sf + " pts";
+  if (id === "putting") return row.puttPts + " pts · " + (row.puttsTotal != null ? row.puttsTotal + " putts" : "sin putts");
+  if (id === "gir") return (row.girPts || 0) + " pts · " + (row.girYes || 0) + " GIR";
+  if (id === "birdie") return (row.birdiePts || 0) + " pts · " + (row.birdieN || 0) + " birdies netos";
+  if (id === "rey") return (row.reyPts || 0) + " pts · " + (row.reyHoles || 0) + " coronas";
+  if (id === "chaos") return (row.chaosPts || 0) + " pts";
+  if (id === "brawl") {
+    if ((maxH || 18) < 10) return "0 pts · esta ronda no tiene hoyos 10–18";
+    return (row.brawlPts || 0) + " pts · " + (row.brawlWins || 0) + " hoyos";
+  }
+  if (id === "last") return (row.lastPts || 0) + " pts · últimos 3";
+  if (id === "nobogey") return (row.noBogeyPts || 0) + " pts · racha " + (row.bestClean || 0);
+  if (id === "creative") return (row.creativePts || 0) + " pts";
+  return "";
+}
+
+function renderLbTabs(mods) {
+  const box = document.getElementById("lbTabs");
+  if (!box) return [];
+  const modes = leaderModes(mods);
+  if (!modes.some(m => m.id === state.lbTab)) state.lbTab = "stroke";
+  box.innerHTML = modes.map(m =>
+    `<button class="lb-tab ${state.lbTab === m.id ? "active" : ""}" data-lb="${m.id}" onclick="switchLb(this)">${escapeHtml(m.tab)}</button>`
+  ).join("");
+  return modes;
+}
+
 function renderLeader() {
   renderLbRoundPick();
   const listEl = document.getElementById("lbList");
   const foot = document.getElementById("lbFoot");
-  const tab = state.lbTab;
   const { rows, meta, live } = leaderboardRows();
+  const mods = live
+    ? ((state.setup && state.setup.modalities) || [])
+    : ((meta && meta.modalities) || []);
+  const modes = renderLbTabs(mods);
+  const mode = modes.find(m => m.id === state.lbTab) || modes[0];
   const scope = live
-    ? "partida actual"
+    ? "Clasificación en vivo"
     : ((meta && meta.club ? meta.club : "Partida") + " · " + (meta && meta.date ? meta.date : ""));
-
-  function modeSubline(d, mode) {
-    if (mode === "stroke") {
-      const tp = d.toPar == null ? "—" : ((d.toPar > 0 ? "+" : "") + d.toPar);
-      return "Gross " + (d.thru ? d.gross : "—") + " · al par " + tp;
-    }
-    if (mode === "stableford") {
-      return "Thru " + (d.thru || 0) + (d.thru ? (" · gross " + d.gross) : "");
-    }
-    if (mode === "putting") {
-      if (d.puttsTotal == null) return "Sin putts";
-      return d.puttsTotal + " putts · " + (d.puttsHoles || 0) + " hoyos";
-    }
-    if (mode === "rey") {
-      const w = Number(d.holeWins) || 0;
-      return w === 1 ? "1 hoyo ganado" : (w + " hoyos ganados");
-    }
-    if (mode === "birdie") {
-      const b = Number(d.birdies) || 0;
-      return b === 1 ? "1 birdie+" : (b + " birdies+");
-    }
-    if (mode === "creative") {
-      return d.thru ? ("Thru " + d.thru) : "Sin puntos aún";
-    }
-    return "";
-  }
-
-  if (!rows.length) {
+  if (!listEl || !foot) return;
+  if (!rows.length || !mode) {
     foot.textContent = live ? "Sin jugadores en curso" : "Sin datos en esta partida";
     listEl.innerHTML = `<p class="muted" style="padding:16px;">${live ? "Empieza una ronda o elige una del historial." : "Esta partida no tiene jugadores guardados."}</p>`;
     return;
   }
-
-  if (tab === "stroke") {
-    const data = rows.slice().sort((a, b) => {
-      if (!a.thru && !b.thru) return 0;
-      if (!a.thru) return 1;
-      if (!b.thru) return -1;
-      return a.net - b.net || a.gross - b.gross;
-    });
-    foot.textContent = live ? "Clasificación en vivo" : scope;
-    listEl.innerHTML = `<div class="lb-list-wrap">` +
-      data.map((d, i) => {
-        return `<div class="lb-row ${d.me?"me":""}">
-          <div class="lb-pos">${i+1}</div>
-          <div class="avatar ${d.avatar||""}" style="width:32px;height:32px;font-size:11px;">${escapeHtml(d.initials||"?")}</div>
-          <div class="lb-info"><div class="n">${escapeHtml(standingsName(d))}</div><div class="s">${escapeHtml(modeSubline(d, "stroke"))}</div></div>
-          <div class="lb-pts"><div class="big">${d.thru?d.net:"—"}</div><div class="sub">net</div></div>
-        </div>`;
-      }).join("") + `</div>`;
-  } else if (tab === "stableford") {
-    const data = rows.slice().sort((a, b) => b.sf - a.sf || a.gross - b.gross);
-    foot.textContent = live ? "Clasificación en vivo" : scope;
-    listEl.innerHTML = `<div class="lb-list-wrap">` +
-      data.map((d, i) => {
-        return `<div class="lb-row ${d.me?"me":""}">
-          <div class="lb-pos">${i+1}</div>
-          <div class="avatar ${d.avatar||""}" style="width:32px;height:32px;font-size:11px;">${escapeHtml(d.initials||"?")}</div>
-          <div class="lb-info"><div class="n">${escapeHtml(standingsName(d))}</div><div class="s">${escapeHtml(modeSubline(d, "stableford"))}</div></div>
-          <div class="lb-pts"><div class="big">${d.sf}</div><div class="sub">pts</div></div>
-        </div>`;
-      }).join("") + `</div>`;
-  } else if (tab === "putting") {
-    const data = rows.slice().sort((a, b) => (b.puttPts||0) - (a.puttPts||0) || (a.puttsTotal||999) - (b.puttsTotal||999));
-    foot.textContent = live ? "Clasificación en vivo" : scope;
-    listEl.innerHTML = `<div class="lb-list-wrap">` +
-      data.map((d, i) => {
-        return `<div class="lb-row ${d.me?"me":""}">
-          <div class="lb-pos">${i+1}</div>
-          <div class="avatar ${d.avatar||""}" style="width:32px;height:32px;font-size:11px;">${escapeHtml(d.initials||"?")}</div>
-          <div class="lb-info"><div class="n">${escapeHtml(standingsName(d))}</div><div class="s">${escapeHtml(modeSubline(d, "putting"))}</div></div>
-          <div class="lb-pts"><div class="big">${d.puttPts||0}</div><div class="sub">pts</div></div>
-        </div>`;
-      }).join("") + `</div>`;
-  } else {
-    const keyMap = { rey: "holeWins", birdie: "birdies", creative: "creativePts" };
-    const key = keyMap[tab] || "holeWins";
-    const data = rows.slice().sort((a, b) => (b[key]||0) - (a[key]||0));
-    foot.textContent = live ? "Clasificación en vivo" : scope;
-    listEl.innerHTML = `<div class="lb-list-wrap">` +
-      data.map((d, i) => {
-        return `<div class="lb-row ${d.me?"me":""}">
-          <div class="lb-pos">${i+1}</div>
-          <div class="avatar ${d.avatar||""}" style="width:32px;height:32px;font-size:11px;">${escapeHtml(d.initials||"?")}</div>
-          <div class="lb-info"><div class="n">${escapeHtml(standingsName(d))}</div><div class="s">${escapeHtml(modeSubline(d, tab))}</div></div>
-          <div class="lb-pts"><div class="big">${d[key]||0}</div><div class="sub">puntos</div></div>
-        </div>`;
-      }).join("") + `</div>`;
-  }
+  const data = rows.slice().sort(modeRankCmp(mode.id));
+  foot.textContent = scope + " · " + mode.mod;
+  listEl.innerHTML = `<div class="lb-list-wrap">` + data.map((d, i) => {
+    const big = mode.id === "stroke" ? (d.thru ? d.net : "—") : (d[mode.key] || 0);
+    return `<div class="lb-row ${d.me ? "me" : ""}">
+      <div class="lb-pos">${i + 1}</div>
+      <div class="avatar ${d.avatar || ""}" style="width:32px;height:32px;font-size:11px;">${escapeHtml(d.initials || "?")}</div>
+      <div class="lb-info"><div class="n">${escapeHtml(standingsName(d))}</div><div class="s">${escapeHtml(modeSubline(d, mode.id))}</div></div>
+      <div class="lb-pts"><div class="big">${big}</div><div class="sub">${escapeHtml(mode.unit)}</div></div>
+    </div>`;
+  }).join("") + `</div>`;
 }
 
 
@@ -5777,33 +5976,20 @@ function drawClassicScorecard(payload) {
 
 /** Placas de ganador por modalidad (imagen para WhatsApp) */
 function buildLivePodium() {
-  const { rows, mods } = liveStandings();
-  const has = (id) => !mods.length || mods.includes(id);
-  const strokeW = pickWinner(rows, "net", true);
-  const sfW = pickWinner(rows, "sf", false);
-  const puttW = pickWinner(rows, "puttPts", false);
-  const reyW = pickWinner(rows, "holeWins", false);
-  const birdW = pickWinner(rows, "birdies", false);
+  const { rows, mods, maxH } = liveStandings();
   const podium = [];
-  if (strokeW && strokeW.thru)
-    podium.push({ label: "Stroke Play", winner: strokeW.name, detail: "Net " + strokeW.net + " · Gross " + strokeW.gross });
-  if (has("Stableford") && sfW && sfW.thru)
-    podium.push({ label: "Stableford", winner: sfW.name, detail: sfW.sf + " pts" });
-  if (mods.includes("Putting King") && puttW && puttW.thru)
+  leaderModes(mods).forEach(mode => {
+    const pool = rows.filter(r => r.thru > 0);
+    if (!pool.length) return;
+    pool.sort(modeRankCmp(mode.id));
+    const top = pool[0];
+    const tied = pool.filter(r => modeTie(mode.id, r, top));
     podium.push({
-      label: "Putting King",
-      winner: puttW.name,
-      detail: puttW.puttPts + " pts · " + (puttW.puttsTotal != null ? puttW.puttsTotal + " putts" : "sin putts")
+      label: mode.mod,
+      winner: tied.map(r => r.name).join(" · "),
+      detail: modeDetail(mode.id, top, maxH)
     });
-  if (mods.includes("Rey del Hoyo") && reyW && reyW.thru)
-    podium.push({ label: "Rey del Hoyo", winner: reyW.name, detail: reyW.holeWins + " puntos" });
-  if (mods.includes("Birdie Hunt") && birdW && birdW.thru)
-    podium.push({ label: "Birdie Hunt", winner: birdW.name, detail: birdW.birdies + (birdW.birdies === 1 ? " birdie neto" : " birdies netos") });
-  if (mods.includes("Creativo")) {
-    const crW = pickWinner(rows, "creativePts", false);
-    if (crW && (crW.creativePts != null))
-      podium.push({ label: "Creativo", winner: crW.name, detail: crW.creativePts + " pts" });
-  }
+  });
   return podium;
 }
 
