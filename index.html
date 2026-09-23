@@ -6466,6 +6466,14 @@ function mergeFairwayBackup(remote) {
 
 function ensureGis(cb) {
   if (window.google && google.accounts && google.accounts.oauth2) { cb(); return; }
+  if (!document.getElementById("fairwayGis")) {
+    const s = document.createElement("script");
+    s.id = "fairwayGis";
+    s.src = "https://accounts.google.com/gsi/client";
+    s.async = true;
+    s.onerror = function () { showToast("No carga Google Sign-In"); };
+    document.head.appendChild(s);
+  }
   let n = 0;
   const t = setInterval(() => {
     n++;
