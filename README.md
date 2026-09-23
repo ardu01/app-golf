@@ -16,7 +16,7 @@ Campo, tee y jugadores. En el tee salen el Course Rating y el Slope.
 
 [Elegir campo, en vídeo](docs/recorrido/videos/elegir-campo.mp4)
 
-En el hoyo, un toque por golpe. La tarjeta la miro en bruto y en neto. La clasificación lleva cada modo que haya marcado, y al cerrar pone los ganadores. Si empatan, salen los dos. La placa de La Herrería lleva el monasterio de fondo, solo la silueta. En los demás campos la placa sigue igual.
+En el hoyo, un toque por golpe. La tarjeta la miro en bruto y en neto. La clasificación lleva cada modo que haya marcado, y al cerrar pone los ganadores. Si empatan, salen los dos. La placa de La Herrería lleva el monasterio de El Escorial de fondo, el de las dos cúpulas. En los demás campos la placa sigue igual.
 
 <img src="docs/recorrido/partida/marcador.webp" alt="Marcador del hoyo" width="200">
 <img src="docs/recorrido/partida/tarjeta-bruta.webp" alt="Tarjeta bruta" width="200">
