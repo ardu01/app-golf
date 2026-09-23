@@ -173,6 +173,16 @@
   #screen-home .home-hero {
     flex-shrink: 0;
   }
+  #screen-home .home-top {
+    display: flex; align-items: center; justify-content: flex-end;
+    min-height: 36px; margin-bottom: 2px;
+  }
+  #screen-home .greeting-sub.as-link {
+    display: block; width: 100%;
+    color: var(--tint); font-weight: 600; cursor: pointer;
+    background: none; border: none; padding: 0; font-family: inherit;
+    font-size: 15px; letter-spacing: -0.24px; margin-bottom: 16px; text-align: left;
+  }
   #screen-home > .tabbar {
     position: relative;
     z-index: 5;
@@ -577,10 +587,12 @@
   .avatar.a4 { background: #4a5c3d; }
   .player-row .name { flex: 1; font-weight: 600; font-size: 15px; }
   .player-row .hcp { font-size: 12px; color: var(--text-2); font-variant-numeric: tabular-nums; }
-  .player-row .hcp-step {
+  .player-row .hcp-step,
+  .plist-main .hcp-step {
     display: inline-flex; align-items: center; gap: 2px; flex-shrink: 0;
   }
-  .player-row .hcp-step button {
+  .player-row .hcp-step button,
+  .plist-main .hcp-step button {
     width: 28px; height: 28px; min-width: 28px; padding: 0;
     border-radius: 8px; border: 1px solid var(--border);
     background: var(--surface-2); color: inherit;
@@ -588,8 +600,10 @@
     display: inline-flex; align-items: center; justify-content: center;
     cursor: pointer; font-family: inherit;
   }
-  .player-row .hcp-step button:active { transform: scale(0.94); opacity: 0.85; }
-  .player-row .hcp-step .val {
+  .player-row .hcp-step button:active,
+  .plist-main .hcp-step button:active { transform: scale(0.94); opacity: 0.85; }
+  .player-row .hcp-step .val,
+  .plist-main .hcp-step .val {
     min-width: 38px; text-align: center; font-size: 13px; font-weight: 600;
     font-variant-numeric: tabular-nums; color: var(--text);
   }
@@ -1743,9 +1757,10 @@
         <div class="fit">
           <div class="home-hero">
             <div class="home-top">
+              <button type="button" class="topnav-action" onclick="go('perfil')" aria-label="Perfil">Perfil</button>
             </div>
             <div class="greeting">Buenos días</div>
-            <div class="greeting-sub">¿Listo para el campo?</div>
+            <button type="button" class="greeting-sub as-link" id="homeGreetingSub" onclick="go('perfil')">Pon tu nombre y HCP en Perfil</button>
             <button class="btn btn-primary mb-8" onclick="setupStart()">Nueva partida</button>
             <div class="round-card">
               <div class="eyebrow">Ronda en curso</div>
@@ -1770,7 +1785,7 @@
             <button class="quick-tile" onclick="go('scorecard')"><div class="ico" aria-hidden="true">▦</div><div class="t">Tarjeta</div><div class="d">Bruta · Neta</div></button>
             <button class="quick-tile" onclick="go('leader')"><div class="ico" aria-hidden="true">◆</div><div class="t">Clasif.</div><div class="d">Stroke · Social</div></button>
             <button class="quick-tile" onclick="go('historial')"><div class="ico" aria-hidden="true">◎</div><div class="t">Vueltas</div><div class="d">Ver · editar</div></button>
-            <button class="quick-tile" onclick="go('lobby')"><div class="ico" aria-hidden="true">☰</div><div class="t">Lobby</div><div class="d">Flight</div></button>
+            <button class="quick-tile" onclick="go('perfil')"><div class="ico" aria-hidden="true">☺</div><div class="t">Perfil</div><div class="d">Nombre · HCP</div></button>
           </div>
         </div>
         <nav class="tabbar" aria-label="Navegación principal">
@@ -2572,9 +2587,18 @@ function updateHomeGreeting() {
   const hello = hour < 12 ? "Buenos días" : (hour < 20 ? "Buenas tardes" : "Buenas noches");
   const first = hostFirstName();
   el.textContent = first ? (hello + ", " + first) : hello;
-  const sub = document.querySelector("#screen-home .greeting-sub");
+  const sub = document.getElementById("homeGreetingSub") || document.querySelector("#screen-home .greeting-sub");
   if (sub) {
-    sub.textContent = first ? "¿Listo para el campo?" : "Pon tu nombre y HCP en Perfil";
+    if (first) {
+      sub.textContent = "¿Listo para el campo?";
+      sub.classList.remove("as-link");
+      sub.onclick = null;
+      if (sub.tagName === "BUTTON") sub.removeAttribute("onclick");
+    } else {
+      sub.textContent = "Pon tu nombre y HCP en Perfil";
+      sub.classList.add("as-link");
+      sub.onclick = function () { go("perfil"); };
+    }
   }
 }
 
