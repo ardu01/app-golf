@@ -2647,10 +2647,10 @@ function refereeFacts(text) {
     tempWater: casual,
     gur: refHit(t, ["terreno en reparacion", "gur", "ground under repair", "suelo en reparacion"]),
     animal: refHit(t, ["madriguera", "agujero de animal", "topo"]),
-    moved: refHit(t, ["se movio", "se ha movido", "bola movida", "la movi", "movi la bola", "se cayo", "movio"]),
+    moved: refHit(t, ["se movio", "se ha movido", "bola movida", "la movi", "movi la bola", "se cayo", "movio", "he movido", "movido la bola", "la he movido"]),
     natural: refHit(t, ["viento", "gravedad", "la movio el viento"]),
     searching: refHit(t, ["buscando", "al buscar", "durante la busqueda", "al buscarla"]),
-    playerMoved: refHit(t, ["la movi yo", "yo la movi", "con el palo", "al colocarme", "la toque", "la movi", "swing de practica", "ensayando el swing"]),
+    playerMoved: refHit(t, ["la movi yo", "yo la movi", "con el palo", "al colocarme", "la toque", "la movi", "he movido", "la he movido", "swing de practica", "ensayando el swing"]),
     outside: refHit(t, ["espectador", "pajaro", "perro", "otra persona", "la movio otra"]),
     wrongBall: refHit(t, ["bola equivocada", "bola de otro", "wrong ball", "no era mi bola"]),
     doubleHit: refHit(t, ["doble golpe", "dos veces", "la pegue dos", "golpe doble"]),
@@ -3315,6 +3315,11 @@ function go(name) {
   if (name === "arbitro") renderReferee();
   updateNetBadge();
   updateHomeThru();
+  if (name === "home") {
+    try {
+      if (typeof fairwayFlushAppUpdate === "function" && !fairwayShouldHoldUpdate()) fairwayFlushAppUpdate();
+    } catch (e) {}
+  }
 }
 
 function hasStoredActiveRound() {
@@ -3332,6 +3337,16 @@ function isRoundInProgress() {
     p.totalsGross != null ||
     p.totalsPutts != null
   );
+}
+
+/** Hold a waiting app update while a live round, the trophy, or an open hole can still lose the screen. */
+function fairwayShouldHoldUpdate() {
+  if (state.screen === "close") return true;
+  if (state._roundSaved) return false;
+  if (isRoundInProgress()) return true;
+  const playing = state.screen === "hole" || state.screen === "scorecard"
+    || state.screen === "leader" || state.screen === "ajustes" || state.screen === "arbitro";
+  return playing && hasStoredActiveRound();
 }
 
 function updateHomeThru() {
@@ -3575,6 +3590,16 @@ function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
+function fmtStoredNum(v) {
+  if (v == null || v === "") return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+function fmtStoredText(v) {
+  const n = fmtStoredNum(v);
+  return n == null ? "—" : String(n);
+}
+
 function playerLabel(p) {
   const n = p && String(p.name || "").trim();
   return n || "Sin nombre";
@@ -3659,22 +3684,36 @@ function setHostHcpFromPerfil(raw) {
 }
 
 const ROUNDS_KEY = "fairway.rounds.v1";
+const ROUNDS_BAK_KEY = "fairway.rounds.bak.v1";
 const ACTIVE_KEY = "fairway.activeRound.v1";
+const ACTIVE_BAK_KEY = "fairway.activeRound.bak.v1";
 
 let _roundsUnreadable = false;
+function readRoundList(raw) {
+  if (!raw) return null;
+  try {
+    const data = JSON.parse(raw);
+    return Array.isArray(data) ? data : null;
+  } catch (e) { return null; }
+}
 function loadRounds() {
   try {
     const raw = localStorage.getItem(ROUNDS_KEY);
     if (!raw) { _roundsUnreadable = false; return []; }
-    const data = JSON.parse(raw);
-    if (!Array.isArray(data)) {
-      _roundsUnreadable = true;
-      console.warn("loadRounds: stored history is not a list");
-      if (typeof showToast === "function") showToast("El historial guardado no se pudo leer. No se ha borrado.");
-      return [];
+    const data = readRoundList(raw);
+    if (data) { _roundsUnreadable = false; return data; }
+    const bak = readRoundList(localStorage.getItem(ROUNDS_BAK_KEY));
+    if (bak) {
+      _roundsUnreadable = false;
+      try { localStorage.setItem(ROUNDS_KEY, JSON.stringify(bak)); } catch (e) {}
+      console.warn("loadRounds: recovered history from local backup");
+      if (typeof showToast === "function") showToast("Historial recuperado de la copia local");
+      return bak;
     }
-    _roundsUnreadable = false;
-    return data;
+    _roundsUnreadable = true;
+    console.warn("loadRounds: stored history is not a list");
+    if (typeof showToast === "function") showToast("El historial guardado no se pudo leer. No se ha borrado.");
+    return [];
   } catch (e) {
     _roundsUnreadable = true;
     console.warn("loadRounds", e);
@@ -3688,8 +3727,14 @@ function saveRounds(list) {
     if (typeof showToast === "function") showToast("No se guarda encima de un historial dañado");
     return;
   }
-  try { localStorage.setItem(ROUNDS_KEY, JSON.stringify(list)); }
-  catch (e) {
+  try {
+    const prev = localStorage.getItem(ROUNDS_KEY);
+    const next = JSON.stringify(list);
+    if (prev && prev !== next) {
+      try { localStorage.setItem(ROUNDS_BAK_KEY, prev); } catch (e) {}
+    }
+    localStorage.setItem(ROUNDS_KEY, next);
+  } catch (e) {
     console.warn("saveRounds", e);
     if (typeof showToast === "function") showToast("No se pudo guardar el historial en este dispositivo");
     return;
@@ -3736,7 +3781,12 @@ function persistActiveRound() {
       players: snapshotPlayers(),
       setupPlayers: (state.setup && state.setup.players) ? state.setup.players.slice() : [true]
     };
-    localStorage.setItem(ACTIVE_KEY, JSON.stringify(payload));
+    const prev = localStorage.getItem(ACTIVE_KEY);
+    const next = JSON.stringify(payload);
+    if (prev && prev !== next) {
+      try { localStorage.setItem(ACTIVE_BAK_KEY, prev); } catch (e) {}
+    }
+    localStorage.setItem(ACTIVE_KEY, next);
   } catch (e) {
     console.warn("persistActiveRound", e);
     if (typeof showToast === "function") showToast("No se pudo guardar la ronda en curso");
@@ -3744,6 +3794,7 @@ function persistActiveRound() {
 }
 function clearActiveRound() {
   try { localStorage.removeItem(ACTIVE_KEY); } catch (e) {}
+  try { localStorage.removeItem(ACTIVE_BAK_KEY); } catch (e) {}
 }
 
 /** After closing a round: wipe storage + scores so Home never shows Continuar */
@@ -3787,8 +3838,16 @@ function restoreActiveRound() {
   try {
     const raw = localStorage.getItem(ACTIVE_KEY);
     if (!raw) return false;
-    const data = JSON.parse(raw);
-    if (!data || !data.players || !data.players.length) return false;
+    let data = null;
+    try { data = JSON.parse(raw); } catch (e) { data = null; }
+    if (!data || !data.players || !data.players.length) {
+      let bak = null;
+      try { bak = JSON.parse(localStorage.getItem(ACTIVE_BAK_KEY) || "null"); } catch (e) { bak = null; }
+      if (!bak || !bak.players || !bak.players.length) return false;
+      data = bak;
+      try { localStorage.setItem(ACTIVE_KEY, JSON.stringify(bak)); } catch (e) {}
+      if (typeof showToast === "function") showToast("Ronda recuperada de la copia local");
+    }
     if (data.setup) state.setup = data.setup;
     if (data.setupPlayers) state.setup.players = data.setupPlayers;
     state.hole = data.hole || 1;
@@ -4729,12 +4788,12 @@ function renderCreativePad() {
   const actions = state.setup.creative.actions || [];
   const rules = (state.setup.creative.rulesText || "").trim();
   const html = `
-    <div class="cp-head"><span>Creativo · auto</span><span>${p ? (p.short || p.name) : ""} · ${pts} pts</span></div>
+    <div class="cp-head"><span>Creativo · auto</span><span>${p ? escapeHtml(p.short || p.name) : ""} · ${pts} pts</span></div>
     ${rules ? `<p class="micro" style="margin:0 0 8px;white-space:pre-wrap;">${rules.replace(/</g, "&lt;").slice(0, 280)}${rules.length > 280 ? "…" : ""}</p>` : ""}
     <div class="cp-actions" style="opacity:0.85;">
       ${actions.map(a => {
         const tr = CREATIVE_TRIGGERS.find(x => x.id === a.trigger);
-        return `<span class="chip" style="cursor:default;height:auto;padding:6px 10px;font-size:12px;">${a.label || (tr && tr.label) || a.trigger} ${a.pts >= 0 ? "+" : ""}${a.pts}</span>`;
+        return `<span class="chip" style="cursor:default;height:auto;padding:6px 10px;font-size:12px;">${escapeHtml(a.label || (tr && tr.label) || a.trigger)} ${a.pts >= 0 ? "+" : ""}${fmtStoredText(a.pts) === "—" ? "0" : fmtStoredText(a.pts)}</span>`;
       }).join("")}
     </div>
     <p class="micro mt-8">Se calcula solo con golpes / putts / FIR / GIR</p>`;
@@ -6329,6 +6388,7 @@ function standingsFromSavedRound(d) {
   const hostName = (PLAYERS[0] && PLAYERS[0].name) ? String(PLAYERS[0].name).toLowerCase() : "";
   const list = (d.players || []).slice();
 
+  // Local helper for a saved card. Not a second global strokesRecv; the canvas card has its own.
   function strokesRecv(ch, holeHcp) {
     if (typeof strokesOnHole === "function") {
       return strokesOnHole(ch, holeHcp, { holes: maxH, holeList: holes });
@@ -6629,6 +6689,7 @@ function drawClassicScorecard(payload) {
   ctx.scale(scale, scale);
   ctx.textBaseline = "middle";
 
+  // Local helper for the drawn card. Same allocation as the saved standings helper, different argument.
   function strokesRecv(p, holeHcp) {
     const ch = (p.ch != null && Number.isFinite(Number(p.ch)))
       ? Number(p.ch)
@@ -7278,7 +7339,7 @@ function collectFairwayBackup() {
   return {
     version: 3,
     app: "Fairway",
-    appVersion: "3.184",
+    appVersion: "3.0.0",
     exportedAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     includes: ["rounds", "players.scores", "players.putts", "players.fir", "players.gir", "players.ball", "players.withdrawn", "roster", "host", "activeRound", "winners", "standings"],
@@ -7326,6 +7387,48 @@ function sanitizeMarkMap(obj, allowed) {
   });
   return out;
 }
+function finiteOrNull(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+function sanitizeMe(me) {
+  if (!me || typeof me !== "object" || Array.isArray(me)) return null;
+  return {
+    name: clipStr(me.name, 40),
+    gross: finiteOrNull(me.gross),
+    net: finiteOrNull(me.net),
+    toPar: finiteOrNull(me.toPar),
+    sf: finiteOrNull(me.sf),
+    thru: finiteOrNull(me.thru),
+    ch: finiteOrNull(me.ch),
+    strokesUsed: finiteOrNull(me.strokesUsed),
+    puttsTotal: finiteOrNull(me.puttsTotal),
+    puttsHoles: finiteOrNull(me.puttsHoles),
+    birdies: finiteOrNull(me.birdies),
+    puttPts: finiteOrNull(me.puttPts),
+    holeWins: finiteOrNull(me.holeWins),
+    firHit: finiteOrNull(me.firHit),
+    firAtt: finiteOrNull(me.firAtt),
+    girYes: finiteOrNull(me.girYes),
+    girAtt: finiteOrNull(me.girAtt),
+    firPct: finiteOrNull(me.firPct),
+    girPct: finiteOrNull(me.girPct)
+  };
+}
+function sanitizeCreative(c) {
+  if (!c || typeof c !== "object" || Array.isArray(c)) return null;
+  const actions = Array.isArray(c.actions) ? c.actions.slice(0, 30).map((a, i) => {
+    if (!a || typeof a !== "object") return null;
+    const id = clipStr(a.id, 40).replace(/[^a-zA-Z0-9_-]/g, "") || ("imp" + i);
+    return {
+      id: id,
+      trigger: clipStr(a.trigger, 40),
+      label: clipStr(a.label, 40),
+      pts: Number.isFinite(Number(a.pts)) ? Math.max(-20, Math.min(20, Math.round(Number(a.pts)))) : 0
+    };
+  }).filter(Boolean) : [];
+  return { rulesText: clipStr(c.rulesText, 2000), actions: actions };
+}
 function sanitizeImportedPlayer(p) {
   if (!p || typeof p !== "object") return null;
   return {
@@ -7346,7 +7449,16 @@ function sanitizeImportedPlayer(p) {
     totalsGross: Number.isFinite(Number(p.totalsGross)) ? Math.round(Number(p.totalsGross)) : null,
     totalsPutts: Number.isFinite(Number(p.totalsPutts)) ? Math.round(Number(p.totalsPutts)) : null,
     creativePts: Number.isFinite(Number(p.creativePts)) ? Math.round(Number(p.creativePts)) : 0,
-    creativeLog: Array.isArray(p.creativeLog) ? p.creativeLog.slice(0, 40) : []
+    creativeLog: Array.isArray(p.creativeLog) ? p.creativeLog.slice(0, 80).map(entry => {
+      if (!entry || typeof entry !== "object") return null;
+      return {
+        hole: Number.isFinite(Number(entry.hole)) ? Math.round(Number(entry.hole)) : null,
+        id: clipStr(entry.id, 40),
+        trigger: clipStr(entry.trigger, 40),
+        label: clipStr(entry.label, 40),
+        pts: Number.isFinite(Number(entry.pts)) ? Math.round(Number(entry.pts)) : 0
+      };
+    }).filter(Boolean) : []
   };
 }
 function sanitizeImportedRound(r) {
@@ -7359,10 +7471,7 @@ function sanitizeImportedRound(r) {
     winner: clipStr(w && w.winner, 40),
     detail: clipStr(w && w.detail, 80)
   })) : [];
-  const creative = (r.creative && typeof r.creative === "object") ? {
-    rulesText: clipStr(r.creative.rulesText, 2000),
-    actions: Array.isArray(r.creative.actions) ? r.creative.actions.slice(0, 30) : []
-  } : null;
+  const creative = sanitizeCreative(r.creative);
   return {
     id: id,
     dateISO: clipStr(r.dateISO, 40),
@@ -7378,9 +7487,9 @@ function sanitizeImportedRound(r) {
     creative: creative,
     official: !!r.official,
     players: players,
-    me: (r.me && typeof r.me === "object") ? r.me : null,
+    me: sanitizeMe(r.me),
     winners: winners,
-    standings: Array.isArray(r.standings) ? r.standings.slice(0, 8) : []
+    standings: Array.isArray(r.standings) ? r.standings.slice(0, 8).map(sanitizeMe).filter(Boolean) : []
   };
 }
 function validateFairwayBackup(data) {
@@ -7433,10 +7542,7 @@ function validateFairwayBackup(data) {
           modalities: Array.isArray(s.modalities) ? s.modalities.slice(0, 12).map(m => clipStr(m, 40)) : [],
           players: Array.isArray(s.players) ? s.players.slice(0, 8).map(Boolean) : [],
           writeMode: "single_device",
-          creative: (s.creative && typeof s.creative === "object") ? {
-            rulesText: clipStr(s.creative.rulesText, 2000),
-            actions: Array.isArray(s.creative.actions) ? s.creative.actions.slice(0, 30) : []
-          } : null
+          creative: sanitizeCreative(s.creative)
         };
       })(),
       players: data.activeRound.players.slice(0, 8).map(sanitizeImportedPlayer).filter(Boolean),
@@ -7668,10 +7774,8 @@ async function drivePush() {
   let fileId = await driveFindDataFile(folderId);
   // Pull-merge first if file exists
   if (fileId) {
-    try {
-      const remote = await driveDownloadJson(fileId);
-      mergeFairwayBackup(remote);
-    } catch (e) {}
+    const remote = await driveDownloadJson(fileId);
+    if (mergeFairwayBackup(remote) === false) throw new Error("Copia de Drive no válida");
   }
   const payload = collectFairwayBackup();
   fileId = await driveUploadJson(payload, fileId, folderId);
@@ -7688,6 +7792,10 @@ async function driveSync(interactive) {
   if (_driveBusy) { showToast("Sync en curso…"); return; }
   if (!getDriveClientId()) { showToast("Falta el Client ID"); go("perfil"); return; }
   if (!driveOriginOk()) { showToast("Abre Fairway por HTTPS"); return; }
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    showToast("Sin conexión · Drive espera a que haya red");
+    return;
+  }
   _driveBusy = true;
   try {
     if (interactive) await requestDriveToken(true);
@@ -7718,6 +7826,7 @@ function driveConnect() {
 
 function queueDriveSync() {
   if (!getDriveClientId() || !driveOriginOk()) return;
+  if (typeof navigator !== "undefined" && navigator.onLine === false) return;
   clearTimeout(queueDriveSync._t);
   queueDriveSync._t = setTimeout(() => { driveSync(false); }, 1200);
 }
@@ -7868,8 +7977,8 @@ function _perfilRecordsHtml() {
   const bestGross = rounds.slice().sort((a,b) => (a.me.gross||999) - (b.me.gross||999))[0];
   const bestSf = rounds.slice().sort((a,b) => (b.me.sf||0) - (a.me.sf||0))[0];
   return `<p class="muted mt-8">${rounds.length} vuelta${rounds.length===1?"":"s"} guardadas</p>
-      <p class="micro mt-8">Mejor gross: ${bestGross.me.gross} · ${escapeHtml(bestGross.club)}</p>
-      <p class="micro">Mejor Stableford: ${bestSf.me.sf} pts · ${escapeHtml(bestSf.club)}</p>`;
+      <p class="micro mt-8">Mejor gross: ${fmtStoredText(bestGross.me.gross)} · ${escapeHtml(bestGross.club)}</p>
+      <p class="micro">Mejor Stableford: ${fmtStoredText(bestSf.me.sf)} pts · ${escapeHtml(bestSf.club)}</p>`;
 }
 
 /* —— Ajustes de partida (mid-round) —— */
@@ -8139,12 +8248,15 @@ function renderHistorial() {
   }
   const rows = rounds.slice(0, 20).map(r => {
     const me = r.me || {};
-    const gross = me.gross != null ? me.gross : "—";
-    const toPar = me.toPar != null ? ((me.toPar > 0 ? "+" : "") + me.toPar) : "";
-    const playedBit = r.holesPlayed ? (" · " + r.holesPlayed + " hoyos") : "";
-    const micro = `${r.date} · ${gross}${toPar ? " (" + toPar + ")" : ""}${playedBit} · ${r.tee || ""}`;
-    return `<button class="list-row" type="button" onclick="openDetalle('${r.id}')">
-      <div class="lr-score">${gross}</div>
+    const grossN = fmtStoredNum(me.gross);
+    const gross = grossN == null ? "—" : String(grossN);
+    const toParN = fmtStoredNum(me.toPar);
+    const toPar = toParN == null ? "" : ((toParN > 0 ? "+" : "") + toParN);
+    const playedN = fmtStoredNum(r.holesPlayed);
+    const playedBit = playedN ? (" · " + playedN + " hoyos") : "";
+    const micro = `${r.date || ""} · ${gross}${toPar ? " (" + toPar + ")" : ""}${playedBit} · ${r.tee || ""}`;
+    return `<button class="list-row" type="button" data-open-detalle data-round-id="${escapeHtml(r.id)}">
+      <div class="lr-score">${escapeHtml(gross)}</div>
       <div class="lr-body">
         <div class="lr-title">${escapeHtml(r.club)}</div>
         <div class="lr-micro">${escapeHtml(micro)}</div>
@@ -8178,10 +8290,11 @@ function renderDetalle() {
     return;
   }
   const me = d.me || {};
-  const gross = me.gross != null ? me.gross : "—";
-  const net = me.net != null ? me.net : "—";
-  const toPar = me.toPar != null ? ((me.toPar > 0 ? "+" : "") + me.toPar) : "—";
-  const sf = me.sf != null ? me.sf : "—";
+  const gross = fmtStoredText(me.gross);
+  const net = fmtStoredText(me.net);
+  const toParN = fmtStoredNum(me.toPar);
+  const toPar = toParN == null ? "—" : ((toParN > 0 ? "+" : "") + toParN);
+  const sf = fmtStoredText(me.sf);
   const winList = d.winners || [];
   window._lastPodium = winList.slice();
   window._lastPlaqueMeta = { club: d.club, date: d.date, tee: d.tee || "", par: d.par };
@@ -8198,7 +8311,7 @@ function renderDetalle() {
     <div class="card mb-16">
       <div class="eyebrow">${d.date}</div>
       <h1 style="font-size:22px;margin:4px 0;">${escapeHtml(d.club)}</h1>
-      <p class="micro">${escapeHtml(d.layout)} · ${escapeHtml(d.tee)} · Par ${d.par}</p>
+      <p class="micro">${escapeHtml(d.layout)} · ${escapeHtml(d.tee)} · Par ${fmtStoredText(d.par)}</p>
       <div class="close-stats" style="margin-top:12px;">
         <div class="close-stat"><div class="v">${gross}</div><div class="l">Gross</div></div>
         <div class="close-stat"><div class="v">${toPar}</div><div class="l">Al par</div></div>
@@ -8214,11 +8327,11 @@ function renderDetalle() {
       <div class="winners-head">Ganadores</div>
       ${winners}
     </div>
-    <button class="btn btn-primary" onclick="reopenRound('${d.id}','hole')"><span class="mark mark-hole" aria-hidden="true"></span>Abrir partida</button>
-    <button class="btn btn-ghost" onclick="reopenRound('${d.id}','scorecard')"><span class="mark mark-grid" aria-hidden="true"></span>Ver tarjeta</button>
-    <button class="btn btn-ghost" onclick="openLeaderForRound('${d.id}')"><span class="mark mark-diamond" aria-hidden="true"></span>Clasificación</button>
-    <button class="btn btn-ghost" onclick="shareRoundWhatsApp('${d.id}')"><span class="mark mark-out" aria-hidden="true"></span>Compartir</button>
-    <button class="btn btn-ghost" onclick="deleteRound('${d.id}')"><span class="mark mark-x" aria-hidden="true"></span>Eliminar</button>
+    <button class="btn btn-primary" type="button" data-round-action="reopen-hole" data-round-id="${escapeHtml(d.id)}"><span class="mark mark-hole" aria-hidden="true"></span>Abrir partida</button>
+    <button class="btn btn-ghost" type="button" data-round-action="reopen-card" data-round-id="${escapeHtml(d.id)}"><span class="mark mark-grid" aria-hidden="true"></span>Ver tarjeta</button>
+    <button class="btn btn-ghost" type="button" data-round-action="leader" data-round-id="${escapeHtml(d.id)}"><span class="mark mark-diamond" aria-hidden="true"></span>Clasificación</button>
+    <button class="btn btn-ghost" type="button" data-round-action="share" data-round-id="${escapeHtml(d.id)}"><span class="mark mark-out" aria-hidden="true"></span>Compartir</button>
+    <button class="btn btn-ghost" type="button" data-round-action="delete" data-round-id="${escapeHtml(d.id)}"><span class="mark mark-x" aria-hidden="true"></span>Eliminar</button>
     <button class="btn btn-ghost" onclick="go('historial')"><span class="mark mark-back" aria-hidden="true"></span>Volver</button>`;
 }
 
@@ -8372,9 +8485,10 @@ function renderStats() {
     const tp = statsNum(me.toPar);
     const tpTxt = tp == null ? "" : " · " + fmtToParAvg(tp);
     const played = statsNum(r.holesPlayed) || statsNum(me.thru);
-    const micro = `${r.date || ""} · ${me.gross}${tpTxt}${played ? " · " + played + " hoyos" : ""}`;
-    return `<button class="list-row" type="button" onclick="openDetalle('${r.id}')">
-      <div class="lr-score">${escapeHtml(me.gross)}</div>
+    const grossN = fmtStoredNum(me.gross);
+    const micro = `${r.date || ""} · ${grossN == null ? "—" : grossN}${tpTxt}${played ? " · " + played + " hoyos" : ""}`;
+    return `<button class="list-row" type="button" data-open-detalle data-round-id="${escapeHtml(r.id)}">
+      <div class="lr-score">${escapeHtml(grossN == null ? "—" : grossN)}</div>
       <div class="lr-body">
         <div class="lr-title">${escapeHtml(r.club || "Vuelta")}</div>
         <div class="lr-micro">${escapeHtml(micro)}</div>
@@ -8388,6 +8502,24 @@ function renderStats() {
     <div class="list-card mb-16">${rows}</div>
     <p class="footer-note" style="position:static;padding:4px 0;">Al par es la media de cada vuelta anotada, de 9 o de 18. FIR no cuenta los pares 3.</p>`;
 }
+
+document.addEventListener("click", function (ev) {
+  const t = ev.target;
+  if (!t || !t.closest) return;
+  const act = t.closest("[data-round-action]");
+  if (act) {
+    const id = act.getAttribute("data-round-id") || state.detalleId;
+    const action = act.getAttribute("data-round-action");
+    if (action === "reopen-hole") reopenRound(id, "hole");
+    else if (action === "reopen-card") reopenRound(id, "scorecard");
+    else if (action === "leader") openLeaderForRound(id);
+    else if (action === "share") shareRoundWhatsApp(id);
+    else if (action === "delete") deleteRound(id);
+    return;
+  }
+  const row = t.closest("[data-open-detalle]");
+  if (row) openDetalle(row.getAttribute("data-round-id"));
+});
 
 // Init — default official course, fresh round
 (function initFresh() {
@@ -8450,27 +8582,43 @@ loadHostHcp();
 <script>
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", function () {
+    var hadController = !!navigator.serviceWorker.controller;
+    var refreshing = false;
+    function holdUpdate() {
+      try { return typeof fairwayShouldHoldUpdate === "function" && fairwayShouldHoldUpdate(); }
+      catch (e) { return false; }
+    }
+    navigator.serviceWorker.addEventListener("controllerchange", function () {
+      if (!hadController) { hadController = true; return; }
+      if (refreshing || holdUpdate()) return;
+      refreshing = true;
+      try { location.reload(); } catch (e) {}
+    });
     navigator.serviceWorker.register("./sw.js").then(function (reg) {
       try { reg.update(); } catch (e) {}
-      if (reg.waiting) {
-        try { reg.waiting.postMessage("SKIP_WAITING"); } catch (e) {}
+      function activateWaiting(worker) {
+        if (!worker || holdUpdate()) return;
+        try { worker.postMessage("SKIP_WAITING"); } catch (e) {}
       }
+      window.fairwayFlushAppUpdate = function () {
+        if (holdUpdate()) return;
+        activateWaiting(reg.waiting || null);
+      };
+      if (!navigator.serviceWorker.controller && reg.waiting) activateWaiting(reg.waiting);
+      else if (reg.waiting) activateWaiting(reg.waiting);
       reg.addEventListener("updatefound", function () {
         var nw = reg.installing;
         if (!nw) return;
         nw.addEventListener("statechange", function () {
-          if (nw.state === "installed" && navigator.serviceWorker.controller) {
+          if (nw.state !== "installed") return;
+          if (!navigator.serviceWorker.controller) {
             try { nw.postMessage("SKIP_WAITING"); } catch (e) {}
+            return;
           }
+          activateWaiting(nw);
         });
       });
     }).catch(function () {});
-    var refreshing = false;
-    navigator.serviceWorker.addEventListener("controllerchange", function () {
-      if (refreshing) return;
-      refreshing = true;
-      try { location.reload(); } catch (e) {}
-    });
   });
 }
 </script>
