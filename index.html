@@ -197,6 +197,67 @@
   }
   .fit-body { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
 
+  /* Setup: siempre scrollable; hijos no se comprimen (lista de jugadores) */
+  #screen-setup .fit-body {
+    display: block;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    padding-bottom: 16px;
+  }
+  #screen-setup .player-list,
+  #screen-setup .player-block,
+  #screen-setup .option-list,
+  #screen-setup .card {
+    flex-shrink: 0;
+  }
+
+  /* Tarjeta: scroll de página completa — la tabla no se aplasta a 0 */
+  #screen-scorecard .fit {
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    padding-bottom: 20px;
+  }
+  #screen-scorecard .fit > .card {
+    flex: 0 0 auto;
+    min-height: 220px;
+  }
+  #screen-scorecard .sc-table-wrap {
+    overflow-x: auto;
+    overflow-y: visible;
+    flex: none;
+    min-height: 180px;
+    -webkit-overflow-scrolling: touch;
+  }
+  #screen-scorecard .sc-legend,
+  #screen-scorecard .stat-row,
+  #screen-scorecard .totals-entry,
+  #screen-scorecard #scWhatsApp {
+    flex-shrink: 0;
+  }
+
+  /* Clasificación: lista con scroll propio */
+  #screen-leader #lbList.fit-body {
+    display: block;
+    overflow-x: hidden;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    padding-bottom: 12px;
+  }
+  #screen-leader .lb-tabs {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  #screen-leader .lb-tab {
+    flex: 1 1 calc(33.33% - 6px);
+    min-width: 88px;
+    max-width: 100%;
+  }
+
 
   .theme-paper {
     background: var(--bg-paper); color: var(--ink);
@@ -1806,7 +1867,7 @@
           <div class="title" id="setupTitle">Campo</div>
         </div>
         <div class="steps" id="setupSteps"></div>
-        <div class="fit-body" id="setupBody" style="padding:0 var(--pad-x) 8px;overflow-y:auto;-webkit-overflow-scrolling:touch;"></div>
+        <div class="fit-body" id="setupBody" style="padding:0 var(--pad-x) 8px;"></div>
         <div class="setup-footer">
           <button class="btn btn-ghost" id="setupPrev" onclick="setupBack()">Anterior</button>
           <button class="btn btn-primary" id="setupNext" onclick="setupNext()">Siguiente</button>
@@ -1985,7 +2046,7 @@
           <button class="lb-tab" data-lb="creative" onclick="switchLb(this)">Creativo</button>
         </div>
         <div class="lb-round-pick" id="lbRoundPick"></div>
-        <div class="fit-body" id="lbList" style="padding:0;overflow:hidden;"></div>
+        <div class="fit-body" id="lbList" style="padding:0;"></div>
         <div class="footer-note" id="lbFoot" style="padding-bottom:4px;">Clasificación en vivo</div>
         <nav class="tabbar">
           <button class="tab" onclick="go('home')"><span class="ico">⌂</span>Inicio</button>
@@ -3389,9 +3450,9 @@ function renderSetup() {
       </div>
       <button type="button" class="link-btn" onclick="state.setupStep=5;renderSetup()">Ver reglas otra vez</button>`;
   }
-  const scrollSteps = (step === 0 || step === 3 || step === 5 || step === 4);
-  body.style.overflowY = scrollSteps ? "auto" : "hidden";
-  body.style.webkitOverflowScrolling = scrollSteps ? "touch" : "";
+  const scrollSteps = true; // todas las pestañas del setup hacen scroll en móvil
+  body.style.overflowY = "auto";
+  body.style.webkitOverflowScrolling = "touch";
   body.innerHTML = html;
   if (step === 3) renderSavedRoster();
 }
@@ -5109,12 +5170,30 @@ function renderLeader() {
     ? "partida actual"
     : ((meta && meta.club ? meta.club : "Partida") + " · " + (meta && meta.date ? meta.date : ""));
 
-  function subStats(d) {
-    const bits = [];
-    if (d.puttsTotal != null) bits.push(d.puttsTotal + " putts");
-    if (d.firPct != null) bits.push("FIR " + d.firPct + "%");
-    if (d.girPct != null) bits.push("GIR " + d.girPct + "%");
-    return bits.length ? bits.join(" · ") : "";
+  function modeSubline(d, mode) {
+    if (mode === "stroke") {
+      const tp = d.toPar == null ? "—" : ((d.toPar > 0 ? "+" : "") + d.toPar);
+      return "Gross " + (d.thru ? d.gross : "—") + " · al par " + tp;
+    }
+    if (mode === "stableford") {
+      return "Thru " + (d.thru || 0) + (d.thru ? (" · gross " + d.gross) : "");
+    }
+    if (mode === "putting") {
+      if (d.puttsTotal == null) return "Sin putts";
+      return d.puttsTotal + " putts · " + (d.puttsHoles || 0) + " hoyos";
+    }
+    if (mode === "rey") {
+      const w = Number(d.holeWins) || 0;
+      return w === 1 ? "1 hoyo ganado" : (w + " hoyos ganados");
+    }
+    if (mode === "birdie") {
+      const b = Number(d.birdies) || 0;
+      return b === 1 ? "1 birdie+" : (b + " birdies+");
+    }
+    if (mode === "creative") {
+      return d.thru ? ("Thru " + d.thru) : "Sin puntos aún";
+    }
+    return "";
   }
 
   if (!rows.length) {
@@ -5133,12 +5212,10 @@ function renderLeader() {
     foot.textContent = live ? "Clasificación en vivo" : scope;
     listEl.innerHTML = `<div class="lb-list-wrap">` +
       data.map((d, i) => {
-        const tp = d.toPar == null ? "—" : ((d.toPar > 0 ? "+" : "") + d.toPar);
-        const extra = subStats(d);
         return `<div class="lb-row ${d.me?"me":""}">
           <div class="lb-pos">${i+1}</div>
           <div class="avatar ${d.avatar||""}" style="width:32px;height:32px;font-size:11px;">${d.initials||"?"}</div>
-          <div class="lb-info"><div class="n">${standingsName(d)}</div><div class="s">Gross ${d.thru?d.gross:"—"} · al par ${tp}${extra?" · "+extra:""}</div></div>
+          <div class="lb-info"><div class="n">${standingsName(d)}</div><div class="s">${modeSubline(d, "stroke")}</div></div>
           <div class="lb-pts"><div class="big">${d.thru?d.net:"—"}</div><div class="sub">net</div></div>
         </div>`;
       }).join("") + `</div>`;
@@ -5147,11 +5224,10 @@ function renderLeader() {
     foot.textContent = live ? "Clasificación en vivo" : scope;
     listEl.innerHTML = `<div class="lb-list-wrap">` +
       data.map((d, i) => {
-        const extra = subStats(d);
         return `<div class="lb-row ${d.me?"me":""}">
           <div class="lb-pos">${i+1}</div>
           <div class="avatar ${d.avatar||""}" style="width:32px;height:32px;font-size:11px;">${d.initials||"?"}</div>
-          <div class="lb-info"><div class="n">${standingsName(d)}</div><div class="s">Thru ${d.thru||0}${extra?" · "+extra:""}</div></div>
+          <div class="lb-info"><div class="n">${standingsName(d)}</div><div class="s">${modeSubline(d, "stableford")}</div></div>
           <div class="lb-pts"><div class="big">${d.sf}</div><div class="sub">pts</div></div>
         </div>`;
       }).join("") + `</div>`;
@@ -5160,11 +5236,10 @@ function renderLeader() {
     foot.textContent = live ? "Clasificación en vivo" : scope;
     listEl.innerHTML = `<div class="lb-list-wrap">` +
       data.map((d, i) => {
-        const puttLine = d.puttsTotal != null ? (d.puttsTotal + " putts · " + (d.puttsHoles||0) + " hoyos") : "sin putts";
         return `<div class="lb-row ${d.me?"me":""}">
           <div class="lb-pos">${i+1}</div>
           <div class="avatar ${d.avatar||""}" style="width:32px;height:32px;font-size:11px;">${d.initials||"?"}</div>
-          <div class="lb-info"><div class="n">${standingsName(d)}</div><div class="s">${puttLine}</div></div>
+          <div class="lb-info"><div class="n">${standingsName(d)}</div><div class="s">${modeSubline(d, "putting")}</div></div>
           <div class="lb-pts"><div class="big">${d.puttPts||0}</div><div class="sub">pts</div></div>
         </div>`;
       }).join("") + `</div>`;
@@ -5176,11 +5251,10 @@ function renderLeader() {
     foot.textContent = live ? "Clasificación en vivo" : scope;
     listEl.innerHTML = `<div class="lb-list-wrap">` +
       data.map((d, i) => {
-        const extra = subStats(d);
         return `<div class="lb-row ${d.me?"me":""}">
           <div class="lb-pos">${i+1}</div>
           <div class="avatar ${d.avatar||""}" style="width:32px;height:32px;font-size:11px;">${d.initials||"?"}</div>
-          <div class="lb-info"><div class="n">${standingsName(d)}</div><div class="s">${extra || "puntos"}</div></div>
+          <div class="lb-info"><div class="n">${standingsName(d)}</div><div class="s">${modeSubline(d, tab)}</div></div>
           <div class="lb-pts"><div class="big">${d[key]||0}</div><div class="sub">puntos</div></div>
         </div>`;
       }).join("") + `</div>`;
