@@ -5059,9 +5059,9 @@ function renderTotalsEntry() {
     const hint = marked ? "Hoyos marcados" : "Si no marcas hoyos";
     return `<div class="te-row">
       <div><div class="te-name">${escapeHtml(playerLabel(p))}</div><div class="te-hint">${escapeHtml(hint)}</div></div>
-      <input type="number" inputmode="numeric" ${disabled} placeholder="Golpes" aria-label="Golpes totales ${p.name||""}"
+      <input type="number" inputmode="numeric" ${disabled} placeholder="Golpes" aria-label="Golpes totales ${escapeHtml(p.name||"")}"
         value="${gVal}" onchange="setPlayerTotalsGross(${pi}, this.value)" onblur="setPlayerTotalsGross(${pi}, this.value)" />
-      <input type="number" inputmode="numeric" placeholder="Putts" aria-label="Putts totales ${p.name||""}"
+      <input type="number" inputmode="numeric" placeholder="Putts" aria-label="Putts totales ${escapeHtml(p.name||"")}"
         value="${ptVal}" onchange="setPlayerTotalsPutts(${pi}, this.value)" onblur="setPlayerTotalsPutts(${pi}, this.value)" />
     </div>`;
   }).join("");
