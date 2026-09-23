@@ -6247,8 +6247,10 @@ function collectFairwayBackup() {
     return Object.assign({}, r, { players: players });
   });
   return {
-    version: 2,
+    version: 3,
     app: "Fairway",
+    appVersion: "3.184",
+    exportedAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     includes: ["rounds", "players.scores", "players.putts", "players.fir", "players.gir", "players.ball", "players.withdrawn", "roster", "host", "activeRound", "winners", "standings"],
     rounds: rounds,
@@ -6266,8 +6268,162 @@ function collectFairwayBackup() {
   };
 }
 
+function clipStr(v, max) {
+  return String(v == null ? "" : v).replace(/[\u0000-\u001F]/g, "").slice(0, max);
+}
+function sanitizeScoreMap(obj, maxVal) {
+  const out = {};
+  if (!obj || typeof obj !== "object" || Array.isArray(obj)) return out;
+  Object.keys(obj).forEach(k => {
+    const n = Number(k);
+    if (!Number.isFinite(n) || n < 1 || n > 18) return;
+    const val = Number(obj[k]);
+    if (!Number.isFinite(val)) return;
+    out[String(Math.floor(n))] = Math.max(0, Math.min(maxVal, Math.round(val)));
+  });
+  return out;
+}
+function sanitizeMarkMap(obj, allowed) {
+  const out = {};
+  if (!obj || typeof obj !== "object" || Array.isArray(obj)) return out;
+  Object.keys(obj).forEach(k => {
+    const n = Number(k);
+    if (!Number.isFinite(n) || n < 1 || n > 18) return;
+    const v = String(obj[k] || "");
+    if (allowed.indexOf(v) >= 0) out[String(Math.floor(n))] = v;
+  });
+  return out;
+}
+function sanitizeImportedPlayer(p) {
+  if (!p || typeof p !== "object") return null;
+  return {
+    id: clipStr(p.id, 64),
+    name: clipStr(p.name, 40),
+    short: clipStr(p.short, 8),
+    initials: clipStr(p.initials, 4),
+    hcp: Number.isFinite(Number(p.hcp)) ? clampHcp(p.hcp) : null,
+    ch: Number.isFinite(Number(p.ch)) ? Math.max(-18, Math.min(54, Math.round(Number(p.ch)))) : null,
+    ph: Number.isFinite(Number(p.ph)) ? Math.max(-18, Math.min(54, Math.round(Number(p.ph)))) : null,
+    guest: !!p.guest,
+    ball: clipStr(p.ball, 48),
+    withdrawn: !!p.withdrawn,
+    scores: sanitizeScoreMap(p.scores, 30),
+    putts: sanitizeScoreMap(p.putts, 15),
+    fir: sanitizeMarkMap(p.fir, ["hit", "miss", "na"]),
+    gir: sanitizeMarkMap(p.gir, ["yes", "no", "na"]),
+    totalsGross: Number.isFinite(Number(p.totalsGross)) ? Math.round(Number(p.totalsGross)) : null,
+    totalsPutts: Number.isFinite(Number(p.totalsPutts)) ? Math.round(Number(p.totalsPutts)) : null,
+    creativePts: Number.isFinite(Number(p.creativePts)) ? Math.round(Number(p.creativePts)) : 0,
+    creativeLog: Array.isArray(p.creativeLog) ? p.creativeLog.slice(0, 40) : []
+  };
+}
+function sanitizeImportedRound(r) {
+  if (!r || typeof r !== "object" || Array.isArray(r)) return null;
+  const id = clipStr(r.id, 64);
+  if (!id) return null;
+  const players = Array.isArray(r.players) ? r.players.slice(0, 8).map(sanitizeImportedPlayer).filter(Boolean) : [];
+  const winners = Array.isArray(r.winners) ? r.winners.slice(0, 12).map(w => ({
+    label: clipStr(w && w.label, 40),
+    winner: clipStr(w && w.winner, 40),
+    detail: clipStr(w && w.detail, 80)
+  })) : [];
+  const creative = (r.creative && typeof r.creative === "object") ? {
+    rulesText: clipStr(r.creative.rulesText, 2000),
+    actions: Array.isArray(r.creative.actions) ? r.creative.actions.slice(0, 30) : []
+  } : null;
+  return {
+    id: id,
+    dateISO: clipStr(r.dateISO, 40),
+    date: clipStr(r.date, 40),
+    club: clipStr(r.club, 80),
+    courseId: clipStr(r.courseId, 80),
+    layout: clipStr(r.layout, 40),
+    tee: clipStr(r.tee, 40),
+    par: Number.isFinite(Number(r.par)) ? Math.round(Number(r.par)) : null,
+    holes: Number.isFinite(Number(r.holes)) ? Math.max(1, Math.min(18, Math.round(Number(r.holes)))) : 18,
+    holesPlayed: Number.isFinite(Number(r.holesPlayed)) ? Math.max(0, Math.min(18, Math.round(Number(r.holesPlayed)))) : null,
+    modalities: Array.isArray(r.modalities) ? r.modalities.slice(0, 12).map(m => clipStr(m, 40)) : [],
+    creative: creative,
+    official: !!r.official,
+    players: players,
+    me: (r.me && typeof r.me === "object") ? r.me : null,
+    winners: winners,
+    standings: Array.isArray(r.standings) ? r.standings.slice(0, 8) : []
+  };
+}
+function validateFairwayBackup(data) {
+  if (!data || typeof data !== "object" || Array.isArray(data) || !Array.isArray(data.rounds)) {
+    return { ok: false, reason: "JSON no válido" };
+  }
+  if (data.rounds.length > 200) return { ok: false, reason: "Demasiadas partidas en la copia" };
+  const rounds = data.rounds.map(sanitizeImportedRound).filter(Boolean);
+  const out = {
+    version: Number(data.version) || 1,
+    rounds: rounds,
+    roster: Array.isArray(data.roster) ? data.roster.slice(0, 80).map(p => {
+      if (!p || typeof p !== "object") return null;
+      const name = clipStr(p.name, 40);
+      const id = clipStr(p.id, 64);
+      if (!name || !id) return null;
+      return {
+        id: id,
+        name: name,
+        hcp: Number.isFinite(Number(p.hcp)) ? clampHcp(p.hcp) : 18,
+        initials: clipStr(p.initials, 4),
+        short: clipStr(p.short, 8)
+      };
+    }).filter(Boolean) : [],
+    host: (data.host && typeof data.host === "object") ? {
+      name: clipStr(data.host.name, 40),
+      hcp: (data.host.hcp != null && data.host.hcp !== "" && Number.isFinite(Number(data.host.hcp))) ? clampHcp(data.host.hcp) : null
+    } : null,
+    activeRound: null,
+    newer: Number(data.version) > 3
+  };
+  if (data.activeRound && typeof data.activeRound === "object" && Array.isArray(data.activeRound.players)) {
+    out.activeRound = {
+      v: 1,
+      hole: Number.isFinite(Number(data.activeRound.hole)) ? Math.max(1, Math.min(18, Math.round(Number(data.activeRound.hole)))) : 1,
+      activePlayer: Number.isFinite(Number(data.activeRound.activePlayer)) ? Math.max(0, Math.round(Number(data.activeRound.activePlayer))) : 0,
+      editingRoundId: data.activeRound.editingRoundId ? clipStr(data.activeRound.editingRoundId, 64) : null,
+      dataTier: clipStr(data.activeRound.dataTier || "score", 16),
+      scNine: data.activeRound.scNine === "in" ? "in" : "out",
+      scCard: data.activeRound.scCard === "net" ? "net" : "gross",
+      club: clipStr(data.activeRound.club, 80),
+      setup: (function () {
+        const s = data.activeRound.setup;
+        if (!s || typeof s !== "object") return null;
+        return {
+          courseId: clipStr(s.courseId, 80),
+          club: clipStr(s.club, 80),
+          tee: clipStr(s.tee, 40),
+          holes: Number.isFinite(Number(s.holes)) ? Math.max(1, Math.min(18, Math.round(Number(s.holes)))) : 18,
+          modalities: Array.isArray(s.modalities) ? s.modalities.slice(0, 12).map(m => clipStr(m, 40)) : [],
+          players: Array.isArray(s.players) ? s.players.slice(0, 8).map(Boolean) : [],
+          writeMode: "single_device",
+          creative: (s.creative && typeof s.creative === "object") ? {
+            rulesText: clipStr(s.creative.rulesText, 2000),
+            actions: Array.isArray(s.creative.actions) ? s.creative.actions.slice(0, 30) : []
+          } : null
+        };
+      })(),
+      players: data.activeRound.players.slice(0, 8).map(sanitizeImportedPlayer).filter(Boolean),
+      setupPlayers: Array.isArray(data.activeRound.setupPlayers) ? data.activeRound.setupPlayers.slice(0, 8).map(Boolean) : []
+    };
+  }
+  return { ok: true, data: out };
+}
+
 function mergeFairwayBackup(remote) {
-  if (!remote || typeof remote !== "object") return;
+  const checked = validateFairwayBackup(remote);
+  if (!checked.ok) {
+    if (typeof showToast === "function") showToast(checked.reason || "JSON no válido");
+    return false;
+  }
+  remote = checked.data;
+  if (remote.newer && typeof showToast === "function") {
+    showToast("Copia de una versión más nueva · se importan las partidas reconocidas");
+  }
   // Merge rounds by id (keep newest dateISO / updated)
   const local = loadRounds();
   const byId = {};
@@ -6305,11 +6461,19 @@ function mergeFairwayBackup(remote) {
         if (remote.host.name) applyHostName(remote.host.name, false);
       }
       if (typeof updateHomeGreeting === "function") updateHomeGreeting();
-    } catch (e) {}
+    } catch (e) {
+      console.warn("merge host", e);
+      if (typeof showToast === "function") showToast("No se pudo restaurar el perfil");
+    }
   }
   if (remote.activeRound && typeof remote.activeRound === "object") {
-    try { localStorage.setItem(ACTIVE_KEY, JSON.stringify(remote.activeRound)); } catch (e) {}
+    try { localStorage.setItem(ACTIVE_KEY, JSON.stringify(remote.activeRound)); }
+    catch (e) {
+      console.warn("merge activeRound", e);
+      if (typeof showToast === "function") showToast("No se pudo restaurar la ronda en curso");
+    }
   }
+  return true;
 }
 
 function ensureGis(cb) {
@@ -6583,11 +6747,7 @@ function importFairwayBackup() {
     try {
       const text = await file.text();
       const data = JSON.parse(text);
-      if (!data || typeof data !== "object" || !Array.isArray(data.rounds)) {
-        showToast("JSON no válido");
-        return;
-      }
-      mergeFairwayBackup(data);
+      if (!mergeFairwayBackup(data)) return;
       showToast("Copia restaurada · " + (data.rounds.length || 0) + " partidas");
       if (typeof renderPerfil === "function") renderPerfil();
       if (typeof renderHistorial === "function" && state.screen === "historial") renderHistorial();
