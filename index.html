@@ -2733,13 +2733,8 @@ function standingsName(d) {
 }
 
 function inviteCodeNow() {
-  if (FX.inviteCode && FX.inviteCode !== "H3RR4Y" && FX.inviteCode !== "FWAY01") return FX.inviteCode;
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let code = "FW";
-  for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
-  FX.inviteCode = code;
-  FX.inviteLink = "fairway.app/m/" + code.toLowerCase();
-  return code;
+  // No remote room exists. Do not invent fairway.app/m codes.
+  return "";
 }
 
 function hostFirstName() {
