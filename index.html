@@ -365,6 +365,10 @@
     background: var(--fill); color: var(--ink-secondary);
     border: none; font-size: 11px; letter-spacing: -0.08px; padding: 2px 8px;
   }
+  .hole-chips .badge {
+    background: rgba(255,255,255,0.16); color: rgba(255,255,255,0.92);
+    border: none; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
 
 
   .home-hero { padding: 0; flex-shrink: 0; }
@@ -1768,7 +1772,6 @@
               <div class="micro" id="homeMeta">18 hoyos · Amarillas · Par 72</div>
               <div class="meta">
                 <span class="badge badge-oficial" id="homeCourseBadge">OFICIAL</span>
-                <span class="badge badge-tier">tier: score</span>
               </div>
               <button class="btn btn-ghost" data-continue-hole onclick="go('hole')">Continuar · Hoyo 1</button>
               <button class="btn btn-ghost" data-round-ajustes onclick="go('ajustes')" style="display:none">Ajustes</button>
@@ -1842,8 +1845,8 @@
             </div>
           </div>
           <div class="hole-chips">
-            <span class="badge badge-demo" id="holeClubBadge">Centro Nacional de Golf</span>
-            <span class="badge badge-tier" id="tierBadge">tier: score</span>
+            <span class="badge" id="holeClubBadge">Centro Nacional de Golf</span>
+            <span class="badge badge-tier" id="tierBadge" hidden></span>
           </div>
           <div class="row" style="padding:0 var(--pad-x) 8px; align-items:center; gap:8px;">
             <button type="button" class="hole-jump-btn" id="holeJumpBtn" onclick="openHoleSheet()">
@@ -1895,7 +1898,7 @@
               <button class="btn btn-ghost" onclick="shiftPlayer(-1)">Anterior jugador</button>
               <button class="btn btn-ghost" onclick="shiftPlayer(1)">Siguiente jugador</button>
             </div>
-            <div class="footer-note">Modo A · Golpes + Putts · un asiento</div>
+            <div class="footer-note">Golpes · Putts</div>
           </div>
           <div class="hole-nav">
             <button class="btn btn-ghost" onclick="changeHole(-1)">‹ Hoyo ant.</button>
@@ -1925,9 +1928,9 @@
           <div class="row" style="justify-content:space-between;flex-shrink:0;">
             <div>
               <div class="eyebrow" id="scClub">Centro Nacional de Golf — 18 hoyos</div>
-              <div class="micro">Amarillas · 18 hoyos</div>
+              <div class="micro" id="scMeta">Amarillas · 18 hoyos</div>
             </div>
-            <span class="badge badge-oficial">OFICIAL</span>
+            <span class="badge badge-oficial" id="scOfficialBadge">OFICIAL</span>
           </div>
           <div class="club-calls" id="scClubCalls" hidden>
             <a id="scCallCaddie" href="tel:+34918905111"><span class="call-mark" aria-hidden="true"></span>Caddie master</a>
@@ -1983,7 +1986,7 @@
         </div>
         <div class="lb-round-pick" id="lbRoundPick"></div>
         <div class="fit-body" id="lbList" style="padding:0;overflow:hidden;"></div>
-        <div class="footer-note" id="lbFoot" style="padding-bottom:4px;">El hándicap no manda aquí</div>
+        <div class="footer-note" id="lbFoot" style="padding-bottom:4px;">Clasificación en vivo</div>
         <nav class="tabbar">
           <button class="tab" onclick="go('home')"><span class="ico">⌂</span>Inicio</button>
           <button class="tab" onclick="go('hole')"><span class="ico" aria-hidden="true">○</span>Hoyo</button>
@@ -2087,10 +2090,7 @@
 </div>
 
 
-<p class="desktop-hint">
-  Fairway · Apple HIG v2 · systemGray6 / systemGreen · full demo<br>
-  Tokens: VISUAL-POLISH-v1 · fixtures Parte A · copy Parte B
-</p>
+<p class="desktop-hint">Fairway</p>
 
 <script>
 
@@ -2171,17 +2171,17 @@ const OFFICIAL_FORMATS = [
 ];
 COURSES = COURSES.filter(c => c.id !== "club-ejemplo-norte");
 
-/* 8 Social Games MVP — DEMO-fixture-social.json · no oficiales */
+/* Social Games — no oficiales */
 const SOCIAL_TEMPLATES = [
-  { id: "Putting King", sub: "1P +3 · 2P +1 · 3P −1", badge: "Stats" },
-  { id: "GIR King", sub: "GIR +1 · GIR+birdie +4", badge: "Stats" },
+  { id: "Putting King", sub: "1P +3 · 2P +1 · 3P −1", badge: "" },
+  { id: "GIR King", sub: "GIR +1 · GIR+birdie +4", badge: "" },
   { id: "Birdie Hunt", sub: "Birdie neto o mejor · bounty", badge: "" },
-  { id: "Chaos Golf", sub: "Bonus, caos y ruleta", badge: "Stats" },
+  { id: "Chaos Golf", sub: "Bonus, caos y ruleta", badge: "" },
   { id: "Rey del Hoyo", sub: "Gana el hoyo · defiende la corona", badge: "" },
   { id: "Back Nine Brawl", sub: "Hoyos 10–18 · hole-wins", badge: "" },
   { id: "Last Call", sub: "Últimos 3 · puntos ×2", badge: "" },
   { id: "No Bogey Club", sub: "Par+ suma · bogey resta", badge: "" },
-  { id: "Creativo", sub: "Normas y puntos que defines tú", badge: "Custom" },
+  { id: "Creativo", sub: "Normas y puntos que defines tú", badge: "" },
 ];
 
 const MODALITY_RULES = {
@@ -2249,9 +2249,9 @@ const MODALITY_RULES = {
       "Si hay putts: 1P +3 · 2P +1 · 3P −1",
       "Si hay GIR: GIR +1 · Si hay penalties: cada una −2",
       "Ruleta/hoyo (seed fija): 50% nada · 20% ángel +3 · 20% serpiente −3 · 10% ×2 el hoyo",
-      "Score-only: solo strokes + ruleta",
+      "Sin putts/GIR: solo golpes + ruleta",
     ],
-    note: "Informal · puro entretenimiento.",
+    note: "Informal · entretenimiento.",
   },
   "Back Nine Brawl": {
     title: "Back Nine Brawl",
@@ -2367,7 +2367,7 @@ function updateHomeThru() {
     const badge = document.getElementById("homeCourseBadge");
     if (badge) {
       const off = !!(course && course.official);
-      badge.textContent = off ? "OFICIAL" : "FICTICIO";
+      badge.textContent = off ? "OFICIAL" : ""; badge.style.display = off ? "" : "none";
       badge.className = "badge " + (off ? "badge-oficial" : "badge-demo");
     }
     const eye = document.querySelector("#screen-home .round-card .eyebrow");
@@ -2453,7 +2453,7 @@ function applyCourseData(course, teeName, clearScores) {
   if (homeMeta) homeMeta.textContent = ((state.setup && state.setup.holes) || 18) + " hoyos · " + tee + " · Par " + FX.par;
   const badge = document.getElementById("homeCourseBadge");
   if (badge) {
-    badge.textContent = course.badge || (course.official ? "OFICIAL" : "FICTICIO");
+    badge.textContent = course.official ? "OFICIAL" : ""; badge.style.display = course.official ? "" : "none";
     badge.className = "badge " + (course.official ? "badge-oficial" : "badge-demo");
   }
   updateHomeThru();
@@ -2521,7 +2521,7 @@ function loadHostHcp() {
     const h = JSON.parse(localStorage.getItem(HOST_KEY) || "null");
     if (!PLAYERS[0]) return;
     if (!h) {
-      // Visitante nuevo / otro iPhone: perfil vacío (no hay Miguel en el HTML)
+      // Visitante nuevo: perfil vacío
       PLAYERS[0].name = "";
       PLAYERS[0].short = "";
       PLAYERS[0].initials = "?";
@@ -2567,6 +2567,20 @@ function saveHostProfile() {
       hcp: (p.hcp != null && p.hcp !== "") ? clampHcp(p.hcp) : null
     }));
   } catch (e) {}
+}
+
+function playerLabel(p) {
+  const n = p && String(p.name || "").trim();
+  return n || "Sin nombre";
+}
+
+function inviteCodeNow() {
+  if (FX.inviteCode && FX.inviteCode !== "H3RR4Y") return FX.inviteCode;
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "FW";
+  for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  FX.inviteCode = code;
+  return code;
 }
 
 function hostFirstName() {
@@ -2922,7 +2936,7 @@ function reopenRound(id, dest) {
     PLAYERS.push({
       id: p.id || ("p" + Date.now() + Math.random().toString(16).slice(2, 6)),
       rp: "rp-" + (p.id || "x"),
-      name: p.name || "Jugador",
+      name: (p.name || "").toString(),
       short: p.short || (p.name || "?").slice(0, 3),
       initials: p.initials || guestInitials(p.name || "?"),
       hcp: p.hcp, ch: p.ch, ph: p.ph, guest: !!p.guest,
@@ -2986,7 +3000,7 @@ function renderSavedRoster() {
   const activeNames = new Set(PLAYERS.map(p => p.name.toLowerCase()));
   const list = loadRoster().filter(x => !activeNames.has(x.name.toLowerCase()));
   if (!list.length) {
-    el.innerHTML = `<div class="sr-title">Guardados</div><p class="micro">Los invitados que añadas se guardan en este iPhone.</p>`;
+    el.innerHTML = `<div class="sr-title">Guardados</div><p class="micro">Aún no hay jugadores guardados.</p>`;
     return;
   }
   el.innerHTML = `<div class="sr-title">Guardados</div>` + list.map(x => `
@@ -3136,11 +3150,14 @@ function renderSetup() {
         const badgeCls = c.official ? "badge-oficial" : "badge-demo";
         const detail = c.official
           ? `${c.tees.length} tees · Par ${c.par} · RFEG`
-          : `${c.layout} · Par ${c.par} · Fixture`;
+          : `${c.layout} · Par ${c.par}`;
+        const badgeHtml = c.official
+          ? `<span class="badge ${badgeCls}">OFICIAL</span>`
+          : "";
         return `<button class="option ${sel}" type="button" onclick="selectCourse('${c.id}')">
           <span class="radio"></span>
           <span class="body"><span class="t">${c.name}</span><span class="d">${detail}</span></span>
-          <span class="badge ${badgeCls}">${c.badge}</span>
+          ${badgeHtml}
         </button>`;
       }).join("") +
       `</div>`;
@@ -3162,7 +3179,7 @@ function renderSetup() {
     </div>`;
   } else if (step === 3) {
     const wmOpen = !!state.setup.writeModeOpen;
-    const wmLabel = state.setup.writeMode === "multi_device" ? "Cada uno" : "Un iPhone";
+    const wmLabel = state.setup.writeMode === "multi_device" ? "Cada uno" : "Un móvil";
     html = `<p class="muted mb-8">Quién juega hoy</p>
       <p class="micro mb-12">Nombre, HI y bola. Puedes editarlo después en Ajustes.</p>
       <div class="player-list">` +
@@ -3170,7 +3187,7 @@ function renderSetup() {
         <div class="plist-item">
           <div class="plist-main">
             <div class="avatar ${p.avatar||""}">${p.initials}</div>
-            <div class="name">${p.name || "Jugador"}</div>
+            <div class="name">${playerLabel(p)}</div>
             <div class="hcp-step" aria-label="Hándicap">
               <button type="button" aria-label="Bajar hándicap" onclick="adjPlayerHcp(${i}, -0.1)">−</button>
               <input class="val hcp-input" type="text" inputmode="decimal" enterkeyhint="done"
@@ -3226,18 +3243,18 @@ function renderSetup() {
         <div class="write-mode">
           <button class="option ${state.setup.writeMode==='single_device'?'selected':''}" type="button" onclick="state.setup.writeMode='single_device';renderSetup()">
             <span class="radio"></span>
-            <span class="body"><span class="t">Un iPhone</span><span class="d">Un móvil anota todos los asientos</span></span>
+            <span class="body"><span class="t">Un móvil</span><span class="d">Una persona anota a todos</span></span>
           </button>
           <button class="option ${state.setup.writeMode==='multi_device'?'selected':''}" type="button" onclick="state.setup.writeMode='multi_device';renderSetup()">
             <span class="radio"></span>
-            <span class="body"><span class="t">Cada uno</span><span class="d">Cada jugador escribe solo su fila</span></span>
+            <span class="body"><span class="t">Cada uno</span><span class="d">Cada jugador anota en su móvil</span></span>
           </button>
         </div>
       </div>
       <div class="saved-roster" id="savedRoster"></div>`;
   } else if (step === 4) {
-    html = `<p class="muted mb-8">Modalidades y challenges.</p>
-      <p class="micro mb-8">Formatos oficiales</p>
+    html = `<p class="muted mb-8">¿Cómo queréis jugar?</p>
+      <p class="micro mb-8">Oficiales</p>
       <div class="chip-row mb-16">` +
       OFFICIAL_FORMATS.map(m => {
         const on = state.setup.modalities.includes(m.id);
@@ -3247,18 +3264,17 @@ function renderSetup() {
         </button>`;
       }).join("") +
       `</div>
-      <p class="micro mb-8">Social Games · no cuentan para el hándicap</p>
+      <p class="micro mb-8">Sociales · no cuentan para el hándicap</p>
       <div class="chip-row">` +
       SOCIAL_TEMPLATES.map(m => {
         const on = state.setup.modalities.includes(m.id);
-        const badge = m.badge ? `<span class="badge badge-demo" style="margin-left:4px;">${m.badge}</span>` : "";
         return `<button class="chip mod-chip-card ${on?"selected":""}" onclick="toggleMod('${m.id}')">
-          <span>${m.id}${badge}</span>
+          <span>${m.id}</span>
           <span class="sub">${m.sub}</span>
         </button>`;
       }).join("") +
       `</div>
-      <p class="micro mt-16">Misma tarjeta · varios marcadores. Stats = putts/GIR opcionales.</p>`;
+      <p class="micro mt-16">Puedes cambiar modos a mitad de partida en Ajustes.</p>`;
   } else if (step === 5) {
     const selected = state.setup.modalities;
     const cards = selected.filter(id => id !== "Creativo").map(id => {
@@ -3275,8 +3291,8 @@ function renderSetup() {
       </div>`;
     }).filter(Boolean).join("");
     const wmLine = state.setup.writeMode === 'multi_device'
-      ? 'Captura: Cada uno — misma tarjeta, sin reentrar'
-      : 'Captura: Un iPhone — misma tarjeta, sin reentrar';
+      ? 'Cada jugador anota en su móvil'
+      : 'Un móvil anota a todos';
     let creativeHtml = "";
     
     if (selected.includes("Creativo")) {
@@ -3340,9 +3356,8 @@ function renderSetup() {
     }
 
     html = `
-      <p class="muted mb-8">Cómo se puntúa · solo las modalidades activas</p>
-      <p class="micro mb-8">Social Games no cuentan para el hándicap · Stableford/Stroke sí son oficiales</p>
-      <p class="micro mb-16">${wmLine}</p>
+      <p class="muted mb-8">Cómo se puntúa</p>
+      <p class="micro mb-16">Stableford y Stroke Play son oficiales · el resto son sociales</p>
       <div class="rule-list">${creativeHtml}${cards || (selected.includes("Creativo") ? "" : `<p class="muted">No hay modalidades seleccionadas.</p>`)}</div>`;
   } else {
     const active = activePlayers();
@@ -3351,19 +3366,17 @@ function renderSetup() {
       <div class="card card-elevated">
         <div class="eyebrow">Resumen</div>
         <h2 style="margin:8px 0 4px;">${state.setup.club}</h2>
-        <p class="muted">${state.setup.tee} · ${state.setup.holes} hoyos · Par ${FX.par} · ${state.setup.writeMode==='single_device'?'Captura: Un iPhone':'Captura: Cada uno'}</p>
-        <div class="mt-8"><span class="badge ${course.official?'badge-oficial':'badge-demo'}">${course.badge}</span></div>
+        <p class="muted">${state.setup.tee} · ${state.setup.holes} hoyos · Par ${FX.par}</p>
+        <div class="mt-8">${course.official ? '<span class="badge badge-oficial">OFICIAL</span>' : ''}</div>
         <div class="divider"></div>
         <p class="micro mb-8">Jugadores (${active.length})</p>
-        ${active.map(p => `<div class="row mb-8"><div class="avatar ${p.avatar||""}" style="width:28px;height:28px;font-size:10px;">${p.initials}</div><span style="font-size:14px;">${p.name} · HI ${fmtHcp(p.hcp)}</span></div>`).join("")}
+        ${active.map(p => `<div class="row mb-8"><div class="avatar ${p.avatar||""}" style="width:28px;height:28px;font-size:10px;">${p.initials}</div><span style="font-size:14px;">${playerLabel(p)} · HI ${fmtHcp(p.hcp)}</span></div>`).join("")}
         <div class="divider"></div>
         <p class="micro mb-8">Modalidades</p>
         <div class="chip-row">${state.setup.modalities.map(m => `<span class="chip selected" style="cursor:default;padding:0 12px;height:32px;font-size:12px;">${m}</span>`).join("")}</div>
         ${creativeEnabled() && (state.setup.creative && state.setup.creative.rulesText) ? `<p class="micro mt-8">Creativo: ${(state.setup.creative.rulesText || "").slice(0, 120)}${(state.setup.creative.rulesText || "").length > 120 ? "…" : ""}</p>` : ""}
-        <div class="mt-16"><span class="badge badge-demo">FIXTURES · PARTE A/B</span></div>
       </div>
-      <button type="button" class="link-btn" onclick="state.setupStep=5;renderSetup()">Ver reglas otra vez</button>
-      <p class="muted mt-16" style="font-size:13px;">Misma tarjeta · varios marcadores.</p>`;
+      <button type="button" class="link-btn" onclick="state.setupStep=5;renderSetup()">Ver reglas otra vez</button>`;
   }
   const scrollSteps = (step === 0 || step === 3 || step === 5 || step === 4);
   body.style.overflowY = scrollSteps ? "auto" : "hidden";
@@ -3777,29 +3790,29 @@ function renderLobby() {
   const seats = (PLAYERS || []).filter(Boolean).map((p, i) => ({
     p, role: i === 0 ? "host" : "user", away: false
   }));
-  const modeLabel = (FX.write_mode === "multi_device" || state.writeMode === "B") ? "Cada uno en el suyo" : "Un iPhone anota todos";
+  const modeLabel = (FX.write_mode === "multi_device" || state.writeMode === "B") ? "Cada uno en el suyo" : "Un móvil anota a todos";
   body.innerHTML = `
-    <p class="muted mb-16">${CLUB} · ${FX.tee} · 18</p>
+    <p class="muted mb-16">${CLUB} · ${FX.tee} · ${(state.setup && state.setup.holes) || 18} hoyos</p>
     <div class="row gap-8 mb-16">
-      <button class="chip selected" id="wmA" onclick="setWriteModeDemo('A')">Un iPhone</button>
+      <button class="chip selected" id="wmA" onclick="setWriteModeDemo('A')">Un móvil</button>
       <button class="chip" id="wmB" onclick="setWriteModeDemo('B')">Cada uno</button>
     </div>
     <p class="micro mb-12">${modeLabel}</p>
     ${seats.map(s => `
       <div class="player-row">
         <div class="avatar ${s.p.avatar||""}">${s.p.initials}</div>
-        <div class="name">${s.p.name}${s.role==='host'?' · host':''}
+        <div class="name">${playerLabel(s.p)}${s.role==='host'?' · anfitrión':''}
           ${s.away?' <span class="guest-chip">Ausente</span>':''}
         </div>
-        <div class="hcp">PH ${s.p.ph != null ? s.p.ph : '—'}</div>
+        <div class="hcp">HCP ${s.p.hcp != null ? fmtHcp(s.p.hcp) : '—'}</div>
       </div>`).join("")}
     <div class="row gap-8 mt-16">
       <button class="btn btn-secondary" style="flex:1" onclick="openInvite()">Añadir</button>
     </div>
-    <p class="micro mt-12">Desde amigos · Invitado sin cuenta</p>
+    <p class="micro mt-12">Invitado sin cuenta · se guarda en el roster</p>
     <div class="card mt-16">
-      <div class="eyebrow">Código invite</div>
-      <div class="invite-code" style="font-size:22px;letter-spacing:0.14em;">${FX.inviteCode || 'H3RR4Y'}</div>
+      <div class="eyebrow">Código de invitación</div>
+      <div class="invite-code" style="font-size:22px;letter-spacing:0.14em;">${inviteCodeNow()}</div>
       <button class="btn btn-ghost btn-sm" onclick="copyInvite()">Copiar código</button>
     </div>`;
   const a = document.getElementById("wmA");
@@ -3814,7 +3827,7 @@ function setWriteModeDemo(m) {
   state.writeMode = m;
   if (typeof FX === "object") FX.write_mode = m === "B" ? "multi_device" : "single_device";
   renderLobby();
-  showToast(m === "B" ? "Modo B · cada uno en el suyo" : "Modo A · un iPhone", true);
+  showToast(m === "B" ? "Cada uno en el suyo" : "Un móvil anota a todos", true);
 }
 
 function openInvite() {
@@ -3830,13 +3843,19 @@ function setInviteTab(tab) {
   document.getElementById("invTabLink").classList.toggle("selected", tab==="link");
   const pane = document.getElementById("invitePane");
   if (tab === "code") {
-    pane.innerHTML = `<div class="invite-code">${FX.inviteCode}</div><p class="micro" style="text-align:center;">Código · demo-match-001</p>`;
+    pane.innerHTML = `<div class="invite-code">${inviteCodeNow()}</div><p class="micro" style="text-align:center;">Comparte este código con el flight</p>`;
   } else {
-    pane.innerHTML = `<div class="card" style="text-align:center;font-weight:600;">${FX.inviteLink}</div><p class="micro mt-8" style="text-align:center;">Compartir partida</p>`;
+    const link = (FX.inviteLink && !String(FX.inviteLink).includes("demo"))
+      ? FX.inviteLink
+      : ("fairway.app/m/" + inviteCodeNow().toLowerCase());
+    FX.inviteLink = link;
+    pane.innerHTML = `<div class="card" style="text-align:center;font-weight:600;">${link}</div><p class="micro mt-8" style="text-align:center;">Compartir partida</p>`;
   }
 }
 function copyInvite() {
-  const val = state.inviteTab === "link" ? FX.inviteLink : FX.inviteCode;
+  const val = state.inviteTab === "link"
+    ? (FX.inviteLink || ("fairway.app/m/" + inviteCodeNow().toLowerCase()))
+    : inviteCodeNow();
   if (navigator.clipboard) navigator.clipboard.writeText(val).catch(()=>{});
   showToast("Código copiado", true);
 }
@@ -4100,7 +4119,7 @@ function renderHole(opts) {
         <div class="pc-head">
           <div class="avatar ${p.avatar||""}">${p.initials}${done?`<span class="done-check"></span>`:""}</div>
           <div class="pc-id">
-            <div class="name">${p.name || "Jugador"}${strokeHint}</div>
+            <div class="name">${playerLabel(p)}${strokeHint}</div>
             <div class="micro">${subLine}</div>
             ${ballLine}
           </div>
@@ -4316,7 +4335,7 @@ function toggleStats() {
   el.classList.toggle("open");
   const open = el.classList.contains("open");
   state.dataTier = open ? "stats" : "score";
-  document.getElementById("tierBadge").textContent = "tier: " + state.dataTier;
+  const _tb = document.getElementById("tierBadge"); if (_tb) { _tb.hidden = true; }
   if (open) {
     // Keep Siguiente pinned; only scroll the upper pane so FIR/GIR is visible
     requestAnimationFrame(() => {
@@ -4463,8 +4482,15 @@ function renderScorecard() {
   const clubName = (course && course.name) || FX.club;
   const layout = roundLayoutLabel();
   document.getElementById("scClub").textContent = clubName + " — " + layout;
-  const badge = document.querySelector("#screen-scorecard .badge-demo");
-  if (badge) badge.textContent = (course && course.official) ? "OFICIAL" : "FICTICIO";
+  const scMeta = document.getElementById("scMeta");
+  if (scMeta) scMeta.textContent = ((state.setup && state.setup.tee) || FX.tee || "") + " · " + layout;
+  const badge = document.getElementById("scOfficialBadge") || document.querySelector("#screen-scorecard .badge-oficial, #screen-scorecard .badge-demo");
+  if (badge) {
+    const off = !!(course && course.official);
+    badge.textContent = off ? "OFICIAL" : "";
+    badge.hidden = !off;
+    badge.className = "badge " + (off ? "badge-oficial" : "badge-demo");
+  }
   const maxH = state.setup.holes || 18;
   const nine = state.scNine || "out";
   const cardMode = state.scCard || "gross";
@@ -4738,7 +4764,7 @@ function renderTotalsEntry() {
     const disabled = marked ? "disabled" : "";
     const hint = marked ? "Hoyos marcados" : "Si no marcas hoyos";
     return `<div class="te-row">
-      <div><div class="te-name">${p.name || ("Jugador " + (pi+1))}</div><div class="te-hint">${hint}</div></div>
+      <div><div class="te-name">${playerLabel(p)}</div><div class="te-hint">${hint}</div></div>
       <input type="number" inputmode="numeric" ${disabled} placeholder="Golpes" aria-label="Golpes totales ${p.name||""}"
         value="${gVal}" onchange="setPlayerTotalsGross(${pi}, this.value)" onblur="setPlayerTotalsGross(${pi}, this.value)" />
       <input type="number" inputmode="numeric" placeholder="Putts" aria-label="Putts totales ${p.name||""}"
@@ -5727,7 +5753,9 @@ function renderClose() {
   const course = (typeof getSelectedCourse === "function" ? getSelectedCourse() : null);
   const layout = roundLayoutLabel();
   const par = (course && course.par) || FX.par;
-  const officialBadge = course && course.official ? "OFICIAL" : "FICTICIO";
+  const officialBadge = course && course.official
+    ? '<span class="badge badge-oficial" style="margin-left:6px;">OFICIAL</span>'
+    : "";
 
   const gross = me && me.thru ? me.gross : "—";
   const toPar = me && me.toPar != null ? ((me.toPar > 0 ? "+" : "") + me.toPar) : "—";
@@ -5739,8 +5767,7 @@ function renderClose() {
       <div class="trophy" aria-hidden="true"></div>
       <div class="eyebrow">Ronda completada</div>
       <h1 style="font-size:22px;">${CLUB}</h1>
-      <p class="micro mt-8">${layout} · ${state.setup.tee} · Par ${par}
-        <span class="badge badge-demo" style="margin-left:6px;">${officialBadge}</span></p>
+      <p class="micro mt-8">${layout} · ${state.setup.tee} · Par ${par}${officialBadge}</p>
     </div>
     <div class="close-stats">
       <div class="close-stat"><div class="v">${gross}</div><div class="l">Gross</div></div>
@@ -5762,12 +5789,12 @@ function renderClose() {
         </div>`).join("") + `
         <div class="winners-actions">
           <button type="button" class="placa-link" onclick="shareAllWinnerPlaques()">Compartir todas las placas</button>
-        </div>` : `<div class="winner-row"><div class="name" style="grid-column:1/-1;padding:8px 0;">Aún no hay resultados — mete golpes en la ronda</div></div>`}
+        </div>` : `<div class="winner-row"><div class="name" style="grid-column:1/-1;padding:8px 0;">Aún no hay resultados</div></div>`}
     </div>
     <button class="btn btn-primary" onclick="shareScorecardWhatsApp()">Compartir tarjeta</button>
     <button class="btn btn-ghost" onclick="shareFairwayBackup()">Guardar copia de seguridad</button>
-    <button class="btn btn-ghost" onclick="go('home')">Volver al inicio</button>
     <button class="btn btn-ghost" onclick="go('historial')">Ver historial</button>
+    <button class="btn btn-ghost" onclick="go('home')">Volver al inicio</button>
   `;
 }
 
@@ -6199,14 +6226,14 @@ function renderPerfil() {
   document.getElementById("perfilBody").innerHTML = `
     <div class="profile-hero">
       <div class="avatar-lg">${initials}</div>
-      <p class="muted" style="margin-top:8px;">Solo en este iPhone · no va en la web pública</p>
+      <p class="muted" style="margin-top:8px;">Tu perfil en este dispositivo</p>
     </div>
     <div class="card mb-16">
       <div class="eyebrow">Nombre</div>
       <input class="perfil-input" type="text" maxlength="40" value="${String(p.name || "").replace(/"/g, "&quot;")}"
         onchange="setHostNameFromPerfil(this.value)"
         onblur="setHostNameFromPerfil(this.value);renderPerfil()"
-        placeholder="Tu nombre (solo en este iPhone)" autocomplete="name" />
+        placeholder="Tu nombre" autocomplete="name" />
       <div class="eyebrow mt-16">Handicap Index (HI)</div>
       <div class="row gap-8" style="align-items:center;">
         <button type="button" class="btn-icon" onclick="adjHostHcpFromPerfil(-0.1)" aria-label="Bajar HCP">−</button>
@@ -6217,15 +6244,12 @@ function renderPerfil() {
           aria-label="Handicap Index" />
         <button type="button" class="btn-icon" onclick="adjHostHcpFromPerfil(0.1)" aria-label="Subir HCP">+</button>
       </div>
-      <p class="micro mt-8">Se usa en CH, neto y Stableford de tus partidas.</p>
-      <div class="row gap-8 mt-12" style="justify-content:flex-start;">
-        <span class="badge badge-tier">${hasHcp ? ("HI " + hi) : "HI —"}</span>
-        <span class="badge badge-demo">Historial · Solo yo</span>
-      </div>
+      <p class="micro mt-8">Se usa en CH, neto y Stableford.</p>
+      ${hasHcp ? `<div class="row gap-8 mt-12" style="justify-content:flex-start;"><span class="badge badge-oficial">HI ${hi}</span></div>` : ""}
     </div>
     <div class="quick-grid mb-16">
       <button class="quick-tile" onclick="go('historial')"><div class="ico"></div><div class="t">Historial</div><div class="d">Mis vueltas</div></button>
-      <button class="quick-tile" onclick="go('stats')"><div class="ico">◉</div><div class="t">Stats</div><div class="d">Score-only</div></button>
+      <button class="quick-tile" onclick="go('stats')"><div class="ico">◉</div><div class="t">Stats</div><div class="d">Promedios</div></button>
       <button class="quick-tile" onclick="document.getElementById('recordsBlock').scrollIntoView({behavior:'smooth'})"><div class="ico"></div><div class="t">Récords</div><div class="d">Mejores</div></button>
       <button class="quick-tile" onclick="go('lobby')"><div class="ico"></div><div class="t">Amigos</div><div class="d">Flight</div></button>
     </div>
@@ -6235,13 +6259,13 @@ function renderPerfil() {
     </div>
     <div class="card drive-card">
       <div class="eyebrow">Copia de seguridad</div>
-      <p class="drive-status">Las partidas viven en este iPhone. Haz una copia cuando quieras (Files, Drive, Mail, WhatsApp…).</p>
+      <p class="drive-status">Las partidas se guardan en este dispositivo. Haz una copia cuando quieras.</p>
       <div class="btn-row">
         <button class="btn btn-primary" type="button" onclick="shareFairwayBackup()">Compartir copia</button>
         <button class="btn btn-ghost" type="button" onclick="importFairwayBackup()">Restaurar copia…</button>
         <input id="fairwayImportInput" type="file" accept="application/json,.json" hidden />
       </div>
-      <p class="micro mt-12">Tip: en Compartir elige <b>Guardar en Archivos</b> → iCloud o Google Drive. Para recuperar, Restaurar y elige ese JSON.</p>
+      <p class="micro mt-12">En Compartir elige Guardar en Archivos. Para recuperar, Restaurar y elige ese JSON.</p>
     </div>`;
 }
 function _perfilRecordsHtml() {
@@ -6290,7 +6314,7 @@ function renderAjustes() {
       <div class="aj-player ${wd ? "wd" : ""}">
         <div class="row" style="justify-content:space-between;align-items:center;">
           <div>
-            <strong>${(p.name || "Jugador").replace(/</g, "&lt;")}</strong>
+            <strong>${playerLabel(p).replace(/</g, "&lt;")}</strong>
             ${wd ? '<span class="badge badge-demo" style="margin-left:6px;">RETIRADO</span>' : ""}
             ${!included ? '<span class="badge badge-demo" style="margin-left:6px;">FUERA</span>' : ""}
           </div>
@@ -6450,7 +6474,7 @@ function ajWithdraw(i) {
   p.withdrawn = true;
   if (state.activePlayer >= activePlayers().length) state.activePlayer = 0;
   ajPersist();
-  showToast((p.name || "Jugador") + " retirado");
+  showToast(playerLabel(p) + " retirado");
   renderAjustes();
 }
 
@@ -6460,7 +6484,7 @@ function ajReinstate(i) {
   p.withdrawn = false;
   state.setup.players[i] = true;
   ajPersist();
-  showToast((p.name || "Jugador") + " de vuelta");
+  showToast(playerLabel(p) + " de vuelta");
   renderAjustes();
 }
 
@@ -6511,17 +6535,11 @@ function ajAddPlayer() {
 
 function renderHistorial() {
   const rounds = loadRounds().filter(r => !state.deletedRounds[r.id]);
-  const chips = `<div class="period-chips chip-row mb-16">
-      <button class="chip selected">Últimas 20</button>
-      <button class="chip">Este año</button>
-      <button class="chip">Mejores</button>
-      <button class="chip">Stableford</button>
-    </div>`;
   if (!rounds.length) {
-    document.getElementById("historialBody").innerHTML = chips + `
+    document.getElementById("historialBody").innerHTML = `
       <div class="card"><p class="muted">Sin partidas aún</p></div>
-      <p class="micro mt-16">Las vueltas se guardan solas en este iPhone al completar una ronda.</p>
-      <button class="btn btn-ghost mt-16" type="button" onclick="shareFairwayBackup()">Descargar todos los datos</button>
+      <p class="micro mt-16">Las vueltas se guardan al completar una ronda.</p>
+      <button class="btn btn-ghost mt-16" type="button" onclick="shareFairwayBackup()">Hacer copia de seguridad</button>
       <button class="btn btn-ghost mt-8" type="button" onclick="importFairwayBackup()">Restaurar copia…</button>
       <input id="fairwayImportInput" type="file" accept="application/json,.json" hidden />`;
     return;
@@ -6540,13 +6558,12 @@ function renderHistorial() {
       <div class="lr-chev">›</div>
     </button>`;
   }).join("");
-  document.getElementById("historialBody").innerHTML = chips + `
+  document.getElementById("historialBody").innerHTML = `
     <div class="list-card">${rows}</div>
-    <p class="micro mt-16">Guardado en este iPhone · ${rounds.length} vuelta${rounds.length===1?"":"s"}</p>
-    <button class="btn btn-primary mt-16" type="button" onclick="shareFairwayBackup()">Descargar todos los datos</button>
+    <p class="micro mt-16">${rounds.length} vuelta${rounds.length===1?"":"s"}</p>
+    <button class="btn btn-ghost mt-16" type="button" onclick="shareFairwayBackup()">Hacer copia de seguridad</button>
     <button class="btn btn-ghost mt-8" type="button" onclick="importFairwayBackup()">Restaurar copia…</button>
-    <input id="fairwayImportInput" type="file" accept="application/json,.json" hidden />
-    <p class="micro mt-8">Incluye golpes, putts, FIR, GIR, ganadores, roster e HI · JSON</p>`;
+    <input id="fairwayImportInput" type="file" accept="application/json,.json" hidden />`;
 }
 
 
@@ -6604,11 +6621,11 @@ function renderDetalle() {
       <div class="winners-head">Ganadores</div>
       ${winners}
     </div>
-    <button class="btn btn-primary" onclick="openLeaderForRound('${d.id}')">Ver clasificación</button>
-    <button class="btn btn-primary" onclick="reopenRound('${d.id}','hole')">Abrir / modificar partida</button>
-    <button class="btn btn-ghost" onclick="reopenRound('${d.id}','scorecard')">Ver tarjeta editable</button>
-    <button class="btn btn-ghost" onclick="shareRoundWhatsApp('${d.id}')">Compartir tarjeta</button>
-    <button class="btn btn-ghost" onclick="deleteRound('${d.id}')">Borrar de este iPhone</button>
+    <button class="btn btn-primary" onclick="reopenRound('${d.id}','hole')">Abrir partida</button>
+    <button class="btn btn-ghost" onclick="reopenRound('${d.id}','scorecard')">Ver tarjeta</button>
+    <button class="btn btn-ghost" onclick="openLeaderForRound('${d.id}')">Clasificación</button>
+    <button class="btn btn-ghost" onclick="shareRoundWhatsApp('${d.id}')">Compartir</button>
+    <button class="btn btn-ghost" onclick="deleteRound('${d.id}')">Eliminar</button>
     <button class="btn btn-ghost" onclick="go('historial')">Volver</button>`;
 }
 
@@ -6629,7 +6646,7 @@ function cycleDetalleVisibility() {
 function softDeleteDetalle() {
   const id = state.detalleId;
   state.deletedRounds[id] = true;
-  showToast("Eliminada · recoverable 30 días");
+  showToast("Vuelta eliminada");
   go("historial");
 }
 
@@ -6647,7 +6664,7 @@ function renderStats() {
       <p class="muted">Sin partidas aún</p>
       <p class="micro mt-8">Las estadísticas aparecerán cuando completes vueltas.</p>
     </div>
-    <p class="footer-note" style="position:static;padding:4px 0;">Basado solo en golpes y par · n siempre visible · GIR/FIR = V1</p>`;
+    <p class="footer-note" style="position:static;padding:4px 0;">Basado en golpes y par</p>`;
 }
 
 // Init — default official course, fresh round
