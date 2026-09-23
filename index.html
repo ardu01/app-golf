@@ -4408,36 +4408,40 @@ function renderScorecard() {
   const me = list[0] || PLAYERS[0];
   let migOut = 0, migIn = 0, parOut = 0, parIn = 0;
   let netOut = 0, netIn = 0;
+  let parPlayedOut = 0, parPlayedIn = 0;
   for (let k = 1; k <= 9; k++) {
     if (HOLES[k - 1]) parOut += HOLES[k - 1].par;
-    if (me && me.scores[k] != null) {
+    if (me && me.scores[k] != null && HOLES[k - 1]) {
       migOut += me.scores[k];
+      parPlayedOut += HOLES[k - 1].par;
       const ch = Number(me.ch != null ? me.ch : me.ph) || courseHandicapFor(me);
       netOut += me.scores[k] - strokesOnHole(ch, HOLES[k - 1].hcp);
     }
   }
   for (let k = 10; k <= 18; k++) {
     if (HOLES[k - 1]) parIn += HOLES[k - 1].par;
-    if (me && me.scores[k] != null) {
+    if (me && me.scores[k] != null && HOLES[k - 1]) {
       migIn += me.scores[k];
+      parPlayedIn += HOLES[k - 1].par;
       const ch = Number(me.ch != null ? me.ch : me.ph) || courseHandicapFor(me);
       netIn += me.scores[k] - strokesOnHole(ch, HOLES[k - 1].hcp);
     }
   }
   let sumGross = migOut + migIn;
   if (!sumGross && me && me.totalsGross != null) sumGross = Number(me.totalsGross) || 0;
+  const parPlayed = parPlayedOut + parPlayedIn;
   if (cardMode === "net") {
     document.getElementById("scOut").textContent = migOut ? String(netOut) : "—";
     document.getElementById("scIn").textContent = migIn ? String(netIn) : "—";
     const netTot = netOut + netIn;
-    const d = netTot - (parOut + parIn);
-    document.getElementById("scToPar").textContent = (migOut || migIn) ? ((d > 0 ? "+" : "") + d) : "—";
+    const d = netTot - parPlayed;
+    document.getElementById("scToPar").textContent = parPlayed ? ((d > 0 ? "+" : "") + d) : "—";
   } else {
     document.getElementById("scOut").textContent = migOut || "—";
     document.getElementById("scIn").textContent = migIn || "—";
     const gross = sumGross;
-    const d = gross - (parOut + parIn);
-    document.getElementById("scToPar").textContent = gross ? ((d > 0 ? "+" : "") + d) : "—";
+    const d = gross - parPlayed;
+    document.getElementById("scToPar").textContent = parPlayed ? ((d > 0 ? "+" : "") + d) : "—";
   }
   if (typeof renderTotalsEntry === "function") renderTotalsEntry();
 }
