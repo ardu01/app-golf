@@ -3037,6 +3037,7 @@ function buildRoundRecord() {
     tee: state.setup.tee,
     par: (course && course.par) || 72,
     holes: state.setup.holes || 18,
+    holesPlayed: meSnap ? countMarkedHoles(meSnap.scores, state.setup.holes || 18) : 0,
     modalities: (state.setup.modalities || []).slice(),
     creative: creativeEnabled() ? JSON.parse(JSON.stringify(ensureCreativeSetup())) : null,
     official: !!(course && course.official),
@@ -4952,6 +4953,13 @@ function switchLb(btn) {
 }
 
 /* —— Live scoring from activePlayers (no fixture winners) —— */
+function countMarkedHoles(scores, maxH) {
+  let n = 0;
+  const lim = maxH || 18;
+  if (!scores) return 0;
+  for (let i = 1; i <= lim; i++) if (scores[i] != null) n++;
+  return n;
+}
 function playerHasMarkedHoles(p) {
   const s = (p && p.scores) || {};
   return Object.keys(s).some(k => s[k] != null);
@@ -6112,6 +6120,9 @@ function renderClose() {
     ? '<span class="badge badge-oficial" style="margin-left:6px;">OFICIAL</span>'
     : "";
 
+  const planned = (state.setup && state.setup.holes) || 18;
+  const played = me && me.p ? countMarkedHoles(me.p.scores, planned) : 0;
+  const playedNote = (me && me.totalsOnly) ? "Total, sin hoyo a hoyo" : (played ? (played + " hoyos con resultado") : "");
   const gross = me && me.thru ? me.gross : "—";
   const toPar = me && me.toPar != null ? ((me.toPar > 0 ? "+" : "") + me.toPar) : "—";
   const sfPts = me && me.thru ? me.sf : "—";
@@ -6122,7 +6133,7 @@ function renderClose() {
       <div class="trophy" aria-hidden="true"></div>
       <div class="eyebrow">Ronda completada</div>
       <h1 style="font-size:22px;">${escapeHtml(CLUB)}</h1>
-      <p class="micro mt-8">${escapeHtml(layout)} · ${escapeHtml(state.setup.tee)} · Par ${par}${officialBadge}</p>
+      <p class="micro mt-8">${escapeHtml(layout)} · ${escapeHtml(state.setup.tee)} · Par ${par}${officialBadge}${playedNote ? " · " + escapeHtml(playedNote) : ""}</p>
     </div>
     <div class="close-stats">
       <div class="close-stat"><div class="v">${gross}</div><div class="l">Gross</div></div>
@@ -7074,7 +7085,8 @@ function renderHistorial() {
     const me = r.me || {};
     const gross = me.gross != null ? me.gross : "—";
     const toPar = me.toPar != null ? ((me.toPar > 0 ? "+" : "") + me.toPar) : "";
-    const micro = `${r.date} · ${gross}${toPar ? " (" + toPar + ")" : ""} · ${r.tee || ""}`;
+    const playedBit = r.holesPlayed ? (" · " + r.holesPlayed + " hoyos") : "";
+    const micro = `${r.date} · ${gross}${toPar ? " (" + toPar + ")" : ""}${playedBit} · ${r.tee || ""}`;
     return `<button class="list-row" type="button" onclick="openDetalle('${r.id}')">
       <div class="lr-score">${gross}</div>
       <div class="lr-body">
