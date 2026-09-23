@@ -222,6 +222,7 @@
   .theme-paper .chip { background: var(--bg-paper-elevated); border-color: var(--separator); color: var(--ink); }
   .theme-paper .chip.selected { border-color: var(--tint); background: var(--brand-brass-dim); color: var(--tint-pressed); }
   .theme-paper .player-row { background: var(--bg-paper-elevated); }
+  .theme-paper .player-block { background: var(--bg-paper-elevated); }
   .theme-paper .step-dot { background: rgba(60,60,67,0.18); }
   .theme-paper .step-dot.on { background: var(--tint); }
   .theme-paper .step-dot.done { background: var(--tint); }
@@ -468,32 +469,50 @@
     border-left: 1px solid var(--border); border-right: 1px solid var(--border); margin-bottom: 0;
   }
   .player-block {
-    border-left: 1px solid var(--border); border-right: 1px solid var(--border);
-    background: var(--surface); margin-bottom: 0;
+    border: 1px solid var(--border-paper);
+    border-radius: 14px;
+    background: var(--bg-paper-elevated);
+    margin-bottom: 10px;
+    overflow: hidden;
   }
-  .player-block:first-of-type {
-    border-radius: var(--r-md) var(--r-md) 0 0; border-top: 1px solid var(--border);
-  }
+  .player-block:first-of-type,
   .player-block:last-of-type {
-    border-radius: 0 0 var(--r-md) var(--r-md); margin-bottom: 8px;
-    border-bottom: 1px solid var(--border);
+    border-radius: 14px; margin-bottom: 10px; border-top: 1px solid var(--border-paper);
+    border-bottom: 1px solid var(--border-paper);
   }
   .player-block .player-row {
-    border-left: none; border-right: none; border-bottom: none; border-radius: 0;
-    margin-bottom: 0;
+    border: none; border-radius: 0; margin-bottom: 0;
+    background: transparent; min-height: 56px;
   }
   .player-block .player-row:first-of-type,
-  .player-block .player-row:last-of-type { border-radius: 0; margin-bottom: 0; border-top: none; }
+  .player-block .player-row:last-of-type { border-radius: 0; margin-bottom: 0; border: none; }
   .player-ball-row {
     padding: 0 14px 12px; display: block;
+  }
+  .player-ball-row .field-label,
+  .field-label {
+    display: block; font-size: 11px; font-weight: 600;
+    color: var(--ink-secondary); margin: 0 0 6px;
   }
   .player-ball-row input,
   .player-ball-input {
     display: block; width: 100%; box-sizing: border-box;
-    height: 40px; border-radius: 10px;
+    height: 44px; border-radius: 10px;
     border: 1px solid var(--separator); background: #fff;
-    padding: 0 12px; font: inherit; font-size: 14px; color: var(--ink);
+    padding: 0 12px; font: inherit; font-size: 15px; color: var(--ink);
   }
+  .player-block-footer { padding: 0 14px 14px; }
+  .player-block .name-input {
+    flex: 1; min-width: 0; height: 40px; border: none; background: transparent;
+    font: inherit; font-size: 15px; font-weight: 600; color: var(--ink);
+    padding: 0; outline: none;
+  }
+  .setup-section-label {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.04em;
+    text-transform: uppercase; color: var(--ink-secondary);
+    margin: 20px 0 8px;
+  }
+  .setup-guest { margin-top: 0; }
   .player-row:first-of-type { border-radius: var(--r-md) var(--r-md) 0 0; border-top: 1px solid var(--border); }
   .player-row:last-of-type { border-radius: 0 0 var(--r-md) var(--r-md); margin-bottom: 8px; }
   .avatar {
@@ -956,20 +975,21 @@
   .leg-circle { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid #1B7A3E; box-sizing: border-box; }
   .leg-square { width: 12px; height: 12px; border-radius: 2px; border: 1.5px solid #C0392B; box-sizing: border-box; }
 
-  .aj-section { margin-bottom: 16px; }
+  .aj-section { margin-bottom: 20px; }
   .aj-section h3 {
-    font-size: 13px; font-weight: 700; letter-spacing: 0.04em;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.06em;
     text-transform: uppercase; color: var(--ink-secondary); margin: 0 0 8px;
   }
   .aj-player {
     background: var(--bg-paper-elevated); border: 1px solid var(--border-paper);
-    border-radius: var(--r-lg); padding: 12px; margin-bottom: 10px;
+    border-radius: 14px; padding: 14px; margin-bottom: 10px;
   }
   .aj-player.wd { opacity: 0.55; }
-  .aj-row { display: flex; gap: 8px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
-  .aj-player input[type="text"], .aj-player input[type="number"],
-  .aj-add input[type="text"], .aj-add input[type="number"],
-  .aj-section .aj-row input[type="text"], .aj-section .aj-row input[type="number"] {
+  .aj-row {
+    display: flex; gap: 8px; align-items: center; margin-top: 6px; width: 100%;
+  }
+  .aj-player input[type="text"],
+  .aj-player input[type="number"] {
     flex: 1; min-width: 0; width: 100%; box-sizing: border-box;
     height: 44px; border-radius: 10px;
     border: 1px solid var(--border-paper); background: #fff;
@@ -977,45 +997,25 @@
   }
   .aj-label {
     font-size: 11px; color: var(--ink-secondary); width: 100%;
-    margin: 8px 0 0; font-weight: 600;
+    margin: 12px 0 0; font-weight: 600;
   }
-  .aj-player .aj-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .aj-player .aj-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
   .aj-player .aj-actions .btn { flex: 1; min-width: 120px; height: 40px; font-size: 13px; }
-  .aj-add {
-    background: var(--bg-paper-elevated); border: 1px solid var(--border-paper);
-    border-radius: var(--r-lg); padding: 12px; margin-bottom: 10px;
-  }
-  .aj-add .aj-row { flex-direction: column; align-items: stretch; }
-  .aj-add .aj-hcp-row {
-    display: flex; gap: 8px; align-items: center; width: 100%;
-  }
-  .aj-add .aj-hcp-row input { flex: 1; }
+  .aj-add { /* same card language as .aj-player */ }
   .ball-chip {
     display: inline-flex; align-items: center; gap: 4px;
     font-size: 11px; font-weight: 600; color: var(--ink-secondary);
     margin-top: 2px; background: none; border: none; padding: 0;
-    font-family: inherit; cursor: pointer; text-align: left;
+    font-family: inherit; text-align: left; cursor: default;
   }
   .ball-chip::before { content: "●"; font-size: 8px; color: var(--brand-brass); }
-  .ball-chip.empty { color: var(--tint); text-decoration: underline; text-underline-offset: 2px; }
-  .ball-chip.empty::before { content: "+"; font-size: 11px; font-weight: 700; color: var(--tint); }
   .topnav-action {
-    flex-shrink: 0; height: 34px; padding: 0 10px; border-radius: 8px;
+    flex-shrink: 0; height: 34px; padding: 0 12px; border-radius: 10px;
     border: none; background: rgba(52,199,89,0.16); color: var(--tint);
     font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer;
     white-space: nowrap;
   }
   .topnav-action:active { opacity: 0.8; }
-  .hole-ajustes-link {
-    display: flex; align-items: center; justify-content: space-between; gap: 8px;
-    margin: 0 var(--pad-x) 8px; padding: 10px 12px;
-    border-radius: 12px; background: rgba(52,199,89,0.12);
-    border: none; width: calc(100% - 2 * var(--pad-x));
-    font-family: inherit; color: var(--ink); cursor: pointer; text-align: left;
-  }
-  .hole-ajustes-link .t { font-size: 14px; font-weight: 700; color: var(--tint); }
-  .hole-ajustes-link .d { font-size: 12px; color: var(--ink-secondary); margin-top: 1px; }
-  .hole-ajustes-link .chev { color: var(--tint); font-weight: 700; }
 
   .lb-tabs { display: flex; gap: 4px; padding: 0 var(--pad-x) 8px; }
   .lb-tab {
@@ -1287,8 +1287,8 @@
   .mod-chip-card .sub { font-size: 11px; font-weight: 500; color: var(--text-2); opacity: 0.9; }
   .mod-chip-card.selected .sub { color: inherit; opacity: 0.75; }
   .write-mode {
-    display: flex; flex-direction: column; gap: 0; border: 1px solid var(--border);
-    border-radius: var(--r-md); overflow: hidden; margin-top: 16px;
+    display: flex; flex-direction: column; gap: 0; border: 1px solid var(--border-paper);
+    border-radius: 14px; overflow: hidden; margin-top: 0;
     position: relative; z-index: 1; background: var(--bg-paper-elevated);
   }
   .lb-tabs { flex-wrap: wrap; }
@@ -1317,12 +1317,15 @@
 
 
 
-  .saved-roster { margin: 12px 0 8px; }
-  .saved-roster .sr-title { font-size: 13px; color: rgba(60,60,67,.6); margin-bottom: 8px; }
+  .saved-roster { margin: 16px 0 4px; }
+  .saved-roster .sr-title {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.04em;
+    text-transform: uppercase; color: var(--ink-secondary); margin-bottom: 8px;
+  }
   .saved-roster .sr-row {
     display: flex; align-items: center; gap: 8px; padding: 10px 12px;
-    background: #fff; border-radius: 10px; margin-bottom: 8px;
-    border: .5px solid rgba(60,60,67,.12);
+    background: var(--bg-paper-elevated); border-radius: 12px; margin-bottom: 8px;
+    border: 1px solid var(--border-paper);
   }
   .saved-roster .sr-row .name { flex: 1; font-weight: 600; font-size: 15px; }
   .saved-roster .sr-row .hcp { font-variant-numeric: tabular-nums; color: rgba(60,60,67,.6); font-size: 13px; }
@@ -1701,7 +1704,7 @@
                 <span class="badge badge-tier">tier: score</span>
               </div>
               <button class="btn btn-ghost" data-continue-hole onclick="go('hole')">Continuar · Hoyo 1</button>
-              <button class="btn btn-primary" data-round-ajustes onclick="go('ajustes')" style="display:none">Editar jugadores · bola · modos</button>
+              <button class="btn btn-ghost" data-round-ajustes onclick="go('ajustes')" style="display:none">Ajustes</button>
               <button class="btn btn-ghost" data-finish-round onclick="finishRoundEarly()" style="display:none">Cerrar ronda</button>
               <div class="stat-row">
                 <div class="stat-pill"><div class="v" id="homeToPar">—</div><div class="l">Al par</div></div>
@@ -1781,19 +1784,9 @@
             </button>
             <span class="micro" style="display:none;" id="holeJumpHint"></span>
             <button type="button" class="hole-foto-link" id="holeFotoLink" hidden onclick="setHoleTab('foto')">Mapa</button>
-            <button type="button" class="hole-jump-btn" onclick="go('ajustes')" style="margin-left:auto;">
-              Jugadores <span class="chev">›</span>
-            </button>
           </div>
           <div class="progress-holes" id="holeProgress" aria-hidden="true"></div>
         </div>
-        <button type="button" class="hole-ajustes-link" onclick="go('ajustes')">
-          <span>
-            <div class="t">Editar jugadores · bola · modos</div>
-            <div class="d">Nombre, hándicap, retirar o añadir modo</div>
-          </span>
-          <span class="chev" aria-hidden="true">›</span>
-        </button>
         <div class="club-calls" id="holeClubCalls" hidden style="margin:0 16px 6px;justify-content:flex-end;">
           <a id="holeCallCaddie" href="tel:+34918905111"><span class="call-mark" aria-hidden="true"></span>Caddie master</a>
           <a id="holeCallRest" href="tel:+34918905630"><span class="call-mark" aria-hidden="true"></span>Restaurante</a>
@@ -2916,10 +2909,10 @@ function renderSavedRoster() {
   const activeNames = new Set(PLAYERS.map(p => p.name.toLowerCase()));
   const list = loadRoster().filter(x => !activeNames.has(x.name.toLowerCase()));
   if (!list.length) {
-    el.innerHTML = `<div class="sr-title">Guardados</div><p class="micro">Aún no hay jugadores guardados. Al añadir un invitado se guarda solo en este iPhone.</p>`;
+    el.innerHTML = `<div class="sr-title">Guardados</div><p class="micro">Los invitados que añadas se guardan en este iPhone.</p>`;
     return;
   }
-  el.innerHTML = `<div class="sr-title">Guardados en este iPhone</div>` + list.map(x => `
+  el.innerHTML = `<div class="sr-title">Guardados</div>` + list.map(x => `
     <div class="sr-row">
       <div class="name">${x.name}</div>
       <div class="hcp">HCP ${fmtHcp(x.hcp)}</div>
@@ -3086,8 +3079,7 @@ function renderSetup() {
     </div>`;
   } else if (step === 3) {
     html = `<p class="muted mb-8">Quién juega hoy</p>
-      <p class="micro mb-8">Puedes cambiar nombre, HI y bola también durante la partida en <b>Ajustes</b>.</p>
-      <p class="micro mb-16">Misma tarjeta · captura A o B · HI en pasos de 0,1</p>` +
+      <p class="micro mb-16">Incluye jugadores, HI y bola. También puedes editarlo después en Ajustes.</p>` +
       PLAYERS.map((p, i) => `
         <div class="player-block">
           <div class="player-row">
@@ -3105,12 +3097,14 @@ function renderSetup() {
             <button class="toggle ${state.setup.players[i]?"on":""}" aria-label="Incluir" onclick="state.setup.players[${i}]=!state.setup.players[${i}];renderSetup()"></button>
           </div>
           <div class="player-ball-row">
-            <input class="player-ball-input" type="text" placeholder="Bola · marca · nº · color" maxlength="48"
+            <label class="field-label">Bola</label>
+            <input class="player-ball-input" type="text" placeholder="Marca · nº · color" maxlength="48"
               value="${(p.ball||"").replace(/"/g,"&quot;")}"
               onchange="setPlayerBall(${i}, this.value)" onblur="setPlayerBall(${i}, this.value)" />
           </div>
         </div>`).join("") +
-      `<div class="write-mode mt-16">
+      `<div class="setup-section-label">Cómo se anota</div>
+      <div class="write-mode">
         <button class="option ${state.setup.writeMode==='single_device'?'selected':''}" type="button" onclick="state.setup.writeMode='single_device';renderSetup()">
           <span class="radio"></span>
           <span class="body"><span class="t">Un iPhone</span><span class="d">Un móvil anota todos los asientos</span></span>
@@ -3121,27 +3115,29 @@ function renderSetup() {
         </button>
       </div>
       <div class="saved-roster" id="savedRoster"></div>
-      <div class="guest-add">
-        <div class="ga-title">Añadir invitado</div>
-        <p class="micro">Sin app · nombre, hándicap y bola</p>
-        <div class="ga-row">
-          <div class="ga-row-name">
-            <input id="guestNameInput" type="text" placeholder="Nombre" maxlength="24" autocomplete="off" />
-            <div class="ga-hcp" aria-label="Hándicap invitado">
-              <button type="button" onclick="adjGuestDraftHcp(-0.1)">−</button>
-              <input class="val hcp-input" id="guestHcpVal" type="text" inputmode="decimal" enterkeyhint="done"
-                value="${fmtHcp(state.guestDraftHcp)}"
-                onchange="setGuestDraftHcp(this.value)"
-                onblur="setGuestDraftHcp(this.value)"
-                onclick="this.select()" />
-              <button type="button" onclick="adjGuestDraftHcp(0.1)">+</button>
-            </div>
+      <div class="setup-section-label">Añadir invitado</div>
+      <div class="player-block setup-guest">
+        <div class="player-row">
+          <div class="avatar">+</div>
+          <input id="guestNameInput" class="name-input" type="text" placeholder="Nombre" maxlength="24" autocomplete="off" />
+          <div class="hcp-step" aria-label="Hándicap invitado">
+            <button type="button" onclick="adjGuestDraftHcp(-0.1)">−</button>
+            <input class="val hcp-input" id="guestHcpVal" type="text" inputmode="decimal" enterkeyhint="done"
+              value="${fmtHcp(state.guestDraftHcp)}"
+              onchange="setGuestDraftHcp(this.value)"
+              onblur="setGuestDraftHcp(this.value)"
+              onclick="this.select()" />
+            <button type="button" onclick="adjGuestDraftHcp(0.1)">+</button>
           </div>
-          <input id="guestBallInput" class="ga-ball" type="text" placeholder="Bola · ej. Titleist Pro V1 · 3 · rojo" maxlength="48" autocomplete="off" />
         </div>
-        <button class="btn btn-primary mt-12" type="button" onclick="addGuestPlayer()" style="width:100%;">Añadir a la partida</button>
-      </div>
-      <button class="btn btn-ghost mt-16" onclick="go('lobby')">Abrir lobby · código H3RR4Y</button>`;
+        <div class="player-ball-row">
+          <label class="field-label">Bola</label>
+          <input id="guestBallInput" class="player-ball-input" type="text" placeholder="Marca · nº · color" maxlength="48" autocomplete="off" />
+        </div>
+        <div class="player-block-footer">
+          <button class="btn btn-primary" type="button" onclick="addGuestPlayer()" style="width:100%;">Añadir a la partida</button>
+        </div>
+      </div>`;
   } else if (step === 4) {
     html = `<p class="muted mb-8">Modalidades y challenges.</p>
       <p class="micro mb-8">Formatos oficiales</p>
@@ -4000,19 +3996,17 @@ function renderHole(opts) {
     const scoreOnChip = hasScore && scoreChips.includes(score);
     const ballRaw = (p.ball || "").trim();
     const ballLine = ballRaw
-      ? `<button type="button" class="ball-chip" onclick="event.stopPropagation();go('ajustes')">${ballRaw.replace(/</g, "&lt;")}</button>`
-      : `<button type="button" class="ball-chip empty" onclick="event.stopPropagation();go('ajustes')">Añadir bola</button>`;
+      ? `<div class="ball-chip">${ballRaw.replace(/</g, "&lt;")}</div>`
+      : "";
     return `
       <div class="player-card ${active} ${flash}" data-idx="${idx}" onclick="selectPlayer(${idx})">
         <div class="pc-head">
           <div class="avatar ${p.avatar||""}">${p.initials}${done?`<span class="done-check"></span>`:""}</div>
           <div class="pc-id">
-            <div class="name">${p.name}${strokeHint}</div>
+            <div class="name">${p.name || "Jugador"}${strokeHint}</div>
             <div class="micro">${subLine}</div>
             ${ballLine}
           </div>
-          <button type="button" class="btn btn-ghost btn-sm" style="width:auto;height:32px;padding:0 10px;font-size:12px;"
-            onclick="event.stopPropagation();go('ajustes')">Editar</button>
         </div>
         <div class="entry-section golpes" onclick="event.stopPropagation()">
           <div class="entry-label">Golpes</div>
@@ -6239,20 +6233,26 @@ function renderAjustes() {
       <h3>Jugadores</h3>
       <p class="micro mb-8">Cambia nombre, HI, bola o retira a alguien sin crear una partida nueva.</p>
       ${playersHtml}
-      <div class="aj-add">
-        <div class="aj-label" style="margin-top:0;">Añadir jugador</div>
+      <div class="aj-player aj-add">
+        <div class="row" style="justify-content:space-between;align-items:center;">
+          <div><strong>Nuevo jugador</strong></div>
+          <span class="micro">Invitado</span>
+        </div>
+        <div class="aj-label">Nombre</div>
         <div class="aj-row">
           <input type="text" id="ajGuestName" placeholder="Nombre" maxlength="24" />
-          <div class="aj-label">Handicap Index</div>
-          <div class="aj-hcp-row">
-            <button type="button" class="btn btn-ghost" style="width:44px;height:44px;padding:0;flex:0 0 44px;" onclick="(function(){var el=document.getElementById('ajGuestHcp');if(!el)return;el.value=(Math.max(0,Math.min(54,(Number(String(el.value).replace(',','.'))||18)-0.1))).toFixed(1);})()">−</button>
-            <input type="number" id="ajGuestHcp" step="0.1" min="0" max="54" value="18.0" title="HI" />
-            <button type="button" class="btn btn-ghost" style="width:44px;height:44px;padding:0;flex:0 0 44px;" onclick="(function(){var el=document.getElementById('ajGuestHcp');if(!el)return;el.value=(Math.max(0,Math.min(54,(Number(String(el.value).replace(',','.'))||18)+0.1))).toFixed(1);})()">+</button>
-          </div>
-          <div class="aj-label">Bola (opcional)</div>
-          <input type="text" id="ajGuestBall" placeholder="Marca · nº · color" maxlength="48" />
         </div>
-        <button type="button" class="btn btn-primary mt-8" style="width:100%;" onclick="ajAddPlayer()">Añadir a la partida</button>
+        <div class="aj-label">Handicap Index</div>
+        <div class="aj-row">
+          <button type="button" class="btn btn-ghost" style="width:44px;height:44px;padding:0;flex:0 0 44px;" onclick="ajDraftHcp(-0.1)">−</button>
+          <input type="number" id="ajGuestHcp" step="0.1" min="0" max="54" value="18.0" title="HI" />
+          <button type="button" class="btn btn-ghost" style="width:44px;height:44px;padding:0;flex:0 0 44px;" onclick="ajDraftHcp(0.1)">+</button>
+        </div>
+        <div class="aj-label">Bola (marca · nº · color)</div>
+        <div class="aj-row">
+          <input type="text" id="ajGuestBall" placeholder="Ej. Titleist Pro V1 · 3 · rojo" maxlength="48" />
+        </div>
+        <button type="button" class="btn btn-primary mt-12" style="width:100%;" onclick="ajAddPlayer()">Añadir a la partida</button>
       </div>
     </div>
     <div class="aj-section">
@@ -6270,6 +6270,14 @@ function renderAjustes() {
            <button type="button" class="btn btn-ghost" style="width:100%;" onclick="persistActiveRound();showToast('Progreso guardado');">Guardar ahora</button>`}
       <button type="button" class="btn btn-ghost mt-8" style="width:100%;" onclick="finishRoundEarly()">Cerrar ronda</button>
     </div>`;
+}
+
+function ajDraftHcp(delta) {
+  const el = document.getElementById("ajGuestHcp");
+  if (!el) return;
+  const cur = Number(String(el.value).replace(",", "."));
+  const n = clampHcp((Number.isFinite(cur) ? cur : 18) + delta);
+  el.value = fmtHcp(n);
 }
 
 function ajPersist() {
