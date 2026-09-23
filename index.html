@@ -177,11 +177,23 @@
     display: flex; align-items: center; justify-content: flex-end;
     min-height: 36px; margin-bottom: 2px;
   }
-  #screen-home .greeting-sub.as-link {
+  #screen-home .greeting-sub {
     display: block; width: 100%;
-    color: var(--tint); font-weight: 600; cursor: pointer;
-    background: none; border: none; padding: 0; font-family: inherit;
-    font-size: 15px; letter-spacing: -0.24px; margin-bottom: 16px; text-align: left;
+    margin: 0 0 16px; padding: 0;
+    border: none; background: transparent;
+    font-family: inherit; font-size: 15px; font-weight: 400;
+    letter-spacing: -0.24px; line-height: 1.3;
+    color: var(--ink-secondary); text-align: left;
+    cursor: default; pointer-events: none;
+    -webkit-appearance: none; appearance: none;
+    box-shadow: none; outline: none;
+  }
+  #screen-home .greeting-sub.as-link {
+    color: var(--tint); font-weight: 600;
+    cursor: pointer; pointer-events: auto;
+  }
+  #screen-home .greeting-sub.as-link:active {
+    opacity: 0.75;
   }
   #screen-home > .tabbar {
     position: relative;
@@ -213,30 +225,54 @@
     flex-shrink: 0;
   }
 
-  /* Tarjeta: scroll de página completa — la tabla no se aplasta a 0 */
+  /* Tarjeta: columna con scroll — sin solapes ni tabla aplastada */
   #screen-scorecard .fit {
+    display: block;
     overflow-x: hidden;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain;
-    padding-bottom: 20px;
+    padding-bottom: 28px;
   }
-  #screen-scorecard .fit > .card {
-    flex: 0 0 auto;
-    min-height: 220px;
+  #screen-scorecard .fit > * {
+    position: relative;
+    z-index: 0;
+  }
+  #screen-scorecard .sc-score-card {
+    display: block;
+    padding: 8px 10px;
+    margin: 0;
+    overflow: visible;
   }
   #screen-scorecard .sc-table-wrap {
+    display: block;
+    width: 100%;
     overflow-x: auto;
     overflow-y: visible;
-    flex: none;
-    min-height: 180px;
     -webkit-overflow-scrolling: touch;
+    min-height: 0;
+    flex: none;
   }
-  #screen-scorecard .sc-legend,
-  #screen-scorecard .stat-row,
-  #screen-scorecard .totals-entry,
+  #screen-scorecard .sc-legend {
+    margin-top: 8px;
+  }
+  #screen-scorecard .stat-row {
+    margin-top: 10px;
+  }
+  #screen-scorecard .totals-entry {
+    position: relative;
+    z-index: 1;
+    margin-top: 14px;
+    background: var(--bg-paper-elevated);
+    border: 1px solid var(--border-paper);
+    box-shadow: none;
+  }
   #screen-scorecard #scWhatsApp {
-    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    margin-top: 12px;
+    margin-bottom: 8px;
   }
 
   /* Clasificación: lista con scroll propio */
@@ -397,6 +433,26 @@
     width: 28px; height: 28px; display: inline-flex;
     align-items: center; justify-content: center;
     border-radius: 8px; background: rgba(52,199,89,0.12);
+  }
+  .quick-tile .ico.ico-user {
+    font-size: 0;
+    flex-direction: column;
+    gap: 1px;
+  }
+  .quick-tile .ico.ico-user::before {
+    content: "";
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    border: 1.75px solid currentColor;
+    box-sizing: border-box;
+  }
+  .quick-tile .ico.ico-user::after {
+    content: "";
+    width: 15px; height: 7px;
+    border: 1.75px solid currentColor;
+    border-bottom: 0;
+    border-radius: 8px 8px 0 0;
+    box-sizing: border-box;
   }
   .tab.active { font-weight: 600; }
 
@@ -1056,6 +1112,12 @@
   .sc-nine-tabs { display: flex; gap: 8px; padding: 0; flex-shrink: 0; }
   .sc-nine-tabs .chip { flex: 1; justify-content: center; height: 36px; }
   .sc-table-wrap { overflow: hidden; margin: 0; flex: 1; min-height: 0; }
+  #screen-scorecard .sc-table-wrap {
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    flex: none !important;
+    min-height: 0 !important;
+  }
   table.scorecard { width: 100%; border-collapse: collapse; font-size: 15px; font-variant-numeric: tabular-nums; }
   table.scorecard th, table.scorecard td {
     padding: 0 4px; height: 32px; text-align: center;
@@ -1825,7 +1887,7 @@
               <button type="button" class="topnav-action" onclick="go('perfil')" aria-label="Perfil">Perfil</button>
             </div>
             <div class="greeting">Buenos días</div>
-            <button type="button" class="greeting-sub as-link" id="homeGreetingSub" onclick="go('perfil')">Pon tu nombre y HCP en Perfil</button>
+            <p class="greeting-sub" id="homeGreetingSub">Pon tu nombre y HCP en Perfil</p>
             <button class="btn btn-primary mb-8" onclick="setupStart()">Nueva partida</button>
             <div class="round-card">
               <div class="eyebrow">Ronda en curso</div>
@@ -1849,7 +1911,7 @@
             <button class="quick-tile" onclick="go('scorecard')"><div class="ico" aria-hidden="true">▦</div><div class="t">Tarjeta</div><div class="d">Bruta · Neta</div></button>
             <button class="quick-tile" onclick="go('leader')"><div class="ico" aria-hidden="true">◆</div><div class="t">Clasif.</div><div class="d">Stroke · Social</div></button>
             <button class="quick-tile" onclick="go('historial')"><div class="ico" aria-hidden="true">◎</div><div class="t">Vueltas</div><div class="d">Ver · editar</div></button>
-            <button class="quick-tile" onclick="go('perfil')"><div class="ico" aria-hidden="true">☺</div><div class="t">Perfil</div><div class="d">Nombre · HCP</div></button>
+            <button class="quick-tile" onclick="go('perfil')"><div class="ico ico-user" aria-hidden="true"></div><div class="t">Perfil</div><div class="d">Nombre · HCP</div></button>
           </div>
         </div>
         <nav class="tabbar" aria-label="Navegación principal">
@@ -2005,7 +2067,7 @@
             <button type="button" class="chip selected" data-nine="out" onclick="setScNine('out')">F9 · Ida</button>
             <button type="button" class="chip" data-nine="in" onclick="setScNine('in')">B9 · Vuelta</button>
           </div>
-          <div class="card" style="flex:1;min-height:0;display:flex;flex-direction:column;padding:8px 10px;">
+          <div class="card sc-score-card">
             <div class="sc-table-wrap">
               <table class="scorecard" id="scoreTable">
                 <thead>
@@ -2020,11 +2082,13 @@
               <span><i class="leg" style="display:inline-block;outline:1.5px solid rgba(139,58,47,0.55);border-radius:4px;"></i> Bogey+</span>
             </div>
           </div>
-          <div class="stat-row" style="flex-shrink:0;margin-top:0;">
+          <div class="stat-row" style="margin-top:0;">
             <div class="stat-pill"><div class="v" id="scOut">—</div><div class="l">Out</div></div>
             <div class="stat-pill"><div class="v" id="scIn">—</div><div class="l">In</div></div>
             <div class="stat-pill"><div class="v" id="scToPar">—</div><div class="l">Al par</div></div>
           </div>
+          <div class="totals-entry" id="scTotalsEntry"></div>
+          <button type="button" class="btn btn-ghost" id="scWhatsApp" onclick="shareScorecardWhatsApp()">Compartir tarjeta</button>
         </div>
         <nav class="tabbar">
           <button class="tab" onclick="go('home')"><span class="ico">⌂</span>Inicio</button>
@@ -2678,11 +2742,12 @@ function updateHomeGreeting() {
     if (first) {
       sub.textContent = "¿Listo para el campo?";
       sub.classList.remove("as-link");
+      sub.removeAttribute("role");
       sub.onclick = null;
-      if (sub.tagName === "BUTTON") sub.removeAttribute("onclick");
     } else {
       sub.textContent = "Pon tu nombre y HCP en Perfil";
       sub.classList.add("as-link");
+      sub.setAttribute("role", "button");
       sub.onclick = function () { go("perfil"); };
     }
   }
@@ -4737,16 +4802,8 @@ function renderScorecard() {
   }
 
   let wa = document.getElementById("scWhatsApp");
-  if (!wa) {
-    wa = document.createElement("button");
-    wa.id = "scWhatsApp";
-    wa.type = "button";
-    wa.className = "btn btn-ghost";
-    wa.style.cssText = "width:100%;margin-top:12px;";
-    wa.textContent = "Compartir tarjeta";
+  if (wa) {
     wa.onclick = shareScorecardWhatsApp;
-    const fit = document.querySelector("#screen-scorecard .fit");
-    if (fit) fit.appendChild(wa);
   }
 
   const me = list[0] || PLAYERS[0];
@@ -4869,17 +4926,8 @@ function setPlayerTotalsPutts(pi, raw) {
 }
 
 function renderTotalsEntry() {
-  let box = document.getElementById("scTotalsEntry");
-  const fit = document.querySelector("#screen-scorecard .fit");
-  if (!fit) return;
-  if (!box) {
-    box = document.createElement("div");
-    box.id = "scTotalsEntry";
-    box.className = "totals-entry";
-    const wa = document.getElementById("scWhatsApp");
-    if (wa && wa.parentNode === fit) fit.insertBefore(box, wa);
-    else fit.appendChild(box);
-  }
+  const box = document.getElementById("scTotalsEntry");
+  if (!box) return;
   const list = activePlayers();
   const rows = list.map((p, pi) => {
     const marked = playerHasMarkedHoles(p);
