@@ -468,12 +468,64 @@
     background: var(--surface); border-bottom: 1px solid var(--border);
     border-left: 1px solid var(--border); border-right: 1px solid var(--border); margin-bottom: 0;
   }
+  .player-list {
+    border: 1px solid var(--border-paper);
+    border-radius: 14px;
+    background: var(--bg-paper-elevated);
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+  .plist-item {
+    padding: 12px 14px 12px;
+    border-bottom: 0.5px solid var(--separator);
+  }
+  .plist-item:last-child { border-bottom: none; }
+  .plist-main {
+    display: flex; align-items: center; gap: 12px; min-height: 40px;
+  }
+  .plist-main .name { flex: 1; min-width: 0; font-weight: 600; font-size: 15px; }
+  .plist-main .name-input {
+    flex: 1; min-width: 0; height: 40px; border: none; background: transparent;
+    font: inherit; font-size: 15px; font-weight: 600; color: var(--ink);
+    padding: 0; outline: none;
+  }
+  .plist-ball {
+    display: flex; align-items: center; gap: 8px;
+    margin-top: 10px;
+  }
+  .plist-ball .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--brand-brass); flex-shrink: 0;
+  }
+  .plist-ball input {
+    flex: 1; min-width: 0; height: 40px; box-sizing: border-box;
+    border-radius: 10px; border: 1px solid var(--separator);
+    background: #fff; padding: 0 12px;
+    font: inherit; font-size: 14px; color: var(--ink);
+  }
+  .plist-footer { padding: 12px 14px 14px; }
+  .setup-disclosure {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    width: 100%; margin: 4px 0 12px; padding: 12px 14px;
+    border-radius: 12px; border: 1px solid var(--border-paper);
+    background: var(--bg-paper-elevated); color: var(--ink);
+    font-family: inherit; text-align: left; cursor: pointer;
+  }
+  .setup-disclosure .t { font-size: 14px; font-weight: 600; }
+  .setup-disclosure .d { font-size: 12px; color: var(--ink-secondary); margin-top: 2px; }
+  .setup-disclosure .chev {
+    color: var(--ink-secondary); font-size: 12px; flex-shrink: 0;
+    transition: transform 0.15s ease;
+  }
+  .setup-disclosure.open .chev { transform: rotate(180deg); }
+  .setup-disclosure-body { margin: -4px 0 12px; }
+  .setup-disclosure-body[hidden] { display: none !important; }
   .player-block {
     border: 1px solid var(--border-paper);
     border-radius: 14px;
     background: var(--bg-paper-elevated);
     margin-bottom: 10px;
-    overflow: hidden;
+    overflow: visible;
   }
   .player-block:first-of-type,
   .player-block:last-of-type {
@@ -510,7 +562,7 @@
   .setup-section-label {
     font-size: 12px; font-weight: 700; letter-spacing: 0.04em;
     text-transform: uppercase; color: var(--ink-secondary);
-    margin: 20px 0 8px;
+    margin: 16px 0 8px;
   }
   .setup-guest { margin-top: 0; }
   .player-row:first-of-type { border-radius: var(--r-md) var(--r-md) 0 0; border-top: 1px solid var(--border); }
@@ -1736,7 +1788,7 @@
           <div class="title" id="setupTitle">Campo</div>
         </div>
         <div class="steps" id="setupSteps"></div>
-        <div class="fit-body" id="setupBody" style="padding:0 var(--pad-x) 8px;overflow:hidden;"></div>
+        <div class="fit-body" id="setupBody" style="padding:0 var(--pad-x) 8px;overflow-y:auto;-webkit-overflow-scrolling:touch;"></div>
         <div class="setup-footer">
           <button class="btn btn-ghost" id="setupPrev" onclick="setupBack()">Anterior</button>
           <button class="btn btn-primary" id="setupNext" onclick="setupNext()">Siguiente</button>
@@ -2068,6 +2120,7 @@ let state = {
     players: [true],
     modalities: ["Stableford", "Putting King", "Rey del Hoyo", "Birdie Hunt"],
     writeMode: "single_device",
+    writeModeOpen: false,
     creative: {
       rulesText: "",
       actions: [
@@ -3028,7 +3081,13 @@ function setupStart() {
   clearActiveRound();
   try { localStorage.removeItem(ACTIVE_KEY); } catch (e) {}
   state.setupStep = 0;
+  state.setup.writeModeOpen = false;
   go("setup");
+}
+
+function toggleSetupWriteMode() {
+  state.setup.writeModeOpen = !state.setup.writeModeOpen;
+  renderSetup();
 }
 
 function renderSetup() {
@@ -3078,11 +3137,14 @@ function renderSetup() {
       <button class="chip ${state.setup.holes===18?"selected":""}" onclick="state.setup.holes=18;renderSetup()">18 hoyos</button>
     </div>`;
   } else if (step === 3) {
+    const wmOpen = !!state.setup.writeModeOpen;
+    const wmLabel = state.setup.writeMode === "multi_device" ? "Cada uno" : "Un iPhone";
     html = `<p class="muted mb-8">Quién juega hoy</p>
-      <p class="micro mb-16">Incluye jugadores, HI y bola. También puedes editarlo después en Ajustes.</p>` +
+      <p class="micro mb-12">Nombre, HI y bola. Puedes editarlo después en Ajustes.</p>
+      <div class="player-list">` +
       PLAYERS.map((p, i) => `
-        <div class="player-block">
-          <div class="player-row">
+        <div class="plist-item">
+          <div class="plist-main">
             <div class="avatar ${p.avatar||""}">${p.initials}</div>
             <div class="name">${p.name || "Jugador"}</div>
             <div class="hcp-step" aria-label="Hándicap">
@@ -3096,48 +3158,59 @@ function renderSetup() {
             </div>
             <button class="toggle ${state.setup.players[i]?"on":""}" aria-label="Incluir" onclick="state.setup.players[${i}]=!state.setup.players[${i}];renderSetup()"></button>
           </div>
-          <div class="player-ball-row">
-            <label class="field-label">Bola</label>
-            <input class="player-ball-input" type="text" placeholder="Marca · nº · color" maxlength="48"
+          <div class="plist-ball">
+            <span class="dot" aria-hidden="true"></span>
+            <input type="text" placeholder="Bola · marca · nº · color" maxlength="48"
               value="${(p.ball||"").replace(/"/g,"&quot;")}"
               onchange="setPlayerBall(${i}, this.value)" onblur="setPlayerBall(${i}, this.value)" />
           </div>
-        </div>`).join("") +
-      `<div class="setup-section-label">Cómo se anota</div>
-      <div class="write-mode">
-        <button class="option ${state.setup.writeMode==='single_device'?'selected':''}" type="button" onclick="state.setup.writeMode='single_device';renderSetup()">
-          <span class="radio"></span>
-          <span class="body"><span class="t">Un iPhone</span><span class="d">Un móvil anota todos los asientos</span></span>
-        </button>
-        <button class="option ${state.setup.writeMode==='multi_device'?'selected':''}" type="button" onclick="state.setup.writeMode='multi_device';renderSetup()">
-          <span class="radio"></span>
-          <span class="body"><span class="t">Cada uno</span><span class="d">Cada jugador escribe solo su fila</span></span>
-        </button>
+        </div>`).join("") + `
       </div>
-      <div class="saved-roster" id="savedRoster"></div>
-      <div class="setup-section-label">Añadir invitado</div>
-      <div class="player-block setup-guest">
-        <div class="player-row">
-          <div class="avatar">+</div>
-          <input id="guestNameInput" class="name-input" type="text" placeholder="Nombre" maxlength="24" autocomplete="off" />
-          <div class="hcp-step" aria-label="Hándicap invitado">
-            <button type="button" onclick="adjGuestDraftHcp(-0.1)">−</button>
-            <input class="val hcp-input" id="guestHcpVal" type="text" inputmode="decimal" enterkeyhint="done"
-              value="${fmtHcp(state.guestDraftHcp)}"
-              onchange="setGuestDraftHcp(this.value)"
-              onblur="setGuestDraftHcp(this.value)"
-              onclick="this.select()" />
-            <button type="button" onclick="adjGuestDraftHcp(0.1)">+</button>
+      <div class="setup-section-label" style="margin-top:8px;">Añadir invitado</div>
+      <div class="player-list">
+        <div class="plist-item">
+          <div class="plist-main">
+            <div class="avatar">+</div>
+            <input id="guestNameInput" class="name-input" type="text" placeholder="Nombre" maxlength="24" autocomplete="off" />
+            <div class="hcp-step" aria-label="Hándicap invitado">
+              <button type="button" onclick="adjGuestDraftHcp(-0.1)">−</button>
+              <input class="val hcp-input" id="guestHcpVal" type="text" inputmode="decimal" enterkeyhint="done"
+                value="${fmtHcp(state.guestDraftHcp)}"
+                onchange="setGuestDraftHcp(this.value)"
+                onblur="setGuestDraftHcp(this.value)"
+                onclick="this.select()" />
+              <button type="button" onclick="adjGuestDraftHcp(0.1)">+</button>
+            </div>
+          </div>
+          <div class="plist-ball">
+            <span class="dot" aria-hidden="true"></span>
+            <input id="guestBallInput" type="text" placeholder="Bola · marca · nº · color" maxlength="48" autocomplete="off" />
           </div>
         </div>
-        <div class="player-ball-row">
-          <label class="field-label">Bola</label>
-          <input id="guestBallInput" class="player-ball-input" type="text" placeholder="Marca · nº · color" maxlength="48" autocomplete="off" />
-        </div>
-        <div class="player-block-footer">
+        <div class="plist-footer">
           <button class="btn btn-primary" type="button" onclick="addGuestPlayer()" style="width:100%;">Añadir a la partida</button>
         </div>
-      </div>`;
+      </div>
+      <button type="button" class="setup-disclosure ${wmOpen ? "open" : ""}" onclick="toggleSetupWriteMode()">
+        <span>
+          <div class="t">Cómo se anota</div>
+          <div class="d">${wmLabel} · toca para cambiar</div>
+        </span>
+        <span class="chev" aria-hidden="true">▾</span>
+      </button>
+      <div class="setup-disclosure-body" ${wmOpen ? "" : "hidden"}>
+        <div class="write-mode">
+          <button class="option ${state.setup.writeMode==='single_device'?'selected':''}" type="button" onclick="state.setup.writeMode='single_device';renderSetup()">
+            <span class="radio"></span>
+            <span class="body"><span class="t">Un iPhone</span><span class="d">Un móvil anota todos los asientos</span></span>
+          </button>
+          <button class="option ${state.setup.writeMode==='multi_device'?'selected':''}" type="button" onclick="state.setup.writeMode='multi_device';renderSetup()">
+            <span class="radio"></span>
+            <span class="body"><span class="t">Cada uno</span><span class="d">Cada jugador escribe solo su fila</span></span>
+          </button>
+        </div>
+      </div>
+      <div class="saved-roster" id="savedRoster"></div>`;
   } else if (step === 4) {
     html = `<p class="muted mb-8">Modalidades y challenges.</p>
       <p class="micro mb-8">Formatos oficiales</p>
