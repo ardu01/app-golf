@@ -1,7 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="#F2F2F7"/>
-  <g transform="translate(256 268)" fill="#34C759">
-    <rect x="-10" y="-120" width="20" height="220" rx="10"/>
-    <path d="M10 -120 L10 -20 L130 -70 Z"/>
+  <rect width="512" height="512" fill="#FFFFFF"/>
+  <g transform="translate(256 270)">
+    <!-- soft glow -->
+    <path d="M-118 -150 L72 -150 L118 -104 L72 -58 L-48 -58 L-48 148 L-118 148 Z" fill="#143D23" opacity="0.22" transform="scale(1.08)"/>
+    <!-- green body -->
+    <path d="M-110 -142 L60 -142 L102 -100 L60 -58 L-42 -58 L-42 140 L-110 140 Z" fill="#143D23"/>
+    <!-- cream F pieces -->
+    <path d="M-92 -124 L48 -124 L78 -94 L48 -74 L-42 -74 L-42 -40 L-92 -40 Z" fill="#F5F2E8"/>
+    <path d="M-92 -24 L-42 -24 L-42 20 L22 20 L22 62 L-42 62 L-42 122 L-92 122 Z" fill="#F5F2E8"/>
   </g>
 </svg>
