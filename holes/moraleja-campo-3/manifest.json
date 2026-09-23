@@ -1,0 +1,97 @@
+{
+  "courseId": "moraleja-campo-3",
+  "source": "https://www.realclublamoraleja.com/deportes-instalaciones/golf/campo-3/",
+  "note": "Planos ilustrados oficiales del club (un dibujo por hoyo).",
+  "holes": [
+    {
+      "n": 1,
+      "name": "Hoyo 1",
+      "file": "01.webp"
+    },
+    {
+      "n": 2,
+      "name": "Hoyo 2",
+      "file": "02.webp"
+    },
+    {
+      "n": 3,
+      "name": "Hoyo 3",
+      "file": "03.webp"
+    },
+    {
+      "n": 4,
+      "name": "Hoyo 4",
+      "file": "04.webp"
+    },
+    {
+      "n": 5,
+      "name": "Hoyo 5",
+      "file": "05.webp"
+    },
+    {
+      "n": 6,
+      "name": "Hoyo 6",
+      "file": "06.webp"
+    },
+    {
+      "n": 7,
+      "name": "Hoyo 7",
+      "file": "07.webp"
+    },
+    {
+      "n": 8,
+      "name": "Hoyo 8",
+      "file": "08.webp"
+    },
+    {
+      "n": 9,
+      "name": "Hoyo 9",
+      "file": "09.webp"
+    },
+    {
+      "n": 10,
+      "name": "Hoyo 10",
+      "file": "10.webp"
+    },
+    {
+      "n": 11,
+      "name": "Hoyo 11",
+      "file": "11.webp"
+    },
+    {
+      "n": 12,
+      "name": "Hoyo 12",
+      "file": "12.webp"
+    },
+    {
+      "n": 13,
+      "name": "Hoyo 13",
+      "file": "13.webp"
+    },
+    {
+      "n": 14,
+      "name": "Hoyo 14",
+      "file": "14.webp"
+    },
+    {
+      "n": 15,
+      "name": "Hoyo 15",
+      "file": "15.webp"
+    },
+    {
+      "n": 16,
+      "name": "Hoyo 16",
+      "file": "16.webp"
+    },
+    {
+      "n": 17,
+      "name": "Hoyo 17",
+      "file": "17.webp"
+    },
+    {
+      "n": 18,
+      "name": "Hoyo 18",
+      "file": "18.webp"
+    }
+  ]
+}
