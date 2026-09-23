@@ -2186,15 +2186,10 @@
       <div class="sheet-backdrop" id="inviteSheet" onclick="if(event.target===this)closeInvite()">
         <div class="sheet" role="dialog" aria-label="Invitar al flight">
           <div class="grab"></div>
-          <h2>Invitar al flight</h2>
-          <p class="muted" style="font-size:13px;margin-bottom:8px;">Compartir partida · código o enlace</p>
-          <div class="chip-row mb-8">
-            <button class="chip selected" id="invTabCode" onclick="setInviteTab('code')">Código</button>
-            <button class="chip" id="invTabLink" onclick="setInviteTab('link')">Enlace</button>
-          </div>
-          <div id="invitePane"></div>
-          <button class="btn btn-primary mt-16" onclick="copyInvite()">Copiar</button>
-          <button class="btn btn-ghost mt-8" onclick="closeInvite()">Cerrar</button>
+          <h2>Varios móviles</h2>
+          <p class="muted" style="font-size:13px;margin-bottom:8px;">Compartir código o enlace no está disponible. No hay sala entre dispositivos.</p>
+          <p class="micro">En esta partida un móvil anota a todos. Los invitados se añaden en Nueva ronda.</p>
+          <button class="btn btn-primary mt-16" onclick="closeInvite()">Entendido</button>
         </div>
       </div>
 
@@ -4007,27 +4002,11 @@ function openInvite() {
 function closeInvite() {
   document.getElementById("inviteSheet").classList.remove("open");
 }
-function setInviteTab(tab) {
-  state.inviteTab = tab;
-  document.getElementById("invTabCode").classList.toggle("selected", tab==="code");
-  document.getElementById("invTabLink").classList.toggle("selected", tab==="link");
-  const pane = document.getElementById("invitePane");
-  if (tab === "code") {
-    pane.innerHTML = `<div class="invite-code">${inviteCodeNow()}</div><p class="micro" style="text-align:center;">Comparte este código con el flight</p>`;
-  } else {
-    const link = (FX.inviteLink && !String(FX.inviteLink).includes("demo"))
-      ? FX.inviteLink
-      : ("fairway.app/m/" + inviteCodeNow().toLowerCase());
-    FX.inviteLink = link;
-    pane.innerHTML = `<div class="card" style="text-align:center;font-weight:600;">${link}</div><p class="micro mt-8" style="text-align:center;">Compartir partida</p>`;
-  }
+function setInviteTab() {
+  showToast("Invitar por código o enlace aún no está disponible");
 }
 function copyInvite() {
-  const val = state.inviteTab === "link"
-    ? (FX.inviteLink || ("fairway.app/m/" + inviteCodeNow().toLowerCase()))
-    : inviteCodeNow();
-  if (navigator.clipboard) navigator.clipboard.writeText(val).catch(()=>{});
-  showToast("Código copiado", true);
+  showToast("Invitar por código o enlace aún no está disponible");
 }
 
 /* —— Hole (Modo A · un asiento · golpes + putts) —— */
