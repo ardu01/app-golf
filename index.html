@@ -6752,6 +6752,7 @@ function importFairwayBackup() {
       if (typeof renderPerfil === "function") renderPerfil();
       if (typeof renderHistorial === "function" && state.screen === "historial") renderHistorial();
     } catch (e) {
+      console.warn("importFairwayBackup", e);
       showToast("No se pudo leer el archivo");
     }
   };
