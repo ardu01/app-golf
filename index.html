@@ -1995,7 +1995,7 @@
             <div class="social-pills" id="socialPills" aria-label="Feedback social"></div>
             <div class="stats-collapse" id="statsCollapse">
               <button class="stats-toggle" onclick="toggleStats()">
-                <span>FIR · GIR <span class="micro">(opcional)</span> · <span class="micro" id="firGirFor"></span></span>
+                <span><span id="firGirTitle">FIR · GIR</span> <span class="micro">(opcional)</span> · <span class="micro" id="firGirFor"></span></span>
                 <span class="chev">▼</span>
               </button>
               <div class="stats-body">
@@ -3010,8 +3010,10 @@ function buildRoundRecord() {
     const gir = pSnap.gir || {};
     let puttSum = 0, puttN = 0, firHit = 0, firAtt = 0, girYes = 0, girAtt = 0;
     Object.keys(scores).forEach(k => {
+      const hole = (typeof HOLES !== "undefined") ? HOLES[Number(k) - 1] : null;
+      const par3 = hole && Number(hole.par) === 3;
       if (putts[k] != null) { puttSum += Number(putts[k]) || 0; puttN++; }
-      if (fir[k] === "hit" || fir[k] === "miss") { firAtt++; if (fir[k] === "hit") firHit++; }
+      if (!par3 && (fir[k] === "hit" || fir[k] === "miss")) { firAtt++; if (fir[k] === "hit") firHit++; }
       if (gir[k] === "yes" || gir[k] === "no") { girAtt++; if (gir[k] === "yes") girYes++; }
     });
     return {
@@ -4653,7 +4655,24 @@ function getActiveFirGir() {
   };
 }
 
+function currentHolePar() {
+  const h = (typeof HOLES !== "undefined") ? HOLES[state.hole - 1] : null;
+  return h ? Number(h.par) : 4;
+}
+
 function syncFirGirUI() {
+  const par3 = currentHolePar() === 3;
+  const firEl = document.getElementById("segFir");
+  if (firEl && firEl.parentElement) firEl.parentElement.hidden = par3;
+  const title = document.getElementById("firGirTitle");
+  if (title) title.textContent = par3 ? "GIR · FIR no aplica en par 3" : "FIR · GIR";
+  const list = activePlayers();
+  const p = list[state.activePlayer] || list[0];
+  if (par3 && p) {
+    ensurePlayerFirGir(p);
+    const cur = p.fir[state.hole];
+    if (cur === "hit" || cur === "miss") p.fir[state.hole] = "na";
+  }
   const { fir, gir } = getActiveFirGir();
   state.fir = fir;
   state.gir = gir;
@@ -4665,11 +4684,7 @@ function syncFirGirUI() {
     });
   });
   const who = document.getElementById("firGirFor");
-  if (who) {
-    const list = activePlayers();
-    const p = list[state.activePlayer] || list[0];
-    who.textContent = p ? p.name : "";
-  }
+  if (who) who.textContent = p ? p.name : "";
 }
 
 function resetFirGirUI() {
@@ -4678,6 +4693,11 @@ function resetFirGirUI() {
 }
 
 function setSeg(kind, btn) {
+  if (kind === "fir" && currentHolePar() === 3) {
+    showToast("FIR no aplica en par 3");
+    syncFirGirUI();
+    return;
+  }
   const parent = btn.parentElement;
   parent.querySelectorAll("button").forEach(b => b.classList.remove("on"));
   btn.classList.add("on");
@@ -5327,7 +5347,7 @@ function standingsFromSavedRound(d) {
         else if (pt === 2) puttPts += 1;
         else if (pt >= 3) puttPts -= 1;
       }
-      if (fir[i] === "hit" || fir[i] === "miss") { firAtt++; if (fir[i] === "hit") firHit++; }
+      if (Number(h.par) !== 3 && (fir[i] === "hit" || fir[i] === "miss")) { firAtt++; if (fir[i] === "hit") firHit++; }
       if (gir[i] === "yes" || gir[i] === "no") { girAtt++; if (gir[i] === "yes") girYes++; }
     }
     for (let i = 1; i <= maxH; i++) {
@@ -5367,7 +5387,8 @@ function leaderboardRows() {
     const maxH = state.setup.holes || 18;
     for (let i = 1; i <= maxH; i++) {
       if (r.p.putts && r.p.putts[i] != null) { puttSum += Number(r.p.putts[i]) || 0; puttN++; }
-      if (r.p.fir && (r.p.fir[i] === "hit" || r.p.fir[i] === "miss")) { firAtt++; if (r.p.fir[i] === "hit") firHit++; }
+      const holePar = HOLES[i - 1] && Number(HOLES[i - 1].par);
+      if (holePar !== 3 && r.p.fir && (r.p.fir[i] === "hit" || r.p.fir[i] === "miss")) { firAtt++; if (r.p.fir[i] === "hit") firHit++; }
       if (r.p.gir && (r.p.gir[i] === "yes" || r.p.gir[i] === "no")) { girAtt++; if (r.p.gir[i] === "yes") girYes++; }
     }
     r.puttsTotal = puttN ? puttSum : null;
