@@ -3279,7 +3279,8 @@ function adjPlayerHcp(i, delta) {
 function clampHcp(v) {
   let n = Number(String(v).replace(",", "."));
   if (!Number.isFinite(n)) n = 18;
-  if (n < 0) n = 0;
+  // Plus handicap is a negative Handicap Index. Floor at −10; do not invent a lower band.
+  if (n < -10) n = -10;
   if (n > 54) n = 54;
   return Math.round(n * 10) / 10;
 }
@@ -6687,7 +6688,7 @@ function renderAjustes() {
         <div class="aj-label">Handicap Index</div>
         <div class="aj-row">
           <button type="button" class="btn btn-ghost" style="width:44px;height:40px;padding:0;" onclick="ajAdjHcp(${i},-0.1)">−</button>
-          <input type="number" step="0.1" min="0" max="54" value="${fmtHcp(p.hcp)}"
+          <input type="number" step="0.1" min="-10" max="54" value="${fmtHcp(p.hcp)}"
             onchange="ajSetHcp(${i}, this.value)" />
           <button type="button" class="btn btn-ghost" style="width:44px;height:40px;padding:0;" onclick="ajAdjHcp(${i},0.1)">+</button>
         </div>
