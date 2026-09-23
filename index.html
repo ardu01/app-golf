@@ -625,12 +625,13 @@
     width: 5px; height: 5px; border-radius: 50%; background: var(--brand-brass);
   }
   .rule-card .note { font-size: 11px; color: var(--ink-secondary); margin-top: 8px; font-style: italic; }
-  .hole-ref-btn {
-    height: 32px; padding: 0 12px; border: none; border-radius: 999px;
-    background: rgba(52,199,89,0.16); color: var(--tint, #34C759);
-    font: inherit; font-size: 13px; font-weight: 700; cursor: pointer;
+  .hole-tools {
+    display: flex; align-items: center; gap: 8px;
+    padding: 0 var(--pad-x) 8px;
   }
-  .hole-ref-btn:active { opacity: 0.8; }
+  .hole-tools-gap { flex: 1; min-width: 8px; }
+  #screen-hole .hole-tools .hole-jump-btn,
+  #screen-hole .hole-tools .hole-foto-link { margin-left: 0; }
   #screen-arbitro .ref-log {
     flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
     padding: 8px var(--pad-x) 12px; display: flex; flex-direction: column; gap: 8px;
@@ -2101,11 +2102,12 @@
             <span class="badge" id="holeClubBadge">Centro Nacional de Golf</span>
             <span class="badge badge-tier" id="tierBadge" hidden></span>
           </div>
-          <div class="row" style="padding:0 var(--pad-x) 8px; align-items:center; gap:8px;">
+          <div class="hole-tools">
+            <button type="button" class="topnav-action" onclick="openReferee()">Árbitro</button>
+            <span class="hole-tools-gap"></span>
             <button type="button" class="hole-jump-btn" id="holeJumpBtn" onclick="openHoleSheet()">
               Hoyos <span class="chev">▾</span>
             </button>
-            <button type="button" class="hole-ref-btn" onclick="openReferee()">Árbitro</button>
             <span class="micro" style="display:none;" id="holeJumpHint"></span>
             <button type="button" class="hole-foto-link" id="holeFotoLink" hidden onclick="setHoleTab('foto')">Mapa</button>
           </div>
@@ -2233,6 +2235,7 @@
       <section id="screen-leader" class="screen theme-fairway">
         <div class="topnav no-back">
           <div class="title">Clasificación</div>
+          <button type="button" class="topnav-action" onclick="openReferee()">Árbitro</button>
           <button type="button" class="topnav-action" onclick="openRules()" aria-label="Reglas de los modos">Reglas</button>
         </div>
         <div class="lb-tabs" id="lbTabs">
@@ -2579,82 +2582,177 @@ function showToast(msg, paper) {
 
 /* REFEREE_START */
 const REFEREE_INTRO = "Describe el lie o lo que ha pasado. Resuelvo con las Reglas de Golf (R&A y USGA) y dejo la cita al final. Si falta un dato, pregunto. No invento una regla.";
-const REFEREE_CHIPS = ["Bola perdida", "Fuera de límites", "En el agua", "Injugable", "Empotrada", "Búnker", "Camino o aspersor", "En el green"];
+const REFEREE_CHIPS = ["Bola perdida", "Fuera de límites", "En el agua", "Injugable", "Empotrada", "Búnker", "Camino o aspersor", "En el green", "Detrás de un árbol", "Divot"];
 const REFEREE_NOTE = "Reglas de Golf, edición 2023 (R&A / USGA). Stroke play, salvo que hayas dicho match play. Si el comité tiene una regla local, manda esa regla.";
 
 function normRef(s) {
   return String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 }
-function refHas(t, list) {
-  return list.some(p => t.includes(p));
+function refHit(t, stems) {
+  for (let s = 0; s < stems.length; s++) {
+    const stem = stems[s];
+    let i = 0;
+    while ((i = t.indexOf(stem, i)) !== -1) {
+      const before = i === 0 ? "" : t.charAt(i - 1);
+      if (i === 0 || !/[a-z0-9]/.test(before)) {
+        const pre = t.slice(Math.max(0, i - 40), i);
+        const negated = /\b(no|sin|ni|nunca|tampoco)(?:\s+[a-z0-9]+){0,3}\s*$/.test(pre);
+        if (!negated) return true;
+      }
+      i += Math.max(stem.length, 1);
+    }
+  }
+  return false;
 }
 function refereeFacts(text) {
   const t = normRef(text);
-  const casual = refHas(t, ["agua casual", "charco", "encharcad", "temporary water"]);
-  const penalty = refHas(t, [
-    "penalizacion", "penalty", "lago", "arroyo", "estanque", "estaca roja", "estaca amarilla",
-    "linea roja", "linea amarilla", "en el agua", "al agua", "se metio", "area de penalizacion", "en un area de penalizacion"
-  ]) || /\brio\b/.test(t);
-  const wrongGreen = refHas(t, ["green equivocado", "otro green", "green que no", "wrong green"]);
+  const casual = refHit(t, ["agua casual", "charco", "encharcad", "temporary water"]);
+  const lateralWater = refHit(t, ["agua lateral", "lago lateral", "area lateral", "penalizacion lateral", "hazard lateral"]);
+  const frontWater = refHit(t, ["agua frontal", "lago frontal", "area frontal", "de frente el agua", "agua de frente"]);
+  const penalty = refHit(t, [
+    "lago", "arroyo", "estanque", "estaca roja", "estacas rojas", "estaca amarilla", "estacas amarillas",
+    "linea roja", "linea amarilla", "area de penalizacion", "water hazard", "al lago"
+  ]) || (!casual && refHit(t, ["en el agua", "al agua", "hacia el agua", "para el agua"])) || /\brio\b/.test(t) || lateralWater || frontWater;
+  const wrongGreen = refHit(t, ["green equivocado", "otro green", "green que no", "wrong green"]);
+  const inTree = refHit(t, ["en el arbol", "en un arbol", "dentro del arbol", "subida al arbol", "encajada en el arbol", "clavada en el arbol"]);
+  const behindTree = !inTree && refHit(t, ["detras del arbol", "detras de un arbol", "el arbol me tapa", "arbol me impide", "arbol no me deja"]);
+  const bush = refHit(t, ["arbusto", "matorral", "zarza", "en la mata", "seto"]);
+  const fence = refHit(t, ["valla", "tapia", "reja", "fence", "muro"]);
+  const boundaryTalk = fence && refHit(t, ["fuera de limite", "de limite", "objeto de limite", "linde", "es el fuera"]);
+  const ballOut = refHit(t, [
+    "esta fuera", "se ha ido fuera", "se fue fuera", "bola fuera", "la mande fuera", "fuera de limite", "out of bounds",
+    "estaca blanca", "estacas blancas", "linea blanca"
+  ]) || /\bob\b/.test(t) || /\bout\b/.test(t);
+  const kvcNo = refHit(t, ["no se si entro", "no la vi entrar", "no la vimos entrar", "no estoy seguro de que entrara", "no es seguro que entr"]);
+  const kvcYes = !kvcNo && refHit(t, ["la vi entrar", "seguro que entro", "virtualmente", "la vimos entrar", "visto entrar", "vimos entrar", "vi como entr", "hemos visto entrar"]);
+  const pitchMark = refHit(t, ["marca de pitch", "marca de pique", "pitch mark", "reparar la marca", "reparar el pique", "marca en el green", "marca de bola"]);
+  const embedded = !pitchMark && refHit(t, ["empotrad", "enterrada", "plug", "en su pique", "en su propio impacto", "clavada en el suelo", "hundida"]);
   return {
-    lost: refHas(t, ["perdid", "no la encuentro", "no encuentro", "no aparece", "no la veo", "se perdio"]),
-    found: refHas(t, ["la encontre", "encontrada", "ya la veo", "la encontre"]),
-    ob: refHas(t, ["fuera de limite", "out of bounds", "estaca blanca", "linea blanca"]) || /\bob\b/.test(t),
-    provisional: t.includes("provisional"),
-    penalty: penalty && !(casual && !penalty),
-    red: refHas(t, ["estaca roja", "linea roja", "area roja", "rojas", "roja", "rojo"]),
-    yellow: refHas(t, ["estaca amarilla", "linea amarilla", "area amarilla", "amarillas", "amarilla", "amarillo"]),
-    unplayable: refHas(t, ["injugable", "unplayable", "no puedo jugarla", "no puedo pegarla"]),
-    bunker: refHas(t, ["bunker", "trampa de arena", "trampa", "en el bunker"]),
-    sand: t.includes("arena"),
-    embedded: refHas(t, ["empotrad", "enterrada", "plug", "en su pique", "pitch"]),
+    lost: refHit(t, ["perdid", "no la encuentro", "no encuentro", "no aparece", "no la veo", "se perdio"]),
+    found: refHit(t, ["la encontre", "encontrada", "ya la veo"]),
+    ob: ballOut && !(boundaryTalk && !refHit(t, ["esta fuera", "se ha ido", "se fue", "bola fuera", "la mande", "out of bounds"]) && !/\bob\b/.test(t) && !/\bout\b/.test(t)),
+    provisional: refHit(t, ["provisional"]),
+    penalty: (penalty || lateralWater || frontWater) && !(casual && !penalty && !lateralWater && !frontWater),
+    red: lateralWater || refHit(t, ["estaca roja", "estacas rojas", "linea roja", "area roja", "rojas", "roja", "rojo"]),
+    yellow: frontWater || refHit(t, ["estaca amarilla", "estacas amarillas", "linea amarilla", "area amarilla", "amarillas", "amarilla", "amarillo"]),
+    unplayable: refHit(t, ["injugable", "unplayable", "no puedo jugarla", "no puedo pegarla", "no llego a la bola", "imposible jugarla", "no tengo swing"]),
+    bunker: refHit(t, ["bunker", "trampa de arena", "en la trampa", "en el bunker"]),
+    sand: refHit(t, ["arena"]),
+    embedded,
     green: (/\bgreen\b/.test(t) || t.includes("putting")) && !wrongGreen,
     wrongGreen,
-    immovable: refHas(t, ["camino", "cart path", "aspersor", "sprinkler", "obstruccion inamovible", "alcantarilla"]),
-    movable: refHas(t, ["rastrillo", "rake", "toalla", "botella", "lata", "obstruccion movible"]),
-    loose: refHas(t, ["impedimento", "hoja", "hojas", "piedra", "piedras", "rama", "pina", "pinaza"]),
+    immovable: refHit(t, ["camino", "cart path", "aspersor", "sprinkler", "obstruccion inamovible", "alcantarilla"]),
+    movable: refHit(t, ["rastrillo", "rake", "toalla", "botella", "lata", "obstruccion movible"]),
+    loose: refHit(t, ["impedimento", "hoja", "hojas", "piedra", "piedras", "rama", "pina", "pinaza"]),
     tempWater: casual,
-    gur: refHas(t, ["terreno en reparacion", "gur", "ground under repair", "suelo en reparacion"]),
-    animal: refHas(t, ["madriguera", "agujero de animal", "topo"]),
-    moved: refHas(t, ["se movio", "se ha movido", "bola movida", "la movi", "movi la bola", "se cayo", "movio"]),
-    natural: refHas(t, ["viento", "gravedad", "la movio el viento"]),
-    searching: refHas(t, ["buscando", "al buscar", "durante la busqueda", "al buscarla"]),
-    playerMoved: refHas(t, ["la movi yo", "yo la movi", "con el palo", "al colocarme", "la toque", "la movi"]),
-    outside: refHas(t, ["espectador", "pajaro", "perro", "otra persona", "la movio otra"]),
-    wrongBall: refHas(t, ["bola equivocada", "bola de otro", "wrong ball", "no era mi bola"]),
-    doubleHit: refHas(t, ["doble golpe", "dos veces", "la pegue dos", "golpe doble"]),
-    flagstick: refHas(t, ["bandera", "flagstick", "asta"]),
-    attended: refHas(t, ["atendida", "sujetaba", "sujetando", "atendiendo"]),
-    overhang: refHas(t, ["boca del hoyo", "borde del hoyo", "a punto de caer", "colgando"]),
-    identify: refHas(t, ["identificar", "no se si es mi bola"]),
-    deflect: refHas(t, ["reboto", "me dio", "le dio", "choco", "deflect", "golpeo el palo", "he golpeado otra bola", "golpeado otra"]),
-    otherBall: refHas(t, ["otra bola", "bola del companero", "bola de un companero", "bola ajena"]),
-    advice: refHas(t, ["consejo", "que palo", "me dijo que palo"]),
-    whiff: refHas(t, ["swing al aire", "golpe al aire", "whiff", "no llegue a golpear"]),
-    teeFall: refHas(t, ["se cayo del tee", "cayo del tee", "se ha caido del tee"]),
-    dropHow: refHas(t, ["como dropeo", "como se dropea", "altura de la rodilla", "procedimiento de drop"]),
-    ready: refHas(t, ["fuera de turno", "ready golf", "orden de juego"]),
-    footprint: refHas(t, ["pisada", "huella", "pisadas"]),
-    inTree: refHas(t, ["en un arbol", "arbol"]),
-    kvcNo: refHas(t, ["no estoy seguro", "no se si entro", "no es seguro", "no la vi entrar", "no estoy seguro de que entrara"]),
-    kvcYes: refHas(t, ["la vi entrar", "seguro que entro", "virtualmente", "la vimos entrar"]),
-    match: refHas(t, ["match play", "matchplay", "partido a match"]),
-    lineOnly: refHas(t, ["solo la linea", "linea de juego", "me estorba la linea", "tapa la linea", "solo me tapa la linea"]),
-    general: refHas(t, ["area general", "calle", "rough", "hierba", "en el area general"]),
-    touching: refHas(t, [
-      "en el camino", "sobre el camino", "en el aspersor", "bola en el", "esta en el",
-      "la bola esta en el camino", "me impide el stance", "el stance", "el swing", "dentro del", "en el charco"
+    gur: refHit(t, ["terreno en reparacion", "gur", "ground under repair", "suelo en reparacion"]),
+    animal: refHit(t, ["madriguera", "agujero de animal", "topo"]),
+    moved: refHit(t, ["se movio", "se ha movido", "bola movida", "la movi", "movi la bola", "se cayo", "movio"]),
+    natural: refHit(t, ["viento", "gravedad", "la movio el viento"]),
+    searching: refHit(t, ["buscando", "al buscar", "durante la busqueda", "al buscarla"]),
+    playerMoved: refHit(t, ["la movi yo", "yo la movi", "con el palo", "al colocarme", "la toque", "la movi", "swing de practica", "ensayando el swing"]),
+    outside: refHit(t, ["espectador", "pajaro", "perro", "otra persona", "la movio otra"]),
+    wrongBall: refHit(t, ["bola equivocada", "bola de otro", "wrong ball", "no era mi bola"]),
+    doubleHit: refHit(t, ["doble golpe", "dos veces", "la pegue dos", "golpe doble"]),
+    flagstick: refHit(t, ["bandera", "flagstick", "asta"]),
+    attended: refHit(t, ["atendida", "sujetaba", "sujetando", "atendiendo"]),
+    overhang: refHit(t, ["boca del hoyo", "borde del hoyo", "a punto de caer", "colgando", "medio dentro del hoyo"]),
+    identify: refHit(t, ["identificar", "no se si es mi bola"]),
+    deflect: refHit(t, ["reboto", "me dio", "le dio", "choco", "deflect", "golpeo el palo", "he golpeado otra bola", "golpeado otra"]),
+    otherBall: refHit(t, ["otra bola", "bola del companero", "bola de un companero", "bola ajena"]),
+    advice: refHit(t, ["consejo", "que palo", "me dijo que palo"]),
+    whiff: refHit(t, ["swing al aire", "golpe al aire", "whiff", "no llegue a golpear"]),
+    teeFall: refHit(t, ["se cayo del tee", "cayo del tee", "caido del tee"]),
+    dropHow: refHit(t, ["como dropeo", "como se dropea", "altura de la rodilla", "procedimiento de drop"]),
+    ready: refHit(t, ["fuera de turno", "ready golf", "orden de juego"]),
+    footprint: refHit(t, ["pisada", "huella", "pisadas"]),
+    inTree,
+    behindTree,
+    bush,
+    fence,
+    boundary: boundaryTalk,
+    pitchMark,
+    divot: refHit(t, ["divot", "chuletazo", "en el hoyo del divot"]),
+    caddieLine: refHit(t, ["caddie"]) && refHit(t, ["detras", "alinead", "en la linea", "en mi linea"]),
+    improve: refHit(t, ["mejorado el lie", "mejore el lie", "aplastado la hierba"]),
+    lateralWater,
+    frontWater,
+    kvcNo,
+    kvcYes,
+    match: refHit(t, ["match play", "matchplay", "partido a match"]),
+    lineOnly: refHit(t, ["solo la linea", "linea de juego", "me estorba la linea", "tapa la linea", "solo me tapa la linea"]),
+    general: refHit(t, ["area general", "calle", "rough", "hierba", "semirrough", "semi rough"]),
+    touching: refHit(t, [
+      "en el camino", "sobre el camino", "en el aspersor", "la bola esta en el camino",
+      "me impide el stance", "el stance", "afecta el swing", "en el charco", "esta dentro", "bola dentro", "contra la valla", "pegada a la valla", "en la valla"
     ]),
-    interfere: refHas(t, ["estorba", "me molesta la bola", "interfiere", "bola que ayuda", "me estorba otra bola"])
+    interfere: refHit(t, ["estorba", "me molesta la bola", "interfiere", "bola que ayuda", "me estorba otra bola"])
   };
+}
+function refereeInfer(f) {
+  if (f.kvcYes) f.penalty = true;
+  if (f.kvcNo) f.kvcYes = false;
+  if (f.found) f.lost = false;
+  if (f.lateralWater && !f.frontWater) { f.penalty = true; f.red = true; f.yellow = false; }
+  if (f.frontWater && !f.lateralWater) { f.penalty = true; f.yellow = true; f.red = false; }
+  if (f.pitchMark) f.embedded = false;
+  if ((f.inTree || f.bush || f.behindTree || f.divot) && !f.bunker && !f.penalty && !f.green && !f.ob) f.general = true;
+  if (f.bunker || f.penalty || (f.green && !f.wrongGreen) || f.ob) f.general = false;
+  return f;
+}
+function lockZone(facts, incoming) {
+  const zones = ["bunker", "green", "penalty", "ob", "general"];
+  const hit = zones.filter(k => incoming[k]);
+  if (hit.length === 1) zones.forEach(k => { if (k !== hit[0]) facts[k] = false; });
+  return facts;
+}
+function bindAnswer(slot, text, facts) {
+  const t = normRef(text);
+  const no = /^(no|nop|para nada)\b/.test(t);
+  if (slot === "water-color") {
+    if (refHit(t, ["amarill", "frontal"])) { facts.yellow = true; facts.red = false; facts.penalty = true; facts.kvcNo = false; }
+    else if (refHit(t, ["roj", "lateral"])) { facts.red = true; facts.yellow = false; facts.penalty = true; facts.kvcNo = false; }
+    else if (no || refHit(t, ["no la vi", "no estoy seguro", "no es seguro"])) { facts.kvcNo = true; facts.kvcYes = false; }
+  } else if (slot === "ob-or-water") {
+    if (refHit(t, ["fuera", "limite", "ob", "blanca"])) { facts.ob = true; facts.penalty = false; facts.red = false; facts.yellow = false; }
+    else if (refHit(t, ["amarill"])) { facts.penalty = true; facts.yellow = true; facts.red = false; facts.ob = false; }
+    else if (refHit(t, ["roj", "agua", "lago", "penal"])) { facts.penalty = true; facts.ob = false; if (refHit(t, ["roj", "lateral"])) facts.red = true; }
+  } else if (slot === "lost-where") {
+    if (refHit(t, ["fuera", "limite"])) { facts.ob = true; facts.lost = true; facts.penalty = false; }
+    else if (refHit(t, ["vi entrar", "visto entrar", "vimos"])) { facts.kvcYes = true; facts.penalty = true; facts.lost = true; }
+    else if (refHit(t, ["no la vi", "no estoy"])) { facts.kvcNo = true; facts.lost = true; }
+    else if (refHit(t, ["encontre", "ya la veo"])) { facts.found = true; facts.lost = false; }
+    else if (refHit(t, ["area general", "rough", "calle", "general"])) { facts.general = true; facts.lost = true; facts.penalty = false; facts.ob = false; }
+  } else if (slot === "place") {
+    if (refHit(t, ["bunker", "trampa"])) { facts.bunker = true; facts.general = false; facts.green = false; facts.penalty = false; }
+    else if (refHit(t, ["green"])) { facts.green = true; facts.general = false; facts.bunker = false; facts.penalty = false; }
+    else if (refHit(t, ["penal", "agua", "lago"])) { facts.penalty = true; facts.general = false; facts.bunker = false; facts.green = false; }
+    else if (refHit(t, ["general", "calle", "rough", "hierba", "arbol", "arbusto"])) { facts.general = true; facts.bunker = false; facts.green = false; facts.penalty = false; }
+  } else if (slot === "acc-touch") {
+    if (refHit(t, ["solo", "linea", "tapa la linea"])) { facts.lineOnly = true; facts.touching = false; }
+    else if (refHit(t, ["bunker"])) { facts.bunker = true; facts.touching = true; facts.lineOnly = false; }
+    else if (refHit(t, ["green"])) { facts.green = true; facts.lineOnly = false; }
+    else if (refHit(t, ["camino", "aspersor", "stance", "swing", "bola esta"])) { facts.touching = true; facts.lineOnly = false; }
+  } else if (slot === "who-moved") {
+    if (refHit(t, ["la movi", "yo ", "fui yo"])) facts.playerMoved = true;
+    if (refHit(t, ["buscar"])) facts.searching = true;
+    if (refHit(t, ["viento", "gravedad"])) facts.natural = true;
+    if (refHit(t, ["otra persona", "espectador", "perro", "pajaro"])) facts.outside = true;
+    if (refHit(t, ["green"])) facts.green = true;
+    facts.moved = true;
+  } else if (slot === "fence") {
+    if (no || refHit(t, ["dentro"])) { facts.boundary = false; facts.immovable = true; facts.touching = true; facts.ob = false; }
+    else if (refHit(t, ["fuera", "limite", "linde"])) { facts.boundary = true; facts.ob = false; }
+  }
+  return facts;
 }
 function mergeFacts(a, b) {
   const out = Object.assign({}, a || {});
   Object.keys(b || {}).forEach(k => { if (b[k]) out[k] = true; });
   return out;
 }
-function refAsk(text, chips) {
-  return { kind: "ask", text, cites: [], chips };
+function refAsk(text, chips, slot) {
+  return { kind: "ask", text, cites: [], chips, slot: slot || "" };
 }
 function refRule(text, cites) {
   return { kind: "rule", text, cites, chips: ["Otro caso"] };
@@ -2669,9 +2767,7 @@ function refAcc(f) {
   return "obstrucción inamovible";
 }
 function refereeDecide(raw) {
-  const f = Object.assign({}, raw || {});
-  if (f.found) f.lost = false;
-  if (f.kvcYes) f.penalty = true;
+  const f = refereeInfer(Object.assign({}, raw || {}));
   const acc = f.immovable || f.tempWater || f.gur || f.animal;
   const drop = "Dropea desde la altura de la rodilla, sin tocar la bola al soltarla. Tiene que quedar en el área de alivio. Si se sale, dropea otra vez. Si la segunda tampoco se queda, colócala donde tocó el suelo en ese segundo drop.";
   const dropCite = { rule: "14.3b y 14.3c", point: "el drop es desde la altura de la rodilla y la bola debe quedar en el área de alivio." };
@@ -2733,8 +2829,19 @@ function refereeDecide(raw) {
       { rule: "18.3c", point: "pasa a ser la bola en juego si la original está perdida o fuera de límites, o si la juegas más cerca del hoyo." }
     ]);
   }
+  if (f.caddieLine) {
+    return refRule("El caddie no puede ponerse en la prolongación de tu línea, detrás de la bola, desde que tomas la posición hasta que pegas. Tampoco puede alinearte a propósito. " + refGp(f) + ".", [
+      { rule: "10.2b(4)", point: "el caddie no se coloca detrás de la bola en la línea mientras te colocas para el golpe." },
+      { rule: "10.2b(3)", point: "la ayuda deliberada para alinearse es penalización general." }
+    ]);
+  }
+  if (f.improve) {
+    return refRule("No puedes mejorar el lie, el stance, el swing o la línea: ni aplastando hierba, ni moviendo arena o tierra, ni doblando o rompiendo algo que crece o está fijo. " + refGp(f) + ". Quitar un impedimento suelto o una obstrucción movible, como permite su regla, no es mejorar.", [
+      { rule: "8.1a", point: "está prohibido mejorar las condiciones que afectan al golpe." }
+    ]);
+  }
   if (f.ob && f.penalty) {
-    return refAsk("¿La bola está fuera de límites o dentro de un área de penalización?", ["Fuera de límites", "Estacas rojas", "Estacas amarillas"]);
+    return refAsk("¿La bola está fuera de límites o dentro de un área de penalización?", ["Fuera de límites", "Estacas rojas", "Estacas amarillas"], "ob-or-water");
   }
   if (f.ob) {
     return refRule("La bola está fuera de límites solo cuando está entera al otro lado del margen. Si cualquier parte toca el margen, está dentro. No hay alivio lateral. Tienes que volver a jugar desde donde diste el golpe anterior, con un golpe de penalización. Puedes cambiar de bola. Si ese sitio era el tee, puedes volver a colocarla en el tee.", [
@@ -2751,10 +2858,34 @@ function refereeDecide(raw) {
     ]);
   }
   if ((f.lost || f.kvcYes || f.penalty) && f.penalty && f.red && f.yellow) {
-    return refAsk("¿El margen del área es rojo o amarillo?", ["Estacas rojas", "Estacas amarillas"]);
+    return refAsk("¿El margen del área es rojo o amarillo?", ["Estacas rojas", "Estacas amarillas"], "water-color");
   }
   if ((f.lost || f.kvcYes) && f.penalty && !f.red && !f.yellow) {
-    return refAsk("¿El área de penalización es roja o amarilla? Si no viste entrar la bola y cabe otra explicación, dímelo.", ["Estacas rojas", "Estacas amarillas", "No la vi entrar"]);
+    return refAsk("¿El área de penalización es roja o amarilla? Si no viste entrar la bola y cabe otra explicación, dímelo.", ["Estacas rojas", "Estacas amarillas", "No la vi entrar"], "water-color");
+  }
+  if (f.pitchMark && !f.green && !f.general) {
+    return refAsk("¿La marca está en el green o fuera?", ["En el green", "En el área general"], "place");
+  }
+  if (f.pitchMark && f.green) {
+    return refRule("En el green puedes reparar la marca de un impacto, la tuya o la de otro, sin penalización. Da igual que tu bola esté en el green o no. Si al repararla puede moverse tu bola, márcala antes.", [
+      { rule: "13.1c(2)", point: "en el green se puede reparar el daño, incluida la marca de un impacto, sin penalización." }
+    ]);
+  }
+  if (f.pitchMark) {
+    return refRule("Fuera del green no se repara una marca de impacto si con eso mejoras el lie, el stance, el swing o la línea. " + refGp(f) + " si lo haces. La bola se juega como está.", [
+      { rule: "8.1a", point: "mejorar las condiciones que afectan al golpe está prohibido." },
+      { rule: "13.1c", point: "reparar ese daño sin penalización es una regla del green." }
+    ]);
+  }
+  if (f.fence && f.boundary && !f.ob) {
+    return refRule("Si esa valla o ese muro es el límite del campo, no hay alivio gratis: un objeto de límite no es una obstrucción. Si la bola está entera al otro lado del margen, está fuera de límites y toca golpe y distancia. Si alguna parte toca el margen, sigue dentro: se juega como está o la declaras injugable.", [
+      { rule: "Definición de objeto de límite", point: "el muro o la valla que marca el fuera de límites no da alivio." },
+      { rule: "18.2a(2)", point: "fuera de límites solo si la bola está entera al otro lado del margen." },
+      { rule: "19.2", point: "si sigue dentro y no puedes jugarla, puedes declararla injugable con un golpe." }
+    ]);
+  }
+  if (f.fence && !f.boundary && !f.ob && !f.immovable) {
+    return refAsk("¿Esa valla o ese muro es el fuera de límites, o está dentro del campo?", ["Es el fuera de límites", "Está dentro del campo"], "fence");
   }
   if (f.lost && f.general && !f.penalty && !f.ob) {
     return refRule("Si está perdida en el área general, la búsqueda es de tres minutos desde que empiezas a buscar. Si no la identificas, tienes que volver a jugar desde el golpe anterior, con un golpe de penalización. No hay alivio lateral.", [
@@ -2764,10 +2895,10 @@ function refereeDecide(raw) {
     ]);
   }
   if (f.lost && !f.penalty && !f.ob && !f.unplayable && !f.embedded) {
-    return refAsk("¿Dónde puede estar? La búsqueda es de tres minutos.", ["Fuera de límites", "La vi entrar", "No la vi entrar", "La encontré", "Perdida en el área general"]);
+    return refAsk("¿Dónde puede estar? La búsqueda es de tres minutos.", ["Fuera de límites", "La vi entrar", "No la vi entrar", "La encontré", "Perdida en el área general"], "lost-where");
   }
   if (f.penalty && !f.red && !f.yellow) {
-    return refAsk("¿Estacas o líneas rojas, o amarillas?", ["Estacas rojas", "Estacas amarillas", "No la vi entrar"]);
+    return refAsk("¿Estacas o líneas rojas, o amarillas?", ["Estacas rojas", "Estacas amarillas", "No la vi entrar"], "water-color");
   }
   if (f.penalty && (f.red || f.yellow) && !f.unplayable) {
     const lateral = f.red
@@ -2803,7 +2934,7 @@ function refereeDecide(raw) {
     ]);
   }
   if (f.embedded && !f.general && !f.bunker && !f.penalty && !f.green) {
-    return refAsk("¿Dónde está empotrada?", ["En el área general", "En el búnker", "En el green", "En un área de penalización"]);
+    return refAsk("¿Dónde está empotrada?", ["En el área general", "En el búnker", "En el green", "En un área de penalización"], "place");
   }
   if (f.embedded && f.sand && !f.bunker) {
     return refRule("Si está empotrada en arena del área general que no está cortada a altura de calle o menos, no hay alivio gratuito: se juega como está o la declaras injugable. Si esa arena sí está a altura de calle, el alivio es el de bola empotrada: un palo desde el punto justo detrás, sin acercarte al hoyo.", [
@@ -2826,13 +2957,23 @@ function refereeDecide(raw) {
     ]);
   }
   if (f.unplayable && !f.bunker && !f.green && !f.general && !f.penalty) {
-    return refAsk("¿Dónde está la bola injugable?", ["En el área general", "En el búnker", "En el green", "En un área de penalización"]);
+    return refAsk("¿Dónde está la bola injugable?", ["En el área general", "En el búnker", "En el green", "En un área de penalización"], "place");
   }
   if (f.unplayable && f.bunker) {
     return refRule("Tú decides si es injugable. En el búnker, con un golpe de penalización: golpe y distancia; línea hacia atrás, dropeando dentro del búnker; o dos palos laterales, también dentro del búnker. Para salir del búnker por la línea hacia atrás son dos golpes en total. " + drop, [
       { rule: "19.3a", point: "las tres opciones de un golpe obligan a que la bola quede en el búnker, salvo el golpe y distancia." },
       { rule: "19.3b", point: "la línea hacia atrás fuera del búnker son dos golpes de penalización." },
       { rule: "19.2b", point: "en la línea hacia atrás, el punto donde la bola toca el suelo abre un área de un palo." },
+      dropCite
+    ]);
+  }
+  if (f.unplayable && (f.inTree || f.bush || f.behindTree)) {
+    const where = f.inTree ? "en el árbol" : (f.bush ? "en el arbusto" : "detrás del árbol");
+    return refRule("No hay alivio gratis por estar " + where + ": un árbol o un arbusto no es una obstrucción. Puedes jugarla como está o declararla injugable. Con un golpe de penalización: golpe y distancia, línea hacia atrás, o dos palos desde donde está la bola, sin acercarte al hoyo. " + drop, [
+      { rule: "Definición de obstrucción", point: "lo que crece, como un árbol o un arbusto, no es una obstrucción." },
+      { rule: "19.2a", point: "golpe y distancia, un golpe de penalización." },
+      { rule: "19.2b", point: "línea hacia atrás, un golpe de penalización." },
+      { rule: "19.2c", point: "alivio lateral de dos palos, sin acercarse al hoyo." },
       dropCite
     ]);
   }
@@ -2863,7 +3004,7 @@ function refereeDecide(raw) {
     ]);
   }
   if (acc && !f.touching && !f.lineOnly && !f.bunker && !f.green && !f.penalty) {
-    return refAsk("¿La bola, el stance o el swing están en esa condición, o solo te tapa la línea?", ["La bola está en el camino", "Solo me tapa la línea", "En el búnker", "En el green"]);
+    return refAsk("¿La bola, el stance o el swing están en esa condición, o solo te tapa la línea?", ["La bola está en el camino", "Solo me tapa la línea", "En el búnker", "En el green"], "acc-touch");
   }
   if (acc && f.bunker) {
     return refRule("Si " + refAcc(f) + " interfiere con la bola, el stance o el swing dentro del búnker, hay alivio sin penalización, pero el drop tiene que quedar en el búnker: punto más cercano con alivio completo y un palo, sin acercarte al hoyo. También puedes salir del búnker por la línea hacia atrás, y eso es un golpe de penalización. " + drop, [
@@ -2928,7 +3069,7 @@ function refereeDecide(raw) {
     ]);
   }
   if (f.moved && !f.natural && !f.outside && !f.searching && !f.playerMoved && !f.loose && !f.movable) {
-    return refAsk("¿Quién o qué ha movido la bola?", ["La moví yo", "Se movió al buscarla", "La movió el viento", "La movió otra persona", "Se movió en el green"]);
+    return refAsk("¿Quién o qué ha movido la bola?", ["La moví yo", "Se movió al buscarla", "La movió el viento", "La movió otra persona", "Se movió en el green"], "who-moved");
   }
   if (f.moved) {
     return refRule("Si tú haces que la bola se mueva, y no es en el green, ni en el tee, ni mientras la buscabas, es un golpe de penalización y tienes que reponerla. Si se movió al buscarla, no hay penalización y también se repone.", [
@@ -2962,10 +3103,18 @@ function refereeDecide(raw) {
       { rule: "11.1b", point: "la bola se juega como quede, salvo si se queda sobre una persona, un animal o algo en movimiento." }
     ]);
   }
-  if (f.inTree) {
-    return refRule("Si la identificas en el árbol, puedes jugarla como está. Si no puedes o no quieres, la declaras injugable: golpe y distancia, línea hacia atrás, o dos palos desde el punto donde está, sin acercarte al hoyo. Eso es un golpe de penalización. Si no la identificas en tres minutos, es bola perdida.", [
-      { rule: "19.2", point: "bola injugable en el área general: tres opciones, un golpe de penalización." },
+  if (f.inTree || f.bush || f.behindTree) {
+    const where = f.inTree ? "en el árbol" : (f.bush ? "en el arbusto" : "detrás del árbol, en el suelo");
+    return refRule("La bola está " + where + ". No hay alivio gratis: eso no es una obstrucción ni una condición anormal. Juegas la bola como está. Si no puedes o no quieres, la declaras injugable, con un golpe: golpe y distancia, línea hacia atrás, o dos palos desde donde está, sin acercarte al hoyo. Si no la identificas en tres minutos, es bola perdida.", [
+      { rule: "Definición de obstrucción", point: "un árbol o un arbusto no es una obstrucción." },
+      { rule: "19.2", point: "si la declaras injugable, tres opciones y un golpe de penalización." },
       { rule: "18.2", point: "si no se identifica a tiempo, es bola perdida: golpe y distancia." }
+    ]);
+  }
+  if (f.divot) {
+    return refRule("Un divot en la calle o en el rough no da alivio gratis. La bola se juega como está. Si no puedes o no quieres, la declaras injugable, con un golpe de penalización.", [
+      { rule: "Definición de condición anormal del campo", point: "un divot no es agua casual, terreno en reparación, agujero de animal ni obstrucción." },
+      { rule: "19.2", point: "la injugable en el área general son tres opciones y un golpe." }
     ]);
   }
   if (f.bunker) {
@@ -2982,10 +3131,10 @@ function refereeDecide(raw) {
     ]);
   }
   if (f.green) {
-    return refAsk("En el green puedes marcar, levantar y limpiar la bola. ¿Qué ha pasado?", ["Se movió en el green", "He golpeado otra bola", "Me estorba otra bola", "Bandera", "Injugable", "Agua casual"]);
+    return refAsk("En el green puedes marcar, levantar y limpiar la bola. ¿Qué ha pasado?", ["Se movió en el green", "He golpeado otra bola", "Me estorba otra bola", "Bandera", "Injugable", "Agua casual"], "green-what");
   }
   if (f.found && f.general) {
-    return refAsk("La bola está en juego. ¿Qué le pasa al lie?", ["Empotrada", "Injugable", "Camino o aspersor", "Impedimento suelto"]);
+    return refAsk("La bola está en juego. ¿Qué le pasa al lie?", ["Empotrada", "Injugable", "Camino o aspersor", "Impedimento suelto"], "found-lie");
   }
   return refAsk("Dime dónde está la bola y qué ha pasado. Si en stroke play sigues en duda, la Regla 20.1c(3) permite jugar dos bolas: anúncialo, di cuál quieres que cuente si la regla lo permite y cuéntaselo al comité antes de entregar la tarjeta.", ["Bola perdida", "Fuera de límites", "En el agua", "Injugable", "Empotrada", "Búnker"]);
 }
@@ -3051,6 +3200,7 @@ function refereeSend(text) {
   if (clean === "Otro caso") {
     session.facts = {};
     session.lastKind = "intro";
+    session.lastSlot = "";
     session.messages.push({ role: "ref", text: "Siguiente caso. ¿Dónde está la bola y qué ha pasado?", cites: [], chips: REFEREE_CHIPS.slice() });
     renderReferee();
     return;
@@ -3058,14 +3208,18 @@ function refereeSend(text) {
   const incoming = refereeFacts(clean);
   const startFresh = session.lastKind === "rule" && clean.length > 60;
   const facts = startFresh ? incoming : mergeFacts(session.facts, incoming);
+  if (!startFresh && session.lastSlot && clean.length < 80) bindAnswer(session.lastSlot, clean, facts);
+  if (!startFresh) lockZone(facts, incoming);
   if (incoming.found) facts.lost = false;
   if (incoming.kvcYes) facts.kvcNo = false;
   if (incoming.kvcNo) facts.kvcYes = false;
   if (incoming.red && !incoming.yellow) facts.yellow = false;
   if (incoming.yellow && !incoming.red) facts.red = false;
+  refereeInfer(facts);
   const reply = refereeDecide(facts);
   session.facts = facts;
   session.lastKind = reply.kind;
+  session.lastSlot = reply.slot || "";
   session.messages.push({ role: "user", text: clean });
   session.messages.push({ role: "ref", text: reply.text, cites: reply.cites || [], chips: reply.chips || [] });
   renderReferee();
