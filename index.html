@@ -5073,7 +5073,7 @@ function renderLeader() {
       if (!b.thru) return -1;
       return a.net - b.net || a.gross - b.gross;
     });
-    foot.textContent = "Stroke · net · " + scope;
+    foot.textContent = live ? "Clasificación en vivo" : scope;
     listEl.innerHTML = `<div class="lb-list-wrap">` +
       data.map((d, i) => {
         const tp = d.toPar == null ? "—" : ((d.toPar > 0 ? "+" : "") + d.toPar);
@@ -5087,7 +5087,7 @@ function renderLeader() {
       }).join("") + `</div>`;
   } else if (tab === "stableford") {
     const data = rows.slice().sort((a, b) => b.sf - a.sf || a.gross - b.gross);
-    foot.textContent = "Stableford · " + scope;
+    foot.textContent = live ? "Clasificación en vivo" : scope;
     listEl.innerHTML = `<div class="lb-list-wrap">` +
       data.map((d, i) => {
         const extra = subStats(d);
@@ -5100,7 +5100,7 @@ function renderLeader() {
       }).join("") + `</div>`;
   } else if (tab === "putting") {
     const data = rows.slice().sort((a, b) => (b.puttPts||0) - (a.puttPts||0) || (a.puttsTotal||999) - (b.puttsTotal||999));
-    foot.textContent = "Putting King · " + scope;
+    foot.textContent = live ? "Clasificación en vivo" : scope;
     listEl.innerHTML = `<div class="lb-list-wrap">` +
       data.map((d, i) => {
         const puttLine = d.puttsTotal != null ? (d.puttsTotal + " putts · " + (d.puttsHoles||0) + " hoyos") : "sin putts";
@@ -5116,7 +5116,7 @@ function renderLeader() {
     const key = keyMap[tab] || "holeWins";
     const titles = { rey: "Rey del Hoyo", birdie: "Birdie Hunt", creative: "Creativo" };
     const data = rows.slice().sort((a, b) => (b[key]||0) - (a[key]||0));
-    foot.textContent = (titles[tab]||tab) + " · " + scope;
+    foot.textContent = live ? "Clasificación en vivo" : scope;
     listEl.innerHTML = `<div class="lb-list-wrap">` +
       data.map((d, i) => {
         const extra = subStats(d);
