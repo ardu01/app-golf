@@ -27,7 +27,8 @@ const api = loadFunctions(html, [
   "strokesOnHole",
   "modeRankCmp",
   "modeTie",
-  "activePlayers"
+  "activePlayers",
+  "plaqueIsHerreria"
 ], scope);
 
 const course = {
@@ -141,5 +142,10 @@ assert.ok(api.modeRankCmp("stableford")(
   { name: "Ana", thru: 9, sf: 20, gross: 40 },
   { name: "Bea", thru: 9, sf: 18, gross: 41 }
 ) < 0);
+
+assert.strictEqual(api.plaqueIsHerreria({ courseId: "la-herreria" }), true);
+assert.strictEqual(api.plaqueIsHerreria({ club: "La Herrería" }), true);
+assert.strictEqual(api.plaqueIsHerreria({ courseId: "las-rozas", club: "Las Rozas" }), false);
+assert.strictEqual(api.plaqueIsHerreria({ club: "CD Militar La Dehesa" }), false);
 
 console.log("scoring ok");
