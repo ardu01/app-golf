@@ -1946,7 +1946,7 @@
         </div>
         <div class="scroll" id="lobbyBody"></div>
         <div class="setup-footer">
-          <button class="btn btn-ghost" onclick="openInvite()">Invitar</button>
+          <button class="btn btn-ghost" onclick="go('home')">Cerrar</button>
           <button class="btn btn-primary" onclick="go('hole')">Ir al hoyo</button>
         </div>
       </section>
@@ -2700,6 +2700,15 @@ function saveHostProfile() {
   } catch (e) {}
 }
 
+function escapeHtml(value) {
+  return String(value == null ? "" : value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function playerLabel(p) {
   const n = p && String(p.name || "").trim();
   return n || "Sin nombre";
@@ -3319,8 +3328,7 @@ function renderSetup() {
       <button class="chip ${state.setup.holes===18?"selected":""}" onclick="state.setup.holes=18;if(typeof refreshPlayerHandicaps==='function')refreshPlayerHandicaps();renderSetup()">18 hoyos</button>
     </div>`;
   } else if (step === 3) {
-    const wmOpen = !!state.setup.writeModeOpen;
-    const wmLabel = state.setup.writeMode === "multi_device" ? "Cada uno" : "Un móvil";
+    state.setup.writeMode = "single_device";
     html = `<p class="muted mb-8">Quién juega hoy</p>
       <p class="micro mb-12">Nombre, HI y bola. Puedes editarlo después en Ajustes.</p>
       <div class="player-list">` +
@@ -3328,7 +3336,7 @@ function renderSetup() {
         <div class="plist-item">
           <div class="plist-main">
             <div class="avatar ${p.avatar||""}">${p.initials}</div>
-            <div class="name">${playerLabel(p)}</div>
+            <div class="name">${escapeHtml(playerLabel(p))}</div>
             <div class="hcp-step" aria-label="Hándicap">
               <button type="button" aria-label="Bajar hándicap" onclick="adjPlayerHcp(${i}, -0.1)">−</button>
               <input class="val hcp-input" type="text" inputmode="decimal" enterkeyhint="done"
@@ -3373,25 +3381,7 @@ function renderSetup() {
           <button class="btn btn-primary" type="button" onclick="addGuestPlayer()" style="width:100%;">Añadir a la partida</button>
         </div>
       </div>
-      <button type="button" class="setup-disclosure ${wmOpen ? "open" : ""}" onclick="toggleSetupWriteMode()">
-        <span>
-          <div class="t">Cómo se anota</div>
-          <div class="d">${wmLabel} · toca para cambiar</div>
-        </span>
-        <span class="chev" aria-hidden="true">▾</span>
-      </button>
-      <div class="setup-disclosure-body" ${wmOpen ? "" : "hidden"}>
-        <div class="write-mode">
-          <button class="option ${state.setup.writeMode==='single_device'?'selected':''}" type="button" onclick="state.setup.writeMode='single_device';renderSetup()">
-            <span class="radio"></span>
-            <span class="body"><span class="t">Un móvil</span><span class="d">Una persona anota a todos</span></span>
-          </button>
-          <button class="option ${state.setup.writeMode==='multi_device'?'selected':''}" type="button" onclick="state.setup.writeMode='multi_device';renderSetup()">
-            <span class="radio"></span>
-            <span class="body"><span class="t">Cada uno</span><span class="d">Cada jugador anota en su móvil</span></span>
-          </button>
-        </div>
-      </div>
+      <p class="micro mt-12">Un móvil anota a todos. Anotar cada uno en el suyo necesita sincronización entre dispositivos y aún no está disponible.</p>
       <div class="saved-roster" id="savedRoster"></div>`;
   } else if (step === 4) {
     html = `<p class="muted mb-8">¿Cómo queréis jugar?</p>
@@ -3431,9 +3421,7 @@ function renderSetup() {
         ${note}
       </div>`;
     }).filter(Boolean).join("");
-    const wmLine = state.setup.writeMode === 'multi_device'
-      ? 'Cada jugador anota en su móvil'
-      : 'Un móvil anota a todos';
+    const wmLine = 'Un móvil anota a todos';
     let creativeHtml = "";
     
     if (selected.includes("Creativo")) {
@@ -3511,7 +3499,7 @@ function renderSetup() {
         <div class="mt-8">${course.official ? '<span class="badge badge-oficial">OFICIAL</span>' : ''}</div>
         <div class="divider"></div>
         <p class="micro mb-8">Jugadores (${active.length})</p>
-        ${active.map(p => `<div class="row mb-8"><div class="avatar ${p.avatar||""}" style="width:28px;height:28px;font-size:10px;">${p.initials}</div><span style="font-size:14px;">${playerLabel(p)} · HI ${fmtHcp(p.hcp)}</span></div>`).join("")}
+        ${active.map(p => `<div class="row mb-8"><div class="avatar ${p.avatar||""}" style="width:28px;height:28px;font-size:10px;">${escapeHtml(p.initials)}</div><span style="font-size:14px;">${escapeHtml(playerLabel(p))} · HI ${fmtHcp(p.hcp)}</span></div>`).join("")}
         <div class="divider"></div>
         <p class="micro mb-8">Modalidades</p>
         <div class="chip-row">${state.setup.modalities.map(m => `<span class="chip selected" style="cursor:default;padding:0 12px;height:32px;font-size:12px;">${m}</span>`).join("")}</div>
@@ -3928,52 +3916,35 @@ function setupBack() {
 /* —— Lobby / Invite —— */
 function renderLobby() {
   const body = document.getElementById("lobbyBody");
+  if (!body) return;
+  if (state.setup) state.setup.writeMode = "single_device";
+  if (typeof FX === "object") FX.write_mode = "single_device";
+  state.writeMode = "A";
   const seats = (PLAYERS || []).filter(Boolean).map((p, i) => ({
-    p, role: i === 0 ? "host" : "user", away: false
+    p, role: i === 0 ? "host" : "user"
   }));
-  const modeLabel = (FX.write_mode === "multi_device" || state.writeMode === "B") ? "Cada uno en el suyo" : "Un móvil anota a todos";
   body.innerHTML = `
-    <p class="muted mb-16">${CLUB} · ${FX.tee} · ${(state.setup && state.setup.holes) || 18} hoyos</p>
-    <div class="row gap-8 mb-16">
-      <button class="chip selected" id="wmA" onclick="setWriteModeDemo('A')">Un móvil</button>
-      <button class="chip" id="wmB" onclick="setWriteModeDemo('B')">Cada uno</button>
-    </div>
-    <p class="micro mb-12">${modeLabel}</p>
+    <p class="muted mb-16">${escapeHtml(CLUB)} · ${escapeHtml(FX.tee)} · ${(state.setup && state.setup.holes) || 18} hoyos</p>
+    <p class="micro mb-12">Un móvil anota a todos. Varios móviles a la vez no está disponible: no hay sala ni sincronización.</p>
     ${seats.map(s => `
       <div class="player-row">
-        <div class="avatar ${s.p.avatar||""}">${s.p.initials}</div>
-        <div class="name">${playerLabel(s.p)}${s.role==='host'?' · anfitrión':''}
-          ${s.away?' <span class="guest-chip">Ausente</span>':''}
-        </div>
+        <div class="avatar ${s.p.avatar||""}">${escapeHtml(s.p.initials)}</div>
+        <div class="name">${escapeHtml(playerLabel(s.p))}${s.role==='host'?' · anfitrión':''}</div>
         <div class="hcp">HCP ${s.p.hcp != null ? fmtHcp(s.p.hcp) : '—'}</div>
       </div>`).join("")}
-    <div class="row gap-8 mt-16">
-      <button class="btn btn-secondary" style="flex:1" onclick="openInvite()">Añadir</button>
-    </div>
-    <p class="micro mt-12">Invitado sin cuenta · se guarda en el roster</p>
-    <div class="card mt-16">
-      <div class="eyebrow">Código de invitación</div>
-      <div class="invite-code" style="font-size:22px;letter-spacing:0.14em;">${inviteCodeNow()}</div>
-      <button class="btn btn-ghost btn-sm" onclick="copyInvite()">Copiar código</button>
-    </div>`;
-  const a = document.getElementById("wmA");
-  const b = document.getElementById("wmB");
-  if (a && b) {
-    const isB = state.writeMode === "B";
-    a.classList.toggle("selected", !isB);
-    b.classList.toggle("selected", isB);
-  }
+    <p class="micro mt-12">Los invitados se añaden en Nueva ronda, en este dispositivo.</p>`;
 }
 function setWriteModeDemo(m) {
-  state.writeMode = m;
-  if (typeof FX === "object") FX.write_mode = m === "B" ? "multi_device" : "single_device";
-  renderLobby();
-  showToast(m === "B" ? "Cada uno en el suyo" : "Un móvil anota a todos", true);
+  state.writeMode = "A";
+  if (typeof FX === "object") FX.write_mode = "single_device";
+  if (state.setup) state.setup.writeMode = "single_device";
+  if (m === "B") showToast("Varios móviles aún no está disponible");
+  else showToast("Un móvil anota a todos", true);
+  if (state.screen === "lobby") renderLobby();
 }
 
 function openInvite() {
-  document.getElementById("inviteSheet").classList.add("open");
-  setInviteTab(state.inviteTab);
+  showToast("Invitar por código o enlace aún no está disponible");
 }
 function closeInvite() {
   document.getElementById("inviteSheet").classList.remove("open");
@@ -6584,7 +6555,7 @@ function renderPerfil() {
       <button class="quick-tile" onclick="go('historial')"><div class="ico"></div><div class="t">Historial</div><div class="d">Mis vueltas</div></button>
       <button class="quick-tile" onclick="go('stats')"><div class="ico">◉</div><div class="t">Stats</div><div class="d">Promedios</div></button>
       <button class="quick-tile" onclick="document.getElementById('recordsBlock').scrollIntoView({behavior:'smooth'})"><div class="ico"></div><div class="t">Récords</div><div class="d">Mejores</div></button>
-      <button class="quick-tile" onclick="go('lobby')"><div class="ico"></div><div class="t">Amigos</div><div class="d">Flight</div></button>
+      <button class="quick-tile" onclick="go('lobby')"><div class="ico"></div><div class="t">Flight</div><div class="d">Este móvil</div></button>
     </div>
     <div class="card" id="recordsBlock">
       <div class="eyebrow">Récords</div>
