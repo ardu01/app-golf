@@ -1,0 +1,81 @@
+name: Publish Fairway V3
+on:
+  workflow_dispatch:
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Pull depurated V3 and localize assets
+        run: |
+          set -euo pipefail
+          curl -fsSL https://raw.githubusercontent.com/ardu01/app-golf-v3/main/index.html -o index.html
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          t = p.read_text()
+          t = t.replace('https://raw.githubusercontent.com/ardu01/app-golf/main/icons/apple-touch-icon.png', 'icons/apple-touch-icon.png')
+          t = t.replace('https://raw.githubusercontent.com/ardu01/app-golf/main/icons/icon-192.png', 'icons/icon-192.png')
+          t = t.replace('https://raw.githubusercontent.com/ardu01/app-golf/main/icons/icon-512.png', 'icons/icon-512.png')
+          t = t.replace('<title>Fairway</title>', '<title>Fairway V3</title>')
+          p.write_text(t)
+          print('index.html', p.stat().st_size)
+          PY
+          cat > manifest.webmanifest <<'EOF'
+          {
+            "name": "Fairway V3",
+            "short_name": "Fairway",
+            "description": "Marcador de golf personal · offline",
+            "start_url": "./",
+            "scope": "./",
+            "display": "standalone",
+            "orientation": "portrait-primary",
+            "background_color": "#F2F2F7",
+            "theme_color": "#F2F2F7",
+            "lang": "es-ES",
+            "icons": [
+              {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+              {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+              {"src": "icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+            ]
+          }
+          EOF
+          cat > sw.js <<'EOF'
+          const CACHE = "fairway-v3-161";
+          const ASSETS = ["./" , "./index.html", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/apple-touch-icon.png"];
+          self.addEventListener("install", (event) => {
+            event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(ASSETS)).then(() => self.skipWaiting()));
+          });
+          self.addEventListener("activate", (event) => {
+            event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
+          });
+          self.addEventListener("fetch", (event) => {
+            if (event.request.method !== "GET") return;
+            const url = new URL(event.request.url);
+            event.respondWith(caches.match(event.request).then((cached) => {
+              const fetched = fetch(event.request).then((res) => {
+                if (res.ok && url.href.startsWith(self.registration.scope)) {
+                  const copy = res.clone();
+                  caches.open(CACHE).then((cache) => cache.put(event.request, copy));
+                }
+                return res;
+              }).catch(() => cached);
+              return cached || fetched;
+            }));
+          });
+          EOF
+      - name: Commit published V3
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html manifest.webmanifest sw.js
+          git status
+          if git diff --cached --quiet; then
+            echo "Nothing to commit"
+            exit 0
+          fi
+          git commit -m "Publish depurated Fairway V3 to GitHub Pages"
+          git push
