@@ -6217,12 +6217,12 @@ function driveStatusText() {
     return { cls: "warn", text: "Drive necesita HTTPS (no abras el HTML a pelo). Usa el enlace del servidor o un host." };
   }
   const id = getDriveClientId();
-  if (!id) return { cls: "warn", text: "Pega tu Client ID de Google Cloud abajo para conectar." };
+  if (!id) return { cls: "warn", text: "Experimental. En producción el Client ID lo configura la app, no cada jugador." };
   const meta = getDriveMeta();
   if (meta.lastSync) {
-    return { cls: "ok", text: "Conectado · última sync " + meta.lastSyncLabel };
+    return { cls: "ok", text: "Experimental · última sync " + meta.lastSyncLabel };
   }
-  return { cls: "", text: "Listo para conectar con Google Drive." };
+  return { cls: "", text: "Experimental. Solo para desarrollo en este origen." };
 }
 
 function collectFairwayBackup() {
@@ -6807,7 +6807,19 @@ function renderPerfil() {
         <button class="btn btn-ghost" type="button" onclick="importFairwayBackup()">Restaurar copia…</button>
       </div>
       <p class="micro mt-12">En Compartir elige Guardar en Archivos. Para recuperar, Restaurar y elige ese JSON.</p>
-    </div>`;
+    </div>
+    <details class="card drive-card">
+      <summary class="eyebrow">Funciones experimentales</summary>
+      <p class="micro mt-8">Google Drive no está terminado. Hace falta un cliente OAuth de la aplicación, con el origen autorizado. No pegues secretos y no trates esto como copia de seguridad fiable.</p>
+      <div class="eyebrow mt-12">Client ID de desarrollo</div>
+      <input id="driveClientIdInput" class="perfil-input" type="text" autocomplete="off" spellcheck="false"
+        value="${escapeHtml(getDriveClientId())}" placeholder="Solo si estás probando OAuth" />
+      <div class="btn-row mt-8">
+        <button class="btn btn-ghost" type="button" onclick="saveDriveClientIdFromUi()">Guardar Client ID</button>
+        <button class="btn btn-ghost" type="button" onclick="driveConnect()">Probar sync</button>
+      </div>
+      <p class="micro mt-8">${escapeHtml(driveStatusText().text)}</p>
+    </details>`;
 }
 function _perfilRecordsHtml() {
   const rounds = loadRounds().filter(r => r.me && r.me.thru);
