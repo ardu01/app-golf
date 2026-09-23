@@ -1,4 +1,4 @@
-const SHELL = "fairway-v3-194";
+const SHELL = "fairway-v3-195";
 const MAPS = "fairway-maps-v1";
 const MAPS_MAX = 120;
 const ASSETS = [
@@ -73,6 +73,8 @@ self.addEventListener("fetch", (event) => {
   if (req.method !== "GET") return;
   let url;
   try { url = new URL(req.url); } catch (e) { return; }
+  const host = url.hostname;
+  if (host === "accounts.google.com" || host === "oauth2.googleapis.com" || host.endsWith(".googleapis.com") || host.endsWith(".google.com") || host === "google.com") return;
   const map = isMapUrl(url);
   const shell = !map && isShellUrl(url);
   if (!map && !shell) return;

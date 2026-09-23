@@ -2017,6 +2017,7 @@
             </div>
             <div class="greeting">Buenos días</div>
             <p class="greeting-sub" id="homeGreetingSub">Pon tu nombre y HCP en Perfil</p>
+            <div id="driveConflictHome" class="card" hidden></div>
             <button class="btn btn-primary mb-8" onclick="setupStart()">Nueva partida</button>
             <div class="round-card">
               <div class="eyebrow">Ronda en curso</div>
@@ -3319,6 +3320,7 @@ function go(name) {
     try {
       if (typeof fairwayFlushAppUpdate === "function" && !fairwayShouldHoldUpdate()) fairwayFlushAppUpdate();
     } catch (e) {}
+    try { if (typeof refreshDriveUi === "function") refreshDriveUi(); } catch (e) {}
   }
 }
 
@@ -3506,11 +3508,29 @@ function adjGuestDraftHcp(delta) {
 
 const ROSTER_KEY = "fairway.savedPlayers.v1";
 const HOST_KEY = "fairway.host.v1";
+const DATA_UPDATED_KEY = "fairway.dataUpdatedAt";
+let _driveApplying = false;
+function getDataUpdatedAt() {
+  try { return localStorage.getItem(DATA_UPDATED_KEY) || ""; } catch (e) { return ""; }
+}
+function touchDataUpdated(iso, force) {
+  if (_driveApplying && !force) return getDataUpdatedAt();
+  const stamp = iso || new Date().toISOString();
+  try { localStorage.setItem(DATA_UPDATED_KEY, stamp); } catch (e) {}
+  return stamp;
+}
 function loadRoster() {
   try { return JSON.parse(localStorage.getItem(ROSTER_KEY) || "[]"); } catch (e) { return []; }
 }
 function saveRoster(list) {
-  try { localStorage.setItem(ROSTER_KEY, JSON.stringify(list)); } catch (e) {}
+  let prev = null;
+  try { prev = localStorage.getItem(ROSTER_KEY); } catch (e) {}
+  const next = JSON.stringify(list);
+  try { localStorage.setItem(ROSTER_KEY, next); } catch (e) { return; }
+  if (prev !== next) {
+    touchDataUpdated();
+    if (typeof queueDriveSync === "function") queueDriveSync();
+  }
 }
 function upsertRosterPlayer(name, hcp) {
   const n = String(name || "").trim();
@@ -3573,11 +3593,16 @@ function saveHostHcp() {
 function saveHostProfile() {
   try {
     const p = PLAYERS[0] || {};
-    // Solo en este dispositivo — nunca viaja en el HTML público
-    localStorage.setItem(HOST_KEY, JSON.stringify({
+    const next = JSON.stringify({
       name: String(p.name || "").trim(),
       hcp: (p.hcp != null && p.hcp !== "") ? clampHcp(p.hcp) : null
-    }));
+    });
+    const prev = localStorage.getItem(HOST_KEY);
+    localStorage.setItem(HOST_KEY, next);
+    if (prev !== next) {
+      touchDataUpdated();
+      if (typeof queueDriveSync === "function") queueDriveSync();
+    }
   } catch (e) {}
 }
 
@@ -3734,6 +3759,7 @@ function saveRounds(list) {
       try { localStorage.setItem(ROUNDS_BAK_KEY, prev); } catch (e) {}
     }
     localStorage.setItem(ROUNDS_KEY, next);
+    if (prev !== next) touchDataUpdated();
   } catch (e) {
     console.warn("saveRounds", e);
     if (typeof showToast === "function") showToast("No se pudo guardar el historial en este dispositivo");
@@ -3783,18 +3809,38 @@ function persistActiveRound() {
     };
     const prev = localStorage.getItem(ACTIVE_KEY);
     const next = JSON.stringify(payload);
+    let changed = !prev || prev !== next;
+    try {
+      if (prev) {
+        const a = JSON.parse(prev);
+        const b = JSON.parse(next);
+        delete a.savedAt;
+        delete b.savedAt;
+        changed = JSON.stringify(a) !== JSON.stringify(b);
+      }
+    } catch (e) { changed = true; }
     if (prev && prev !== next) {
       try { localStorage.setItem(ACTIVE_BAK_KEY, prev); } catch (e) {}
     }
     localStorage.setItem(ACTIVE_KEY, next);
+    if (changed) {
+      touchDataUpdated();
+      if (typeof queueDriveSync === "function") queueDriveSync();
+    }
   } catch (e) {
     console.warn("persistActiveRound", e);
     if (typeof showToast === "function") showToast("No se pudo guardar la ronda en curso");
   }
 }
 function clearActiveRound() {
+  let had = false;
+  try { had = !!localStorage.getItem(ACTIVE_KEY); } catch (e) {}
   try { localStorage.removeItem(ACTIVE_KEY); } catch (e) {}
   try { localStorage.removeItem(ACTIVE_BAK_KEY); } catch (e) {}
+  if (had) {
+    touchDataUpdated();
+    if (typeof queueDriveSync === "function") queueDriveSync();
+  }
 }
 
 /** After closing a round: wipe storage + scores so Home never shows Continuar */
@@ -3943,6 +3989,7 @@ function buildRoundRecord() {
   return {
     id,
     dateISO: now.toISOString(),
+    updatedAt: now.toISOString(),
     date: formatRoundDate(now.toISOString()),
     club: (course && course.name) || CLUB || "Fairway",
     courseId: state.setup.courseId,
@@ -3967,6 +4014,7 @@ function persistCompletedRound() {
   // Always wipe activeRound even if already saved (P05: stale Continuar)
   if (state._roundSaved) {
     endActiveRoundMemory();
+    if (typeof queueDriveSync === "function") queueDriveSync({ immediate: true });
     return state._roundSaved;
   }
   const { rows } = liveStandings();
@@ -3976,6 +4024,7 @@ function persistCompletedRound() {
   if (!any) {
     endActiveRoundMemory();
     state.editingRoundId = null;
+    if (typeof queueDriveSync === "function") queueDriveSync({ immediate: true });
     return null;
   }
   const rec = buildRoundRecord();
@@ -3992,6 +4041,7 @@ function persistCompletedRound() {
       state._roundSaved = rec.id;
       state.editingRoundId = null;
       endActiveRoundMemory();
+      if (typeof queueDriveSync === "function") queueDriveSync({ immediate: true });
       return rec.id;
     }
   }
@@ -4000,6 +4050,7 @@ function persistCompletedRound() {
   state._roundSaved = rec.id;
   state.editingRoundId = null;
   endActiveRoundMemory();
+  if (typeof queueDriveSync === "function") queueDriveSync({ immediate: true });
   return rec.id;
 }
 function getRoundById(id) {
@@ -7330,48 +7381,236 @@ function renderClose() {
 
 /* —— Perfil / Historial / Stats —— */
 
-/* —— Google Drive sync (OAuth · drive.file) —— */
+/* —— Google Drive sync (OAuth · drive.file) ——
+   FAIRWAY_DRIVE_CLIENT_ID is a public OAuth web client id, not a secret.
+   Leave it empty until the GitHub Pages origin is registered on that client.
+   Access tokens stay in memory. A silent session of many weeks needs a
+   backend that holds the refresh token; this static app does not invent one.
+*/
+const FAIRWAY_DRIVE_CLIENT_ID = "";
 const DRIVE_CLIENT_KEY = "fairway.drive.clientId";
 const DRIVE_FILE_KEY = "fairway.drive.fileId";
+const DRIVE_FOLDER_KEY = "fairway.drive.folderId";
 const DRIVE_META_KEY = "fairway.drive.meta";
 const DRIVE_FILE_NAME = "fairway-data.json";
 const DRIVE_FOLDER_NAME = "Fairway";
 const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.file";
+const DRIVE_DEBOUNCE_MS = 4000;
 
 let _driveToken = null;
 let _driveTokenExp = 0;
 let _driveBusy = false;
+let _driveInteractive = false;
+let _driveSyncAgain = false;
+let _driveNeedsUser = false;
 
 function getDriveClientId() {
-  try { return (localStorage.getItem(DRIVE_CLIENT_KEY) || "").trim(); } catch (e) { return ""; }
-}
-function setDriveClientId(id) {
-  try {
-    if (id) localStorage.setItem(DRIVE_CLIENT_KEY, id.trim());
-    else localStorage.removeItem(DRIVE_CLIENT_KEY);
-  } catch (e) {}
+  return String(FAIRWAY_DRIVE_CLIENT_ID || "").trim();
 }
 function getDriveMeta() {
-  try { return JSON.parse(localStorage.getItem(DRIVE_META_KEY) || "{}"); } catch (e) { return {}; }
+  try {
+    const m = JSON.parse(localStorage.getItem(DRIVE_META_KEY) || "{}");
+    return m && typeof m === "object" && !Array.isArray(m) ? m : {};
+  } catch (e) { return {}; }
 }
 function setDriveMeta(m) {
   try { localStorage.setItem(DRIVE_META_KEY, JSON.stringify(m || {})); } catch (e) {}
 }
 function driveOriginOk() {
-  const o = location.protocol;
-  return o === "https:" || o === "http:" && (location.hostname === "localhost" || location.hostname === "127.0.0.1");
+  try {
+    const o = location.protocol;
+    return o === "https:" || (o === "http:" && (location.hostname === "localhost" || location.hostname === "127.0.0.1"));
+  } catch (e) { return false; }
 }
-function driveStatusText() {
-  if (!driveOriginOk()) {
-    return { cls: "warn", text: "Drive necesita HTTPS (no abras el HTML a pelo). Usa el enlace del servidor o un host." };
+function driveSafeId(id) {
+  const s = String(id || "");
+  return /^[a-zA-Z0-9_-]{10,128}$/.test(s) ? s : "";
+}
+function driveHash(text) {
+  const s = String(text == null ? "" : text);
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h) ^ s.charCodeAt(i);
+  return (h >>> 0).toString(16);
+}
+function driveRoundStamp(r) {
+  if (!r) return "";
+  return String(r.updatedAt || r.dateISO || "");
+}
+function driveMergeRounds(localRounds, remoteRounds) {
+  const byId = {};
+  (localRounds || []).forEach(r => { if (r && r.id) byId[r.id] = r; });
+  (remoteRounds || []).forEach(r => {
+    if (!r || !r.id) return;
+    const cur = byId[r.id];
+    if (!cur) { byId[r.id] = r; return; }
+    if (driveRoundStamp(r) >= driveRoundStamp(cur)) byId[r.id] = r;
+  });
+  return Object.keys(byId).map(k => byId[k]).sort((a, b) => {
+    return String(b.dateISO || b.updatedAt || "").localeCompare(String(a.dateISO || a.updatedAt || ""));
+  });
+}
+function driveActiveFingerprint(active) {
+  if (!active || typeof active !== "object") return "";
+  try {
+    const players = Array.isArray(active.players) ? active.players : [];
+    return driveHash(JSON.stringify({
+      hole: active.hole || 1,
+      players: players.map(p => ({
+        id: p && p.id,
+        hcp: p && p.hcp,
+        ball: p && p.ball,
+        scores: p && p.scores,
+        putts: p && p.putts,
+        fir: p && p.fir,
+        gir: p && p.gir
+      }))
+    }));
+  } catch (e) { return ""; }
+}
+function driveActiveRoundDirty(active) {
+  if (!active || typeof active !== "object") return false;
+  const players = Array.isArray(active.players) ? active.players : [];
+  return players.some(p => {
+    if (!p || typeof p !== "object") return false;
+    if (p.scores && Object.keys(p.scores).length) return true;
+    if (p.putts && Object.keys(p.putts).length) return true;
+    if (p.fir && Object.keys(p.fir).length) return true;
+    if (p.gir && Object.keys(p.gir).length) return true;
+    if (p.totalsGross != null || p.totalsPutts != null) return true;
+    if (String(p.ball || "").trim()) return true;
+    return false;
+  });
+}
+function drivePickActiveRound(localActive, remoteActive, localDirty) {
+  if (localDirty) return localActive || null;
+  if (!localActive) return remoteActive || null;
+  if (!remoteActive) return localActive;
+  return remoteActive;
+}
+function driveBackupHasData(backup) {
+  if (!backup || typeof backup !== "object") return false;
+  if (Array.isArray(backup.rounds) && backup.rounds.length) return true;
+  if (backup.activeRound && typeof backup.activeRound === "object") return true;
+  if (backup.host && typeof backup.host === "object" && (backup.host.name || backup.host.hcp != null)) return true;
+  if (Array.isArray(backup.roster) && backup.roster.length) return true;
+  return false;
+}
+function driveBackupHash(backup) {
+  const b = backup || {};
+  const rounds = (b.rounds || []).map(r => r && r.id ? (r.id + "@" + driveRoundStamp(r)) : "").sort();
+  return driveHash(JSON.stringify({
+    updatedAt: b.updatedAt || "",
+    rounds: rounds,
+    host: b.host || null,
+    active: driveActiveFingerprint(b.activeRound)
+  }));
+}
+function driveSyncPlan(input) {
+  const i = input || {};
+  if (i.online === false) return { action: "offline", keepLocalActive: true, mergeRounds: false };
+  if (i.remoteCorrupt) return { action: "reject-remote", keepLocalActive: true, mergeRounds: false };
+  if (!i.remoteHasData) return { action: "upload", keepLocalActive: true, mergeRounds: false };
+  if (!i.localHasData) return { action: "download", keepLocalActive: false, mergeRounds: false };
+  const localT = String(i.localUpdatedAt || "");
+  const remoteT = String(i.remoteUpdatedAt || "");
+  if (localT && remoteT && localT === remoteT) return { action: "noop", keepLocalActive: true, mergeRounds: false };
+  const base = String(i.lastSyncUpdatedAt || "");
+  const hasBase = !!(base || i.lastSyncedHash || i.lastSyncRemoteModifiedTime);
+  const localChanged = hasBase
+    ? (localT !== base || !!(i.localHash && i.lastSyncedHash && i.localHash !== i.lastSyncedHash))
+    : (localT > remoteT);
+  const remoteChanged = hasBase
+    ? ((remoteT && remoteT !== base) || !!(i.remoteModifiedTime && i.lastSyncRemoteModifiedTime && i.remoteModifiedTime !== i.lastSyncRemoteModifiedTime) || !!(i.remoteHash && i.lastSyncedHash && i.remoteHash !== i.lastSyncedHash))
+    : (remoteT > localT);
+  if (!hasBase && localT !== remoteT) {
+    if (i.localActiveDirty && i.activeDiffers) return { action: "merge", keepLocalActive: true, mergeRounds: true };
+    if (localT > remoteT) return { action: "upload", keepLocalActive: true, mergeRounds: true };
+    if (i.localActiveDirty) return { action: "merge", keepLocalActive: true, mergeRounds: true };
+    return { action: "download", keepLocalActive: false, mergeRounds: true };
   }
-  const id = getDriveClientId();
-  if (!id) return { cls: "warn", text: "Experimental. En producción el Client ID lo configura la app, no cada jugador." };
-  const meta = getDriveMeta();
-  if (meta.lastSync) {
-    return { cls: "ok", text: "Experimental · última sync " + meta.lastSyncLabel };
+  if (hasBase && localChanged && remoteChanged && i.activeDiffers && i.localActiveDirty) {
+    return { action: "conflict", keepLocalActive: true, mergeRounds: true };
   }
-  return { cls: "", text: "Experimental. Solo para desarrollo en este origen." };
+  if (localChanged && !remoteChanged) return { action: "upload", keepLocalActive: true, mergeRounds: false };
+  if (remoteChanged && !localChanged) {
+    if (i.localActiveDirty) return { action: "merge", keepLocalActive: true, mergeRounds: true };
+    return { action: "download", keepLocalActive: false, mergeRounds: false };
+  }
+  if (localChanged && remoteChanged) return { action: "merge", keepLocalActive: !!i.localActiveDirty || localT >= remoteT, mergeRounds: true };
+  if (localT > remoteT) return { action: "upload", keepLocalActive: true, mergeRounds: false };
+  if (remoteT > localT) {
+    if (i.localActiveDirty) return { action: "merge", keepLocalActive: true, mergeRounds: true };
+    return { action: "download", keepLocalActive: false, mergeRounds: false };
+  }
+  return { action: "noop", keepLocalActive: true, mergeRounds: false };
+}
+function driveResolveFile(input) {
+  const i = input || {};
+  const found = (i.foundIds || []).filter(Boolean);
+  if (i.storedId && i.storedOk && !i.storedTrashed) return { action: "reuse", fileId: i.storedId, duplicates: found.filter(id => id !== i.storedId) };
+  if (found.length) return { action: "search-hit", fileId: found[0], duplicates: found.slice(1) };
+  return { action: "create", fileId: null, duplicates: [] };
+}
+function driveAuthFailure(status) {
+  const s = Number(status);
+  return { reconnect: s === 401 || s === 403, wipeLocal: false };
+}
+function driveAcceptRemote(raw) {
+  let data = raw;
+  if (typeof raw === "string") {
+    try { data = JSON.parse(raw); } catch (e) { return { ok: false, reason: "JSON no válido" }; }
+  }
+  if (typeof validateFairwayBackup !== "function") return { ok: false, reason: "JSON no válido" };
+  return validateFairwayBackup(data);
+}
+function driveScheduleSync(events, waitMs) {
+  const wait = waitMs == null ? DRIVE_DEBOUNCE_MS : waitMs;
+  const sorted = (events || []).slice().sort((a, b) => a.t - b.t);
+  let due = null;
+  const fires = [];
+  sorted.forEach(ev => {
+    if (due != null && ev.t >= due) {
+      fires.push(due);
+      due = null;
+    }
+    if (ev.immediate) {
+      due = null;
+      fires.push(ev.t);
+    } else due = ev.t + wait;
+  });
+  if (due != null) fires.push(due);
+  return fires;
+}
+function driveSyncImmediate(reason) {
+  return reason === "round-close" || reason === "manual";
+}
+function driveResultStamp(localT, remoteT, kind) {
+  if (kind === "download") return remoteT || localT || "";
+  if (kind === "merge") return new Date().toISOString();
+  return localT || remoteT || "";
+}
+function driveShouldFlushPending(s) {
+  return !!(s && s.pending && s.connected && s.online !== false);
+}
+function driveUiState(input) {
+  const i = input || {};
+  if (i.conflict) return { status: "conflict", label: "Conflicto" };
+  if (i.needsReconnect) return { status: "reconnect", label: "Necesita reconexión" };
+  if (!i.connected && i.status === "connecting") return { status: "connecting", label: "Conectando…" };
+  if (!i.connected) return { status: "disconnected", label: "No conectado" };
+  if (i.status === "connecting") return { status: "connecting", label: "Conectando…" };
+  if (i.status === "syncing") return { status: "syncing", label: "Sincronizando…" };
+  if (i.online === false) return { status: "offline", label: "Sin conexión" };
+  if (i.pending) return { status: "pending", label: "Cambios pendientes" };
+  return { status: "synced", label: "Sincronizado" };
+}
+function drivePlayScreen() {
+  const s = (typeof state !== "undefined" && state && state.screen) || "";
+  return s === "hole" || s === "scorecard" || s === "leader" || s === "ajustes" || s === "arbitro" || s === "close";
+}
+function driveListedIds(data) {
+  if (!data || typeof data !== "object" || !Array.isArray(data.files)) return [];
+  return data.files.map(f => driveSafeId(f && f.id)).filter(Boolean);
 }
 
 function collectFairwayBackup() {
@@ -7400,7 +7639,7 @@ function collectFairwayBackup() {
     app: "Fairway",
     appVersion: "3.0.0",
     exportedAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    updatedAt: (typeof getDataUpdatedAt === "function" ? getDataUpdatedAt() : "") || "",
     includes: ["rounds", "players.scores", "players.putts", "players.fir", "players.gir", "players.ball", "players.withdrawn", "roster", "host", "activeRound", "winners", "standings"],
     rounds: rounds,
     activeRound: active, // ronda en curso con scores/putts/fir/gir si existe
@@ -7534,6 +7773,7 @@ function sanitizeImportedRound(r) {
   return {
     id: id,
     dateISO: clipStr(r.dateISO, 40),
+    updatedAt: clipStr(r.updatedAt, 40),
     date: clipStr(r.date, 40),
     club: clipStr(r.club, 80),
     courseId: clipStr(r.courseId, 80),
@@ -7559,6 +7799,7 @@ function validateFairwayBackup(data) {
   const rounds = data.rounds.map(sanitizeImportedRound).filter(Boolean);
   const out = {
     version: Number(data.version) || 1,
+    updatedAt: clipStr(data.updatedAt, 40),
     rounds: rounds,
     roster: Array.isArray(data.roster) ? data.roster.slice(0, 80).map(p => {
       if (!p || typeof p !== "object") return null;
@@ -7621,20 +7862,10 @@ function mergeFairwayBackup(remote) {
   if (remote.newer && typeof showToast === "function") {
     showToast("Copia de una versión más nueva · se importan las partidas reconocidas");
   }
-  // Merge rounds by id (keep newest dateISO / updated)
-  const local = loadRounds();
-  const byId = {};
-  local.forEach(r => { if (r && r.id) byId[r.id] = r; });
-  (remote.rounds || []).forEach(r => {
-    if (!r || !r.id) return;
-    const cur = byId[r.id];
-    if (!cur) { byId[r.id] = r; return; }
-    const a = cur.dateISO || "";
-    const b = r.dateISO || "";
-    if (b >= a) byId[r.id] = r;
-  });
-  const merged = Object.keys(byId).map(k => byId[k]);
-  merged.sort((a, b) => String(b.dateISO || "").localeCompare(String(a.dateISO || "")));
+  let localActive = null;
+  try { localActive = JSON.parse(localStorage.getItem(ACTIVE_KEY) || "null"); } catch (e) { localActive = null; }
+  const keepLocalActive = driveActiveRoundDirty(localActive) || drivePlayScreen();
+  const merged = driveMergeRounds(loadRounds(), remote.rounds || []).slice(0, 200);
   saveRounds(merged);
   if (Array.isArray(remote.roster) && typeof saveRoster === "function") {
     const loc = loadRoster();
@@ -7663,14 +7894,22 @@ function mergeFairwayBackup(remote) {
       if (typeof showToast === "function") showToast("No se pudo restaurar el perfil");
     }
   }
-  if (remote.activeRound && typeof remote.activeRound === "object") {
+  if (remote.activeRound && typeof remote.activeRound === "object" && !keepLocalActive) {
     try { localStorage.setItem(ACTIVE_KEY, JSON.stringify(remote.activeRound)); }
     catch (e) {
       console.warn("merge activeRound", e);
       if (typeof showToast === "function") showToast("No se pudo restaurar la ronda en curso");
     }
+  } else if (remote.activeRound && keepLocalActive && typeof showToast === "function") {
+    showToast("La ronda en curso de este dispositivo se mantiene");
   }
   return true;
+}
+
+function driveFail(message, status) {
+  const err = new Error(message || "Drive");
+  err.status = status || 0;
+  return err;
 }
 
 function ensureGis(cb) {
@@ -7680,7 +7919,9 @@ function ensureGis(cb) {
     s.id = "fairwayGis";
     s.src = "https://accounts.google.com/gsi/client";
     s.async = true;
-    s.onerror = function () { showToast("No carga Google Sign-In"); };
+    s.onerror = function () {
+      if (_driveInteractive && typeof showToast === "function") showToast("No carga Google Sign-In");
+    };
     document.head.appendChild(s);
   }
   let n = 0;
@@ -7690,7 +7931,8 @@ function ensureGis(cb) {
       clearInterval(t); cb();
     } else if (n > 40) {
       clearInterval(t);
-      showToast("No carga Google Sign-In");
+      if (_driveInteractive && typeof showToast === "function") showToast("No carga Google Sign-In");
+      cb(new Error("gis"));
     }
   }, 150);
 }
@@ -7698,56 +7940,96 @@ function ensureGis(cb) {
 function requestDriveToken(interactive) {
   return new Promise((resolve, reject) => {
     const clientId = getDriveClientId();
-    if (!clientId) return reject(new Error("Sin Client ID"));
-    if (!driveOriginOk()) return reject(new Error("HTTPS requerido"));
-    if (_driveToken && Date.now() < _driveTokenExp - 60000) {
-      return resolve(_driveToken);
-    }
-    ensureGis(() => {
+    if (!clientId) return reject(driveFail("Sin Client ID", 0));
+    if (!driveOriginOk()) return reject(driveFail("HTTPS requerido", 0));
+    if (_driveToken && Date.now() < _driveTokenExp - 60000) return resolve(_driveToken);
+    if (!interactive && _driveNeedsUser) return reject(driveFail("interaction_required", 401));
+    ensureGis((gisErr) => {
+      if (gisErr) return reject(driveFail("gis", 0));
       try {
         const client = google.accounts.oauth2.initTokenClient({
           client_id: clientId,
           scope: DRIVE_SCOPE,
           callback: (resp) => {
             if (resp && resp.error) {
-              reject(new Error(resp.error));
+              if (!interactive) _driveNeedsUser = true;
+              reject(driveFail(resp.error, 401));
               return;
             }
+            _driveNeedsUser = false;
             _driveToken = resp.access_token;
             const secs = Number(resp.expires_in) || 3600;
             _driveTokenExp = Date.now() + secs * 1000;
+            const meta = getDriveMeta();
+            setDriveMeta(Object.assign({}, meta, { connected: true, needsReconnect: false }));
             resolve(_driveToken);
           },
-          error_callback: (err) => reject(err || new Error("OAuth cancelado"))
+          error_callback: (err) => {
+            if (!interactive) _driveNeedsUser = true;
+            const msg = (err && (err.message || err.type)) || "OAuth";
+            reject(driveFail(msg, 401));
+          }
         });
-        const opts = interactive ? { prompt: "consent" } : { prompt: "" };
-        client.requestAccessToken(opts);
+        client.requestAccessToken(interactive ? { prompt: "consent" } : { prompt: "" });
       } catch (e) { reject(e); }
     });
   });
 }
 
 async function driveFetch(path, opts) {
-  const token = await requestDriveToken(false).catch(() => null)
-    || await requestDriveToken(true);
+  const token = await requestDriveToken(!!_driveInteractive);
   const headers = Object.assign({}, (opts && opts.headers) || {}, {
     Authorization: "Bearer " + token
   });
-  const res = await fetch("https://www.googleapis.com/drive/v3/" + path, Object.assign({}, opts, { headers }));
-  if (res.status === 401) {
+  const init = Object.assign({}, opts, { headers: headers });
+  let res = await fetch("https://www.googleapis.com/drive/v3/" + path, init);
+  if (res.status === 401 || res.status === 403) {
     _driveToken = null;
+    _driveTokenExp = 0;
+    if (!_driveInteractive) throw driveFail("auth", res.status);
     const token2 = await requestDriveToken(true);
     headers.Authorization = "Bearer " + token2;
-    return fetch("https://www.googleapis.com/drive/v3/" + path, Object.assign({}, opts, { headers }));
+    res = await fetch("https://www.googleapis.com/drive/v3/" + path, Object.assign({}, opts, { headers: headers }));
+    if (res.status === 401 || res.status === 403) {
+      _driveToken = null;
+      throw driveFail("auth", res.status);
+    }
   }
   return res;
 }
 
+async function driveJson(res) {
+  const text = await res.text();
+  let data = null;
+  try { data = text ? JSON.parse(text) : null; } catch (e) { data = null; }
+  if (res.status === 401 || res.status === 403) throw driveFail("auth", res.status);
+  if (!res.ok) {
+    const msg = (data && data.error && data.error.message) || ("Drive " + res.status);
+    throw driveFail(msg, res.status);
+  }
+  if (!data || typeof data !== "object") throw driveFail("Respuesta no válida", res.status);
+  return data;
+}
+
 async function driveEnsureFolder() {
+  const stored = driveSafeId(localStorage.getItem(DRIVE_FOLDER_KEY) || "");
+  if (stored) {
+    const check = await driveFetch("files/" + stored + "?fields=id,mimeType,trashed");
+    if (check.ok) {
+      const f = await driveJson(check);
+      if (f && !f.trashed && f.mimeType === "application/vnd.google-apps.folder") return f.id;
+    } else if (check.status !== 404) {
+      await driveJson(check);
+    }
+  }
   const q = encodeURIComponent("name='" + DRIVE_FOLDER_NAME + "' and mimeType='application/vnd.google-apps.folder' and trashed=false");
-  const res = await driveFetch("files?q=" + q + "&spaces=drive&fields=files(id,name)");
-  const data = await res.json();
-  if (data.files && data.files[0]) return data.files[0].id;
+  const res = await driveFetch("files?q=" + q + "&spaces=drive&fields=files(id,name)&pageSize=10");
+  const data = await driveJson(res);
+  const ids = driveListedIds(data);
+  if (ids[0]) {
+    try { localStorage.setItem(DRIVE_FOLDER_KEY, ids[0]); } catch (e) {}
+    return ids[0];
+  }
   const create = await driveFetch("files", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -7756,33 +8038,50 @@ async function driveEnsureFolder() {
       mimeType: "application/vnd.google-apps.folder"
     })
   });
-  const folder = await create.json();
-  return folder.id;
+  const folder = await driveJson(create);
+  const id = driveSafeId(folder.id);
+  if (!id) throw driveFail("Carpeta no válida", 0);
+  try { localStorage.setItem(DRIVE_FOLDER_KEY, id); } catch (e) {}
+  return id;
 }
 
 async function driveFindDataFile(folderId) {
-  const stored = localStorage.getItem(DRIVE_FILE_KEY);
+  const folder = driveSafeId(folderId);
+  if (!folder) throw driveFail("Carpeta no válida", 0);
+  const stored = driveSafeId(localStorage.getItem(DRIVE_FILE_KEY) || "");
+  let storedOk = false;
+  let storedTrashed = false;
   if (stored) {
     const check = await driveFetch("files/" + stored + "?fields=id,name,trashed");
-    if (check.ok) {
-      const f = await check.json();
-      if (f && !f.trashed) return f.id;
+    if (check.status === 404) storedOk = false;
+    else if (check.ok) {
+      const f = await driveJson(check);
+      storedOk = !!(f && driveSafeId(f.id));
+      storedTrashed = !!(f && f.trashed);
+    } else {
+      await driveJson(check);
     }
   }
-  const q = encodeURIComponent("name='" + DRIVE_FILE_NAME + "' and '" + folderId + "' in parents and trashed=false");
-  const res = await driveFetch("files?q=" + q + "&spaces=drive&fields=files(id,name)");
-  const data = await res.json();
-  if (data.files && data.files[0]) {
-    localStorage.setItem(DRIVE_FILE_KEY, data.files[0].id);
-    return data.files[0].id;
+  let foundIds = [];
+  if (!storedOk || storedTrashed) {
+    const q = encodeURIComponent("name='" + DRIVE_FILE_NAME + "' and '" + folder + "' in parents and trashed=false");
+    const res = await driveFetch("files?q=" + q + "&spaces=drive&fields=files(id,name,modifiedTime)&orderBy=modifiedTime desc&pageSize=10");
+    const data = await driveJson(res);
+    foundIds = driveListedIds(data);
   }
-  return null;
+  const decision = driveResolveFile({ storedId: stored, storedOk: storedOk, storedTrashed: storedTrashed, foundIds: foundIds });
+  if (decision.fileId) {
+    try { localStorage.setItem(DRIVE_FILE_KEY, decision.fileId); } catch (e) {}
+  }
+  return decision;
 }
 
-async function driveUploadJson(payload, fileId, folderId) {
-  const meta = fileId
+async function driveUploadJson(payload, fileId, folderId, retried) {
+  const safeFile = driveSafeId(fileId);
+  const safeFolder = driveSafeId(folderId);
+  const meta = safeFile
     ? { name: DRIVE_FILE_NAME, mimeType: "application/json" }
-    : { name: DRIVE_FILE_NAME, mimeType: "application/json", parents: [folderId] };
+    : { name: DRIVE_FILE_NAME, mimeType: "application/json", parents: [safeFolder] };
   const boundary = "fairway_" + Date.now();
   const body =
     "--" + boundary + "\r\n" +
@@ -7792,105 +8091,473 @@ async function driveUploadJson(payload, fileId, folderId) {
     "Content-Type: application/json\r\n\r\n" +
     JSON.stringify(payload) + "\r\n" +
     "--" + boundary + "--";
-  const token = await requestDriveToken(false).catch(() => null) || await requestDriveToken(true);
-  const url = fileId
-    ? "https://www.googleapis.com/upload/drive/v3/files/" + fileId + "?uploadType=multipart"
+  const token = await requestDriveToken(!!_driveInteractive);
+  const url = safeFile
+    ? "https://www.googleapis.com/upload/drive/v3/files/" + safeFile + "?uploadType=multipart"
     : "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart";
-  const res = await fetch(url, {
-    method: fileId ? "PATCH" : "POST",
+  let res = await fetch(url, {
+    method: safeFile ? "PATCH" : "POST",
     headers: {
       Authorization: "Bearer " + token,
       "Content-Type": "multipart/related; boundary=" + boundary
     },
     body
   });
-  if (!res.ok) throw new Error("Upload " + res.status);
-  const f = await res.json();
-  if (f.id) localStorage.setItem(DRIVE_FILE_KEY, f.id);
-  return f.id;
+  if ((res.status === 401 || res.status === 403) && _driveInteractive) {
+    _driveToken = null;
+    const token2 = await requestDriveToken(true);
+    res = await fetch(url, {
+      method: safeFile ? "PATCH" : "POST",
+      headers: {
+        Authorization: "Bearer " + token2,
+        "Content-Type": "multipart/related; boundary=" + boundary
+      },
+      body
+    });
+  }
+  if ((res.status === 401 || res.status === 403)) {
+    _driveToken = null;
+    throw driveFail("auth", res.status);
+  }
+  if (res.status === 404 && safeFile && !retried) {
+    try { localStorage.removeItem(DRIVE_FILE_KEY); } catch (e) {}
+    const again = await driveFindDataFile(safeFolder);
+    return driveUploadJson(payload, again && again.action === "create" ? null : (again && again.fileId), safeFolder, true);
+  }
+  const f = await driveJson(res);
+  const id = driveSafeId(f.id);
+  if (!id) throw driveFail("Archivo no válido", 0);
+  try { localStorage.setItem(DRIVE_FILE_KEY, id); } catch (e) {}
+  return id;
 }
 
-async function driveDownloadJson(fileId) {
-  const token = await requestDriveToken(false).catch(() => null) || await requestDriveToken(true);
-  const res = await fetch("https://www.googleapis.com/drive/v3/files/" + fileId + "?alt=media", {
-    headers: { Authorization: "Bearer " + token }
+async function driveReadFile(fileId) {
+  const id = driveSafeId(fileId);
+  if (!id) return { missing: true };
+  const metaRes = await driveFetch("files/" + id + "?fields=id,name,trashed,modifiedTime,mimeType");
+  if (metaRes.status === 404) return { missing: true };
+  const meta = await driveJson(metaRes);
+  if (!meta || meta.trashed) return { missing: true };
+  const mime = String(meta.mimeType || "");
+  if (mime && mime.indexOf("json") === -1 && mime !== "text/plain" && mime !== "application/octet-stream") {
+    return { corrupt: true, modifiedTime: meta.modifiedTime || "" };
+  }
+  const res = await driveFetch("files/" + id + "?alt=media");
+  if (res.status === 404) return { missing: true };
+  if (!res.ok) throw driveFail("download", res.status);
+  const text = await res.text();
+  if (text.length > 5000000) return { corrupt: true, modifiedTime: meta.modifiedTime || "" };
+  try {
+    return { json: JSON.parse(text), modifiedTime: meta.modifiedTime || "" };
+  } catch (e) {
+    return { corrupt: true, modifiedTime: meta.modifiedTime || "" };
+  }
+}
+
+function driveRememberSync(backup, remoteModifiedTime) {
+  const now = new Date();
+  let label = "";
+  try { label = now.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }); } catch (e) { label = ""; }
+  const prev = getDriveMeta();
+  setDriveMeta({
+    connected: true,
+    lastSync: now.toISOString(),
+    lastSyncLabel: label,
+    lastSyncUpdatedAt: (backup && backup.updatedAt) || getDataUpdatedAt(),
+    lastSyncRemoteModifiedTime: remoteModifiedTime || "",
+    lastSyncedHash: driveBackupHash(backup),
+    pending: false,
+    status: "synced",
+    needsReconnect: false,
+    conflict: false,
+    conflictChoice: ""
   });
-  if (!res.ok) throw new Error("Download " + res.status);
-  return res.json();
+  if (prev) { /* metadata replaced on purpose */ }
 }
 
-async function drivePull() {
-  const folderId = await driveEnsureFolder();
-  const fileId = await driveFindDataFile(folderId);
-  if (!fileId) return null;
-  const remote = await driveDownloadJson(fileId);
-  mergeFairwayBackup(remote);
-  return remote;
+function driveApplyResolved(remote, remoteUpdatedAt, opts) {
+  const o = opts || {};
+  _driveApplying = true;
+  try {
+    if (Array.isArray(o.rounds)) saveRounds(o.rounds.slice(0, 200));
+    if (Array.isArray(o.roster) && typeof saveRoster === "function") saveRoster(o.roster);
+    if (o.host && typeof o.host === "object") {
+      try {
+        localStorage.setItem(HOST_KEY, JSON.stringify(o.host));
+        if (typeof PLAYERS !== "undefined" && PLAYERS[0]) {
+          if (o.host.hcp != null && o.host.hcp !== "") {
+            PLAYERS[0].hcp = clampHcp(o.host.hcp);
+            PLAYERS[0].ph = Math.round(PLAYERS[0].hcp);
+            PLAYERS[0].ch = Math.round(PLAYERS[0].hcp);
+          }
+          if (o.host.name) applyHostName(o.host.name, false);
+        }
+      } catch (e) { console.warn("drive host", e); }
+    }
+    if (o.writeActive && o.active && !drivePlayScreen()) {
+      try { localStorage.setItem(ACTIVE_KEY, JSON.stringify(o.active)); } catch (e) { console.warn("drive active", e); }
+    }
+    touchDataUpdated(remoteUpdatedAt || getDataUpdatedAt() || new Date().toISOString(), true);
+  } finally {
+    _driveApplying = false;
+  }
+  if (o.writeActive && o.active && !drivePlayScreen() && typeof restoreActiveRound === "function" && !(typeof isRoundInProgress === "function" && isRoundInProgress())) {
+    try { restoreActiveRound(); } catch (e) {}
+  }
 }
 
-async function drivePush() {
+function driveRefreshOpenScreens() {
+  if (drivePlayScreen()) return;
+  try {
+    if (state.screen === "perfil" && typeof renderPerfil === "function") renderPerfil();
+    else if (state.screen === "historial" && typeof renderHistorial === "function") renderHistorial();
+    else if (state.screen === "home") {
+      if (typeof updateHomeGreeting === "function") updateHomeGreeting();
+      if (typeof updateHomeThru === "function") updateHomeThru();
+    }
+    if (typeof refreshDriveUi === "function") refreshDriveUi();
+  } catch (e) {}
+}
+
+async function driveReconcile() {
+  if (!getDataUpdatedAt() && typeof seedDataUpdatedAt === "function") seedDataUpdatedAt();
   const folderId = await driveEnsureFolder();
-  let fileId = await driveFindDataFile(folderId);
-  // Pull-merge first if file exists
+  let found = await driveFindDataFile(folderId);
+  let fileId = found && found.fileId;
+  const local = collectFairwayBackup();
+  if (!local.updatedAt && driveBackupHasData(local)) local.updatedAt = touchDataUpdated();
+  let remoteRaw = null;
+  let remoteModified = "";
+  let remoteCorrupt = false;
   if (fileId) {
-    const remote = await driveDownloadJson(fileId);
-    if (mergeFairwayBackup(remote) === false) throw new Error("Copia de Drive no válida");
+    const got = await driveReadFile(fileId);
+    if (got && got.missing) {
+      try { localStorage.removeItem(DRIVE_FILE_KEY); } catch (e) {}
+      found = await driveFindDataFile(folderId);
+      fileId = found && found.fileId;
+      if (fileId && found.action !== "create") {
+        const again = await driveReadFile(fileId);
+        if (again && again.corrupt) remoteCorrupt = true;
+        else if (again && again.json) { remoteRaw = again.json; remoteModified = again.modifiedTime || ""; }
+      }
+    } else if (got && got.corrupt) remoteCorrupt = true;
+    else if (got && got.json) { remoteRaw = got.json; remoteModified = got.modifiedTime || ""; }
+  }
+  const accepted = remoteRaw ? driveAcceptRemote(remoteRaw) : { ok: true, data: null };
+  if (remoteRaw && !accepted.ok) remoteCorrupt = true;
+  const remote = accepted.ok ? accepted.data : null;
+  const remoteUpdatedAt = remoteRaw && remoteRaw.updatedAt ? String(remoteRaw.updatedAt) : (remote && remote.updatedAt) || "";
+  if (remote) remote.updatedAt = remoteUpdatedAt;
+  let localActive = null;
+  try { localActive = JSON.parse(localStorage.getItem(ACTIVE_KEY) || "null"); } catch (e) { localActive = null; }
+  const remoteActive = remote && remote.activeRound;
+  const meta = getDriveMeta();
+  const plan = driveSyncPlan({
+    online: typeof navigator === "undefined" ? true : navigator.onLine !== false,
+    remoteCorrupt: remoteCorrupt,
+    remoteHasData: !!(remote && driveBackupHasData(remote)) || remoteCorrupt,
+    localHasData: driveBackupHasData(local),
+    localUpdatedAt: local.updatedAt || "",
+    remoteUpdatedAt: remoteUpdatedAt,
+    lastSyncUpdatedAt: meta.lastSyncUpdatedAt || "",
+    lastSyncRemoteModifiedTime: meta.lastSyncRemoteModifiedTime || "",
+    remoteModifiedTime: remoteModified,
+    localHash: driveBackupHash(local),
+    remoteHash: remote ? driveBackupHash(remote) : "",
+    lastSyncedHash: meta.lastSyncedHash || "",
+    localActiveDirty: driveActiveRoundDirty(localActive),
+    activeDiffers: driveActiveFingerprint(localActive) !== driveActiveFingerprint(remoteActive)
+  });
+  if (plan.action === "offline") {
+    setDriveMeta(Object.assign({}, getDriveMeta(), { pending: true, status: "offline" }));
+    return { action: "offline", message: "Sin conexión. Los cambios siguen en este dispositivo." };
+  }
+  if (plan.action === "reject-remote") {
+    if (_driveInteractive && driveBackupHasData(local)) {
+      const id = await driveUploadJson(local, fileId, folderId);
+      driveRememberSync(local, "");
+      return { action: "upload", fileId: id, message: "Sincronizado" };
+    }
+    setDriveMeta(Object.assign({}, getDriveMeta(), { pending: true, status: "pending" }));
+    return { action: "reject-remote", message: "La copia de Drive no se pudo leer. Los datos de este dispositivo siguen igual." };
+  }
+  if (plan.action === "noop") {
+    driveRememberSync(local, remoteModified);
+    return { action: "noop", message: "Sincronizado" };
+  }
+  if (plan.action === "conflict" && meta.conflictChoice !== "local" && meta.conflictChoice !== "remote") {
+    setDriveMeta(Object.assign({}, getDriveMeta(), { conflict: true, pending: true, status: "conflict", conflictChoice: "" }));
+    return { action: "conflict", message: "Hay datos distintos en este dispositivo y en Google Drive." };
+  }
+  const choice = plan.action === "conflict" ? meta.conflictChoice : "";
+  const keepLocalActive = choice === "local" ? true : (choice === "remote" ? driveActiveRoundDirty(localActive) : plan.keepLocalActive);
+  const mergeRounds = plan.mergeRounds || choice === "local" || choice === "remote";
+  let rounds = local.rounds || [];
+  if (mergeRounds && remote) rounds = driveMergeRounds(local.rounds || [], remote.rounds || []);
+  else if (plan.action === "download" && remote) rounds = remote.rounds || [];
+  const remoteWins = choice === "remote" || (plan.action === "download" && !keepLocalActive) || (remoteUpdatedAt > (local.updatedAt || ""));
+  const host = choice === "local" ? local.host : (remote && remoteWins ? (remote.host || local.host) : local.host);
+  let roster = local.roster || [];
+  if (remote && (mergeRounds || plan.action === "download" || choice)) {
+    const map = {};
+    (local.roster || []).forEach(p => { if (p && p.id) map[p.id] = p; });
+    (remote.roster || []).forEach(p => {
+      if (!p || !p.id) return;
+      if (!map[p.id] || remoteWins) map[p.id] = Object.assign({}, map[p.id] || {}, p);
+    });
+    roster = Object.keys(map).map(k => map[k]);
+  }
+  const active = drivePickActiveRound(localActive, remoteActive, keepLocalActive || driveActiveRoundDirty(localActive));
+  const writeActive = !driveActiveRoundDirty(localActive) && !drivePlayScreen() && active && active !== localActive;
+  const kind = (choice || plan.action === "merge" || plan.mergeRounds) ? "merge" : (plan.action === "download" ? "download" : "upload");
+  const stamp = driveResultStamp(local.updatedAt || "", remoteUpdatedAt, kind);
+  if (kind !== "upload") {
+    driveApplyResolved(remote, stamp, {
+      rounds: rounds,
+      roster: roster,
+      host: host,
+      active: active,
+      writeActive: !!writeActive
+    });
   }
   const payload = collectFairwayBackup();
-  fileId = await driveUploadJson(payload, fileId, folderId);
-  const now = new Date();
-  setDriveMeta({
-    lastSync: now.toISOString(),
-    lastSyncLabel: now.toLocaleString("es-ES", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }),
-    fileId
-  });
-  return fileId;
+  if (!payload.updatedAt) payload.updatedAt = touchDataUpdated(stamp, true);
+  const shouldUpload = plan.action === "upload" || plan.action === "merge" || choice === "local" || choice === "remote" || (plan.action === "download" && (keepLocalActive || mergeRounds));
+  if (shouldUpload) {
+    const id = await driveUploadJson(payload, fileId, folderId);
+    driveRememberSync(payload, remoteModified);
+    return { action: plan.action, fileId: id, message: "Sincronizado" };
+  }
+  driveRememberSync(payload, remoteModified);
+  return { action: plan.action, message: "Sincronizado" };
+}
+
+function driveNoteAuth(e) {
+  const status = e && e.status;
+  const auth = driveAuthFailure(status);
+  const msg = String((e && e.message) || "");
+  if (auth.reconnect || /interaction_required|auth|invalid_grant|consent/i.test(msg)) {
+    _driveToken = null;
+    _driveTokenExp = 0;
+    _driveNeedsUser = true;
+    setDriveMeta(Object.assign({}, getDriveMeta(), { needsReconnect: true, pending: true, status: "reconnect", conflict: false }));
+    return true;
+  }
+  return false;
 }
 
 async function driveSync(interactive) {
-  if (_driveBusy) { showToast("Sync en curso…"); return; }
-  if (!getDriveClientId()) { showToast("Falta el Client ID"); go("perfil"); return; }
-  if (!driveOriginOk()) { showToast("Abre Fairway por HTTPS"); return; }
+  if (_driveBusy) {
+    _driveSyncAgain = true;
+    if (interactive && typeof showToast === "function") showToast("Sincronizando…");
+    return;
+  }
+  const meta = getDriveMeta();
+  if (!interactive && !meta.connected) return;
+  if (!getDriveClientId()) {
+    if (interactive && typeof showToast === "function") showToast("Esta copia de Fairway todavía no tiene Google Drive configurado.");
+    return;
+  }
+  if (!driveOriginOk()) {
+    if (interactive && typeof showToast === "function") showToast("Abre Fairway con https.");
+    return;
+  }
   if (typeof navigator !== "undefined" && navigator.onLine === false) {
-    showToast("Sin conexión · Drive espera a que haya red");
+    setDriveMeta(Object.assign({}, getDriveMeta(), { pending: !!meta.connected, status: meta.connected ? "offline" : "disconnected" }));
+    if (typeof refreshDriveUi === "function") refreshDriveUi();
+    if (interactive && typeof showToast === "function") showToast("Sin conexión. Los cambios siguen en este dispositivo.");
     return;
   }
   _driveBusy = true;
+  _driveInteractive = !!interactive;
+  setDriveMeta(Object.assign({}, getDriveMeta(), { status: interactive && !meta.connected ? "connecting" : "syncing" }));
+  if (typeof refreshDriveUi === "function") refreshDriveUi();
+  if (state && state.screen === "perfil" && typeof renderPerfil === "function") {
+    try { renderPerfil(); } catch (e) {}
+  }
   try {
-    if (interactive) await requestDriveToken(true);
-    showToast("Sincronizando con Drive…");
-    await drivePush();
-    showToast("Drive actualizado");
-    if (typeof renderPerfil === "function" && state.screen === "perfil") renderPerfil();
+    const result = await driveReconcile();
+    if (interactive && typeof showToast === "function") showToast(result.message || "Sincronizado");
   } catch (e) {
     console.warn(e);
-    showToast("No se pudo sync · " + ((e && e.message) || "error"));
+    if (driveNoteAuth(e)) {
+      if (interactive && typeof showToast === "function") showToast("Google Drive necesita volver a conectarse.");
+    } else if (interactive && typeof showToast === "function") {
+      showToast("No se pudo sincronizar. Los datos siguen en este dispositivo.");
+    } else {
+      setDriveMeta(Object.assign({}, getDriveMeta(), { pending: true, status: navigator.onLine === false ? "offline" : "pending" }));
+    }
   } finally {
     _driveBusy = false;
+    _driveInteractive = false;
+    driveRefreshOpenScreens();
+    if (_driveSyncAgain) {
+      _driveSyncAgain = false;
+      queueDriveSync();
+    }
   }
 }
 
-function saveDriveClientIdFromUi() {
-  const el = document.getElementById("driveClientIdInput");
-  if (!el) return;
-  setDriveClientId(el.value);
-  showToast(el.value.trim() ? "Client ID guardado" : "Client ID borrado");
-  renderPerfil();
-}
-
 function driveConnect() {
-  saveDriveClientIdFromUi();
+  if (!getDriveClientId()) {
+    if (typeof showToast === "function") showToast("Esta copia de Fairway todavía no tiene Google Drive configurado.");
+    return;
+  }
   driveSync(true);
 }
 
-function queueDriveSync() {
-  if (!getDriveClientId() || !driveOriginOk()) return;
-  if (typeof navigator !== "undefined" && navigator.onLine === false) return;
-  clearTimeout(queueDriveSync._t);
-  queueDriveSync._t = setTimeout(() => { driveSync(false); }, 1200);
+function driveReconnect() {
+  _driveNeedsUser = false;
+  _driveToken = null;
+  _driveTokenExp = 0;
+  driveSync(true);
 }
 
+function driveSyncNow() {
+  const meta = getDriveMeta();
+  if (!meta.connected) { driveConnect(); return; }
+  driveSync(true);
+}
 
+function driveDisconnect() {
+  const token = _driveToken;
+  _driveToken = null;
+  _driveTokenExp = 0;
+  _driveNeedsUser = false;
+  _driveSyncAgain = false;
+  clearTimeout(queueDriveSync._t);
+  try {
+    if (token && window.google && google.accounts && google.accounts.oauth2 && google.accounts.oauth2.revoke) {
+      google.accounts.oauth2.revoke(token, function () {});
+    }
+  } catch (e) {}
+  try { localStorage.removeItem(DRIVE_FILE_KEY); } catch (e) {}
+  try { localStorage.removeItem(DRIVE_FOLDER_KEY); } catch (e) {}
+  try { localStorage.removeItem(DRIVE_CLIENT_KEY); } catch (e) {}
+  setDriveMeta({});
+  if (typeof renderPerfil === "function" && state && state.screen === "perfil") renderPerfil();
+  if (typeof refreshDriveUi === "function") refreshDriveUi();
+  if (typeof showToast === "function") showToast("Google Drive desconectado. Las partidas siguen en este dispositivo.");
+}
+
+function driveUseThisDevice() {
+  setDriveMeta(Object.assign({}, getDriveMeta(), { conflictChoice: "local", connected: true }));
+  driveSync(true);
+}
+
+function driveUseCloud() {
+  setDriveMeta(Object.assign({}, getDriveMeta(), { conflictChoice: "remote", connected: true }));
+  driveSync(true);
+}
+
+function queueDriveSync(opts) {
+  const meta = getDriveMeta();
+  if (!meta.connected || !getDriveClientId() || !driveOriginOk()) return;
+  if (typeof _driveApplying !== "undefined" && _driveApplying) return;
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    setDriveMeta(Object.assign({}, meta, { pending: true, status: "offline" }));
+    if (typeof refreshDriveUi === "function") refreshDriveUi();
+    return;
+  }
+  clearTimeout(queueDriveSync._t);
+  const wait = opts && opts.immediate ? 0 : DRIVE_DEBOUNCE_MS;
+  queueDriveSync._t = setTimeout(() => { driveSync(false); }, wait);
+}
+
+function seedDataUpdatedAt() {
+  if (getDataUpdatedAt()) return;
+  let best = "";
+  try {
+    loadRounds().forEach(r => {
+      const t = driveRoundStamp(r);
+      if (t > best) best = t;
+    });
+    const active = JSON.parse(localStorage.getItem(ACTIVE_KEY) || "null");
+    const saved = active && active.savedAt ? String(active.savedAt) : "";
+    if (saved > best) best = saved;
+  } catch (e) {}
+  if (best) touchDataUpdated(best, true);
+}
+
+function driveBoot() {
+  if (driveBoot._done) return;
+  driveBoot._done = true;
+  try { seedDataUpdatedAt(); } catch (e) {}
+  window.addEventListener("online", function () {
+    const meta = getDriveMeta();
+    if (driveShouldFlushPending({
+      pending: !!(meta.pending || meta.status === "offline"),
+      connected: !!meta.connected,
+      online: true
+    })) queueDriveSync({ immediate: true });
+  });
+  setTimeout(function () {
+    const meta = getDriveMeta();
+    if (meta.connected && getDriveClientId() && (typeof navigator === "undefined" || navigator.onLine !== false)) {
+      queueDriveSync({ immediate: true });
+    }
+  }, 50);
+}
+
+function driveConflictHtml() {
+  return `<p class="drive-status warn">Hay datos distintos en este dispositivo y en Google Drive.</p>
+    <div class="btn-row mt-8">
+      <button class="btn btn-primary" type="button" onclick="driveUseThisDevice()">Usar este dispositivo</button>
+      <button class="btn btn-ghost" type="button" onclick="driveUseCloud()">Usar Google Drive</button>
+    </div>`;
+}
+
+function refreshDriveUi() {
+  const home = document.getElementById("driveConflictHome");
+  if (!home) return;
+  const meta = getDriveMeta();
+  const show = !!(meta && meta.conflict) && !drivePlayScreen();
+  if (!show) {
+    home.hidden = true;
+    home.innerHTML = "";
+    return;
+  }
+  home.hidden = false;
+  home.innerHTML = driveConflictHtml();
+}
+
+function drivePanelHtml() {
+  const meta = getDriveMeta();
+  const online = typeof navigator === "undefined" ? true : navigator.onLine !== false;
+  const view = driveUiState({
+    configured: !!getDriveClientId(),
+    connected: !!meta.connected,
+    status: meta.status || "",
+    online: online,
+    pending: !!meta.pending,
+    needsReconnect: !!meta.needsReconnect,
+    conflict: !!meta.conflict,
+    lastSyncLabel: meta.lastSyncLabel || ""
+  });
+  const tick = view.status === "synced" ? "✓ " : "";
+  const when = meta.lastSyncLabel ? `<p class="micro">Última copia: ${escapeHtml(meta.lastSyncLabel)}</p>` : "";
+  let buttons = "";
+  if (view.status === "conflict") buttons = driveConflictHtml();
+  else if (view.status === "reconnect" || meta.needsReconnect) {
+    buttons = `<div class="btn-row mt-8"><button class="btn btn-primary" type="button" onclick="driveReconnect()">Reconectar</button><button class="btn btn-ghost" type="button" onclick="driveDisconnect()">Desconectar Google Drive</button></div>`;
+  } else if (!meta.connected) {
+    buttons = `<div class="btn-row mt-8"><button class="btn btn-primary" type="button" onclick="driveConnect()">Conectar Google Drive</button></div>`;
+  } else {
+    buttons = `<div class="btn-row mt-8"><button class="btn btn-primary" type="button" onclick="driveSyncNow()">Sincronizar ahora</button><button class="btn btn-ghost" type="button" onclick="driveDisconnect()">Desconectar Google Drive</button></div>`;
+  }
+  let note = "";
+  if (!getDriveClientId()) note = `<p class="micro mt-8">Esta copia de Fairway todavía no tiene Google Drive configurado.</p>`;
+  else if (!driveOriginOk()) note = `<p class="micro mt-8">Google Drive necesita una página segura (https).</p>`;
+  return `<div class="card drive-card" id="drivePanel">
+      <div class="eyebrow">Google Drive</div>
+      <p class="drive-status ${view.status === "synced" ? "ok" : (view.status === "conflict" || view.status === "reconnect" ? "warn" : "")}">${tick}${escapeHtml(view.label)}</p>
+      ${when}
+      <p class="micro mt-8">Fairway guarda tus datos en tu propio Google Drive.</p>
+      ${note}
+      ${view.status === "conflict" ? "" : buttons}
+      ${view.status === "conflict" ? buttons : ""}
+    </div>`;
+}
 
 function fairwayBackupFilename() {
   return "fairway-data-" + new Date().toISOString().slice(0, 10) + ".json";
@@ -8017,18 +8684,7 @@ function renderPerfil() {
       </div>
       <p class="micro mt-12">En Compartir elige Guardar en Archivos. Para recuperar, Restaurar y elige ese JSON.</p>
     </div>
-    <details class="card drive-card">
-      <summary class="eyebrow">Funciones experimentales</summary>
-      <p class="micro mt-8">Google Drive no está terminado. Hace falta un cliente OAuth de la aplicación, con el origen autorizado. No pegues secretos y no trates esto como copia de seguridad fiable.</p>
-      <div class="eyebrow mt-12">Client ID de desarrollo</div>
-      <input id="driveClientIdInput" class="perfil-input" type="text" autocomplete="off" spellcheck="false"
-        value="${escapeHtml(getDriveClientId())}" placeholder="Solo si estás probando OAuth" />
-      <div class="btn-row mt-8">
-        <button class="btn btn-ghost" type="button" onclick="saveDriveClientIdFromUi()"><span class="mark mark-box" aria-hidden="true"></span>Guardar Client ID</button>
-        <button class="btn btn-ghost" type="button" onclick="driveConnect()"><span class="mark mark-out" aria-hidden="true"></span>Probar sync</button>
-      </div>
-      <p class="micro mt-8">${escapeHtml(driveStatusText().text)}</p>
-    </details>`;
+    ${drivePanelHtml()}`;
 }
 function _perfilRecordsHtml() {
   const rounds = loadRounds().filter(r => r.me && r.me.thru);
@@ -8636,6 +9292,7 @@ loadHostHcp();
   }
   // Historial already reads loadRounds() from localStorage — nothing else needed
   try { updateClubCalls(); } catch (e) {}
+  try { if (typeof driveBoot === "function") driveBoot(); } catch (e) {}
 })();
 </script>
 
