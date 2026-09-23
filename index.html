@@ -6931,77 +6931,32 @@ function plaqueIsHerreria(meta) {
   return club.indexOf("la herreria") !== -1;
 }
 
-/** Monasterio de El Escorial, la vista que se ve desde La Herrería. Solo silueta. */
+let _escorialImg = null;
+let _escorialLoading = null;
+function loadEscorialMonastery() {
+  if (_escorialImg) return Promise.resolve(_escorialImg);
+  if (_escorialLoading) return _escorialLoading;
+  _escorialLoading = new Promise((resolve) => {
+    const img = new Image();
+    img.onload = function () { _escorialImg = img; resolve(img); };
+    img.onerror = function () { resolve(null); };
+    img.src = "icons/escorial-monasterio.png";
+  });
+  return _escorialLoading;
+}
+
+/** Grabado del Monasterio de El Escorial. Se dibuja entero, sin deformar. */
 function drawEscorialSilhouette(ctx, x, y, w, h) {
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.beginPath();
-  ctx.rect(0, 0, w, h);
-  ctx.clip();
-  ctx.scale(w / 1000, h / 360);
-  ctx.beginPath();
-  // Lonja
-  ctx.moveTo(20, 332);
-  ctx.lineTo(980, 332);
-  ctx.lineTo(980, 300);
-  ctx.lineTo(20, 300);
-  ctx.closePath();
-  // Cuerpo sur, largo y bajo
-  ctx.moveTo(70, 300);
-  ctx.lineTo(70, 168);
-  ctx.lineTo(930, 168);
-  ctx.lineTo(930, 300);
-  ctx.closePath();
-  // Torre suroeste
-  ctx.moveTo(70, 168);
-  ctx.lineTo(70, 108);
-  ctx.lineTo(108, 52);
-  ctx.lineTo(146, 108);
-  ctx.lineTo(176, 108);
-  ctx.lineTo(176, 168);
-  ctx.closePath();
-  // Torre sureste
-  ctx.moveTo(824, 168);
-  ctx.lineTo(824, 108);
-  ctx.lineTo(862, 52);
-  ctx.lineTo(900, 108);
-  ctx.lineTo(930, 108);
-  ctx.lineTo(930, 168);
-  ctx.closePath();
-  // Basílica
-  ctx.moveTo(390, 168);
-  ctx.lineTo(390, 118);
-  ctx.lineTo(430, 78);
-  ctx.lineTo(455, 78);
-  ctx.lineTo(500, 40);
-  ctx.lineTo(545, 78);
-  ctx.lineTo(570, 78);
-  ctx.lineTo(610, 118);
-  ctx.lineTo(610, 168);
-  ctx.closePath();
-  // Cúpula
-  ctx.moveTo(445, 86);
-  ctx.bezierCurveTo(445, 18, 555, 18, 555, 86);
-  ctx.lineTo(445, 86);
-  ctx.closePath();
-  // Linterna y cruz
-  ctx.moveTo(482, 28);
-  ctx.lineTo(482, 8);
-  ctx.lineTo(518, 8);
-  ctx.lineTo(518, 28);
-  ctx.closePath();
-  ctx.moveTo(494, 8);
-  ctx.lineTo(506, 8);
-  ctx.lineTo(506, 0);
-  ctx.lineTo(494, 0);
-  ctx.closePath();
-  ctx.moveTo(478, 4);
-  ctx.lineTo(522, 4);
-  ctx.lineTo(522, 12);
-  ctx.lineTo(478, 12);
-  ctx.closePath();
-  ctx.fill();
-  ctx.restore();
+  const img = _escorialImg;
+  if (!img || !img.width || !img.height) return;
+  const aspect = img.width / img.height;
+  let dw = w;
+  let dh = w / aspect;
+  if (dh > h) {
+    dh = h;
+    dw = h * aspect;
+  }
+  ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
 }
 
 function drawWinnerPlaque(payload) {
@@ -7040,9 +6995,8 @@ function drawWinnerPlaque(payload) {
     ctx.beginPath();
     ctx.rect(cx + 20, cy + 80, cw - 40, ch - 98);
     ctx.clip();
-    ctx.globalAlpha = 0.2;
-    ctx.fillStyle = "#1B3329";
-    drawEscorialSilhouette(ctx, cx + 28, cy + 214, cw - 56, 148);
+    ctx.globalAlpha = 0.72;
+    drawEscorialSilhouette(ctx, cx + 28, cy + 92, cw - 56, ch - 118);
     ctx.restore();
   }
 
@@ -7135,6 +7089,7 @@ async function shareCanvasPng(canvas, filename, title, caption) {
 async function shareWinnerPlaque(row, meta) {
   meta = meta || plaqueMeta();
   try {
+    if (plaqueIsHerreria(meta)) await loadEscorialMonastery();
     const canvas = drawWinnerPlaque({
       club: meta.club,
       courseId: meta.courseId || "",
@@ -7194,9 +7149,8 @@ function drawWinnerPlaquesSheet(list, meta) {
       ctx.beginPath();
       ctx.rect(x + 12, y + 12, cw - 24, cardH - 24);
       ctx.clip();
-      ctx.globalAlpha = 0.15;
-      ctx.fillStyle = "#1B3329";
-      drawEscorialSilhouette(ctx, x + cw - 210, y + 78, 180, 58);
+      ctx.globalAlpha = 0.55;
+      drawEscorialSilhouette(ctx, x + 14, y + 18, cw - 28, cardH - 28);
       ctx.restore();
     }
     ctx.strokeStyle = "#1B3329";
@@ -7224,6 +7178,7 @@ async function shareAllWinnerPlaques() {
   if (!list.length) { showToast("Aún no hay ganadores"); return; }
   const meta = window._lastPlaqueMeta || plaqueMeta();
   try {
+    if (plaqueIsHerreria(meta)) await loadEscorialMonastery();
     if (list.length === 1) {
       await shareWinnerPlaque(list[0], meta);
       return;
@@ -8659,6 +8614,7 @@ document.addEventListener("click", function (ev) {
       }));
 })();
 
+loadEscorialMonastery();
 loadHostHcp();
 (function bootMemory() {
   const restored = restoreActiveRound();

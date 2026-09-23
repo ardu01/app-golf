@@ -72,7 +72,9 @@ assert.ok(!folders.includes("forus-golf-las-rejas-pares-3"));
 assert.ok(existsSync(new URL("holes/forus-las-rejas-pares-3/overview.webp", root)));
 
 const sw = readFileSync(new URL("../sw.js", import.meta.url), "utf8");
-assert.ok(sw.includes('const SHELL = "fairway-v3-193"'));
+assert.ok(sw.includes('const SHELL = "fairway-v3-194"'));
+assert.ok(sw.includes("escorial-monasterio.png"));
+assert.ok(existsSync(new URL("icons/escorial-monasterio.png", root)));
 assert.ok(sw.includes('const MAPS = "fairway-maps-v1"'));
 assert.ok(sw.includes("MAPS_MAX = 120"));
 const installPart = sw.split("activate")[0];
