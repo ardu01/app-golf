@@ -1,4 +1,4 @@
-const CACHE = "fairway-v3-162";
+const CACHE = "fairway-v3-164";
 const ASSETS = [
   "./",
   "./index.html",
@@ -20,6 +20,10 @@ self.addEventListener("activate", (event) => {
       Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
     ).then(() => self.clients.claim())
   );
+});
+
+self.addEventListener("message", (event) => {
+  if (event && event.data === "SKIP_WAITING") self.skipWaiting();
 });
 
 self.addEventListener("fetch", (event) => {
