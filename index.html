@@ -625,6 +625,57 @@
     width: 5px; height: 5px; border-radius: 50%; background: var(--brand-brass);
   }
   .rule-card .note { font-size: 11px; color: var(--ink-secondary); margin-top: 8px; font-style: italic; }
+  .hole-ref-btn {
+    height: 32px; padding: 0 12px; border: none; border-radius: 999px;
+    background: rgba(52,199,89,0.16); color: var(--tint, #34C759);
+    font: inherit; font-size: 13px; font-weight: 700; cursor: pointer;
+  }
+  .hole-ref-btn:active { opacity: 0.8; }
+  #screen-arbitro .ref-log {
+    flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+    padding: 8px var(--pad-x) 12px; display: flex; flex-direction: column; gap: 8px;
+  }
+  .ref-bubble { max-width: 92%; border-radius: 16px; padding: 10px 12px; }
+  .ref-bubble p { margin: 0 0 8px; font-size: 15px; line-height: 1.35; letter-spacing: -0.2px; }
+  .ref-bubble p:last-child { margin-bottom: 0; }
+  .ref-bubble.user {
+    align-self: flex-end; background: var(--tint, #34C759); color: #fff;
+    border-bottom-right-radius: 6px;
+  }
+  .ref-bubble.ref {
+    align-self: flex-start; background: var(--bg-paper-elevated);
+    border: 1px solid var(--border-paper); color: var(--ink);
+    border-bottom-left-radius: 6px;
+  }
+  .ref-cites { margin-top: 10px; padding-top: 8px; border-top: 0.5px solid var(--separator); }
+  .ref-cites-label { font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-secondary); margin-bottom: 4px; }
+  .ref-cites ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+  .ref-cites li { font-size: 12px; line-height: 1.35; color: var(--ink-secondary); }
+  .ref-cites li strong { color: var(--ink); font-weight: 650; }
+  .ref-note { margin-top: 8px; font-size: 11px; color: var(--ink-secondary); }
+  .ref-chips {
+    display: flex; gap: 6px; overflow-x: auto; padding: 0 var(--pad-x) 8px; flex-shrink: 0;
+  }
+  .ref-chips:empty { display: none; }
+  .ref-chips button {
+    flex: 0 0 auto; height: 32px; padding: 0 12px; border-radius: 999px;
+    border: 1px solid var(--separator); background: var(--bg-paper-elevated);
+    color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+    white-space: nowrap;
+  }
+  .ref-compose {
+    display: flex; gap: 8px; padding: 8px var(--pad-x) calc(8px + env(safe-area-inset-bottom, 0px));
+    border-top: 0.5px solid var(--separator); flex-shrink: 0; background: var(--bg-paper);
+  }
+  .ref-compose input {
+    flex: 1; height: 44px; border-radius: 12px; border: 1px solid var(--separator);
+    background: var(--bg-paper-elevated); color: var(--ink); font: inherit; font-size: 16px;
+    padding: 0 12px;
+  }
+  .ref-compose button {
+    height: 44px; padding: 0 14px; border: none; border-radius: 12px;
+    background: var(--tint, #34C759); color: #fff; font: inherit; font-size: 15px; font-weight: 700;
+  }
   .badge-oficial {
     background: rgba(27,94,59,0.1); color: var(--brand-fairway);
     border: 1px solid rgba(27,94,59,0.3); font-size: 10px; letter-spacing: 0.06em;
@@ -2054,6 +2105,7 @@
             <button type="button" class="hole-jump-btn" id="holeJumpBtn" onclick="openHoleSheet()">
               Hoyos <span class="chev">▾</span>
             </button>
+            <button type="button" class="hole-ref-btn" onclick="openReferee()">Árbitro</button>
             <span class="micro" style="display:none;" id="holeJumpHint"></span>
             <button type="button" class="hole-foto-link" id="holeFotoLink" hidden onclick="setHoleTab('foto')">Mapa</button>
           </div>
@@ -2209,6 +2261,20 @@
           <div class="title">Reglas</div>
         </div>
         <div class="scroll" id="reglasBody"></div>
+      </section>
+
+      <!-- ARBITRO -->
+      <section id="screen-arbitro" class="screen theme-paper">
+        <div class="topnav">
+          <button class="btn-icon" onclick="closeReferee()" aria-label="Atrás">‹</button>
+          <div class="title">Árbitro</div>
+        </div>
+        <div class="ref-log" id="refLog" role="log" aria-live="polite"></div>
+        <div class="ref-chips" id="refChips"></div>
+        <form class="ref-compose" onsubmit="submitReferee(event)">
+          <input id="refInput" type="text" maxlength="500" autocomplete="off" enterkeyhint="send" placeholder="Describe el lie o el problema" aria-label="Describe el lie o el problema" />
+          <button type="submit">Enviar</button>
+        </form>
       </section>
 
       <!-- CLOSE -->
@@ -2511,6 +2577,500 @@ function showToast(msg, paper) {
   showToast._tm = setTimeout(() => { t.className = "toast"; }, 2200);
 }
 
+/* REFEREE_START */
+const REFEREE_INTRO = "Describe el lie o lo que ha pasado. Resuelvo con las Reglas de Golf (R&A y USGA) y dejo la cita al final. Si falta un dato, pregunto. No invento una regla.";
+const REFEREE_CHIPS = ["Bola perdida", "Fuera de límites", "En el agua", "Injugable", "Empotrada", "Búnker", "Camino o aspersor", "En el green"];
+const REFEREE_NOTE = "Reglas de Golf, edición 2023 (R&A / USGA). Stroke play, salvo que hayas dicho match play. Si el comité tiene una regla local, manda esa regla.";
+
+function normRef(s) {
+  return String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+function refHas(t, list) {
+  return list.some(p => t.includes(p));
+}
+function refereeFacts(text) {
+  const t = normRef(text);
+  const casual = refHas(t, ["agua casual", "charco", "encharcad", "temporary water"]);
+  const penalty = refHas(t, [
+    "penalizacion", "penalty", "lago", "arroyo", "estanque", "estaca roja", "estaca amarilla",
+    "linea roja", "linea amarilla", "en el agua", "al agua", "se metio", "area de penalizacion", "en un area de penalizacion"
+  ]) || /\brio\b/.test(t);
+  const wrongGreen = refHas(t, ["green equivocado", "otro green", "green que no", "wrong green"]);
+  return {
+    lost: refHas(t, ["perdid", "no la encuentro", "no encuentro", "no aparece", "no la veo", "se perdio"]),
+    found: refHas(t, ["la encontre", "encontrada", "ya la veo", "la encontre"]),
+    ob: refHas(t, ["fuera de limite", "out of bounds", "estaca blanca", "linea blanca"]) || /\bob\b/.test(t),
+    provisional: t.includes("provisional"),
+    penalty: penalty && !(casual && !penalty),
+    red: refHas(t, ["estaca roja", "linea roja", "area roja", "rojas", "roja", "rojo"]),
+    yellow: refHas(t, ["estaca amarilla", "linea amarilla", "area amarilla", "amarillas", "amarilla", "amarillo"]),
+    unplayable: refHas(t, ["injugable", "unplayable", "no puedo jugarla", "no puedo pegarla"]),
+    bunker: refHas(t, ["bunker", "trampa de arena", "trampa", "en el bunker"]),
+    sand: t.includes("arena"),
+    embedded: refHas(t, ["empotrad", "enterrada", "plug", "en su pique", "pitch"]),
+    green: (/\bgreen\b/.test(t) || t.includes("putting")) && !wrongGreen,
+    wrongGreen,
+    immovable: refHas(t, ["camino", "cart path", "aspersor", "sprinkler", "obstruccion inamovible", "alcantarilla"]),
+    movable: refHas(t, ["rastrillo", "rake", "toalla", "botella", "lata", "obstruccion movible"]),
+    loose: refHas(t, ["impedimento", "hoja", "hojas", "piedra", "piedras", "rama", "pina", "pinaza"]),
+    tempWater: casual,
+    gur: refHas(t, ["terreno en reparacion", "gur", "ground under repair", "suelo en reparacion"]),
+    animal: refHas(t, ["madriguera", "agujero de animal", "topo"]),
+    moved: refHas(t, ["se movio", "se ha movido", "bola movida", "la movi", "movi la bola", "se cayo", "movio"]),
+    natural: refHas(t, ["viento", "gravedad", "la movio el viento"]),
+    searching: refHas(t, ["buscando", "al buscar", "durante la busqueda", "al buscarla"]),
+    playerMoved: refHas(t, ["la movi yo", "yo la movi", "con el palo", "al colocarme", "la toque", "la movi"]),
+    outside: refHas(t, ["espectador", "pajaro", "perro", "otra persona", "la movio otra"]),
+    wrongBall: refHas(t, ["bola equivocada", "bola de otro", "wrong ball", "no era mi bola"]),
+    doubleHit: refHas(t, ["doble golpe", "dos veces", "la pegue dos", "golpe doble"]),
+    flagstick: refHas(t, ["bandera", "flagstick", "asta"]),
+    attended: refHas(t, ["atendida", "sujetaba", "sujetando", "atendiendo"]),
+    overhang: refHas(t, ["boca del hoyo", "borde del hoyo", "a punto de caer", "colgando"]),
+    identify: refHas(t, ["identificar", "no se si es mi bola"]),
+    deflect: refHas(t, ["reboto", "me dio", "le dio", "choco", "deflect", "golpeo el palo", "he golpeado otra bola", "golpeado otra"]),
+    otherBall: refHas(t, ["otra bola", "bola del companero", "bola de un companero", "bola ajena"]),
+    advice: refHas(t, ["consejo", "que palo", "me dijo que palo"]),
+    whiff: refHas(t, ["swing al aire", "golpe al aire", "whiff", "no llegue a golpear"]),
+    teeFall: refHas(t, ["se cayo del tee", "cayo del tee", "se ha caido del tee"]),
+    dropHow: refHas(t, ["como dropeo", "como se dropea", "altura de la rodilla", "procedimiento de drop"]),
+    ready: refHas(t, ["fuera de turno", "ready golf", "orden de juego"]),
+    footprint: refHas(t, ["pisada", "huella", "pisadas"]),
+    inTree: refHas(t, ["en un arbol", "arbol"]),
+    kvcNo: refHas(t, ["no estoy seguro", "no se si entro", "no es seguro", "no la vi entrar", "no estoy seguro de que entrara"]),
+    kvcYes: refHas(t, ["la vi entrar", "seguro que entro", "virtualmente", "la vimos entrar"]),
+    match: refHas(t, ["match play", "matchplay", "partido a match"]),
+    lineOnly: refHas(t, ["solo la linea", "linea de juego", "me estorba la linea", "tapa la linea", "solo me tapa la linea"]),
+    general: refHas(t, ["area general", "calle", "rough", "hierba", "en el area general"]),
+    touching: refHas(t, [
+      "en el camino", "sobre el camino", "en el aspersor", "bola en el", "esta en el",
+      "la bola esta en el camino", "me impide el stance", "el stance", "el swing", "dentro del", "en el charco"
+    ]),
+    interfere: refHas(t, ["estorba", "me molesta la bola", "interfiere", "bola que ayuda", "me estorba otra bola"])
+  };
+}
+function mergeFacts(a, b) {
+  const out = Object.assign({}, a || {});
+  Object.keys(b || {}).forEach(k => { if (b[k]) out[k] = true; });
+  return out;
+}
+function refAsk(text, chips) {
+  return { kind: "ask", text, cites: [], chips };
+}
+function refRule(text, cites) {
+  return { kind: "rule", text, cites, chips: ["Otro caso"] };
+}
+function refGp(f) {
+  return f.match ? "en match play, pierdes el hoyo" : "en stroke play, dos golpes de penalización";
+}
+function refAcc(f) {
+  if (f.tempWater) return "agua casual";
+  if (f.gur) return "terreno en reparación";
+  if (f.animal) return "agujero de animal";
+  return "obstrucción inamovible";
+}
+function refereeDecide(raw) {
+  const f = Object.assign({}, raw || {});
+  if (f.found) f.lost = false;
+  if (f.kvcYes) f.penalty = true;
+  const acc = f.immovable || f.tempWater || f.gur || f.animal;
+  const drop = "Dropea desde la altura de la rodilla, sin tocar la bola al soltarla. Tiene que quedar en el área de alivio. Si se sale, dropea otra vez. Si la segunda tampoco se queda, colócala donde tocó el suelo en ese segundo drop.";
+  const dropCite = { rule: "14.3b y 14.3c", point: "el drop es desde la altura de la rodilla y la bola debe quedar en el área de alivio." };
+
+  if (f.overhang) {
+    return refRule("Si alguna parte de la bola cuelga del agujero, tienes un tiempo razonable para llegar y diez segundos más. Si cae en ese tiempo, está embocada con el golpe anterior. Si no cae y después entra sola, también está embocada, pero sumas un golpe de penalización.", [
+      { rule: "13.3a", point: "diez segundos de espera; si cae después, un golpe de penalización." }
+    ]);
+  }
+  if (f.doubleHit) {
+    return refRule("Si el palo golpea la bola más de una vez en el mismo golpe y ha sido sin querer, cuenta un solo golpe. No hay penalización. La bola se juega donde haya quedado.", [
+      { rule: "10.1a", point: "un golpe accidental doble cuenta como un solo golpe, sin penalización." }
+    ]);
+  }
+  if (f.whiff) {
+    return refRule("Si has iniciado el movimiento hacia delante para golpear la bola y no la tocas, el golpe cuenta. Si paras el palo de forma voluntaria antes de llegar a la bola, no es un golpe.", [
+      { rule: "Definición de golpe (stroke)", point: "el movimiento hacia delante del palo para golpear la bola es un golpe, aunque no la toque." }
+    ]);
+  }
+  if (f.wrongBall) {
+    return refRule("No puedes golpear una bola equivocada. " + (f.match
+      ? "En match play la penalización general es perder el hoyo."
+      : "En stroke play son dos golpes. Los golpes dados a esa bola no cuentan y tienes que seguir con la bola correcta, como esté o con el alivio que te dé una regla. Si no lo corriges antes de salir en el siguiente hoyo, o antes de entregar la tarjeta en el último, quedas descalificado."), [
+      { rule: "6.3c(1)", point: "golpe a bola equivocada: penalización general y hay que corregir el error." }
+    ]);
+  }
+  if (f.wrongGreen) {
+    return refRule("No se puede jugar desde un green que no es el del hoyo. Alivio sin penalización: el punto más cercano con alivio completo, en la misma zona del campo, y un palo desde ahí sin acercarte al hoyo. El área no puede seguir tocando ese green.", [
+      { rule: "13.1f", point: "alivio obligatorio y gratuito del green equivocado." },
+      dropCite
+    ]);
+  }
+  if (f.teeFall) {
+    return refRule("Si la bola se cae del tee, o la tiras sin querer, antes de hacer el golpe, no cuenta como golpe. La vuelves a colocar. El golpe empieza cuando mueves el palo hacia delante para golpearla.", [
+      { rule: "6.2b(6)", point: "la bola que cae del tee antes del golpe no está en juego." }
+    ]);
+  }
+  if (f.advice) {
+    return refRule("No puedes pedir ni dar consejo sobre cómo jugar o qué palo usar, salvo a tu caddie. " + refGp(f) + ".", [
+      { rule: "10.2a", point: "pedir o dar consejo, salvo al caddie, es penalización general." }
+    ]);
+  }
+  if (f.ready) {
+    return refRule(f.match
+      ? "En match play el orden importa. Si juegas fuera de turno, el rival puede anular ese golpe y hacerte repetirlo."
+      : "En stroke play no hay penalización por jugar fuera de turno. El ready golf, cuando es seguro, está permitido.", [
+      { rule: "6.4", point: "en stroke play jugar fuera de turno no se penaliza." }
+    ]);
+  }
+  if (f.identify && !f.lost && !f.wrongBall) {
+    return refRule("Si no puedes saber si es tu bola como está, marca el sitio y levántala. No la limpies más de lo necesario para identificarla. Si es la tuya, o la de otro, vuelve a su sitio. Si la levantas sin necesidad, no marcas o la limpias de más, es un golpe de penalización.", [
+      { rule: "7.3", point: "se puede levantar para identificar, marcando antes y sin limpiarla de más." }
+    ]);
+  }
+  if (f.provisional) {
+    return refRule("Solo puedes jugar una provisional si la bola puede estar perdida fuera de un área de penalización o fuera de límites. Antes del golpe tienes que decir que es provisional. Si luego encuentras la original dentro de los tres minutos y dentro de límites, la provisional no vale. Si la original está perdida o fuera de límites, la provisional es la bola en juego, con el golpe y distancia ya incluidos. Si juegas la provisional desde más cerca del hoyo que donde calculas que está la original, la provisional pasa a ser la bola en juego.", [
+      { rule: "18.3a", point: "la provisional solo vale si la bola puede estar perdida fuera de un área de penalización o fuera de límites." },
+      { rule: "18.3b", point: "hay que anunciarla como provisional antes del golpe." },
+      { rule: "18.3c", point: "pasa a ser la bola en juego si la original está perdida o fuera de límites, o si la juegas más cerca del hoyo." }
+    ]);
+  }
+  if (f.ob && f.penalty) {
+    return refAsk("¿La bola está fuera de límites o dentro de un área de penalización?", ["Fuera de límites", "Estacas rojas", "Estacas amarillas"]);
+  }
+  if (f.ob) {
+    return refRule("La bola está fuera de límites solo cuando está entera al otro lado del margen. Si cualquier parte toca el margen, está dentro. No hay alivio lateral. Tienes que volver a jugar desde donde diste el golpe anterior, con un golpe de penalización. Puedes cambiar de bola. Si ese sitio era el tee, puedes volver a colocarla en el tee.", [
+      { rule: "18.2a(2)", point: "fuera de límites solo si la bola está entera fuera del margen." },
+      { rule: "18.2b", point: "bola fuera de límites: golpe y distancia, un golpe de penalización." },
+      { rule: "14.6", point: "en golpe y distancia se puede sustituir la bola." }
+    ]);
+  }
+  if ((f.lost || f.penalty) && f.kvcNo) {
+    return refRule("Si no es conocido o virtualmente seguro que la bola entró en el área de penalización, no puedes usar ese alivio. Es bola perdida: tres minutos de búsqueda y, si no aparece, golpe y distancia con un golpe de penalización.", [
+      { rule: "17.1c", point: "sin certeza virtual de que está en el área de penalización, no hay alivio de la Regla 17." },
+      { rule: "18.2a(1)", point: "la búsqueda es de tres minutos." },
+      { rule: "18.2b", point: "bola perdida: golpe y distancia." }
+    ]);
+  }
+  if ((f.lost || f.kvcYes || f.penalty) && f.penalty && f.red && f.yellow) {
+    return refAsk("¿El margen del área es rojo o amarillo?", ["Estacas rojas", "Estacas amarillas"]);
+  }
+  if ((f.lost || f.kvcYes) && f.penalty && !f.red && !f.yellow) {
+    return refAsk("¿El área de penalización es roja o amarilla? Si no viste entrar la bola y cabe otra explicación, dímelo.", ["Estacas rojas", "Estacas amarillas", "No la vi entrar"]);
+  }
+  if (f.lost && f.general && !f.penalty && !f.ob) {
+    return refRule("Si está perdida en el área general, la búsqueda es de tres minutos desde que empiezas a buscar. Si no la identificas, tienes que volver a jugar desde el golpe anterior, con un golpe de penalización. No hay alivio lateral.", [
+      { rule: "18.2a(1)", point: "tres minutos para identificar la bola." },
+      { rule: "18.2b", point: "bola perdida fuera de un área de penalización: golpe y distancia." },
+      { rule: "14.6", point: "se puede sustituir la bola al tomar golpe y distancia." }
+    ]);
+  }
+  if (f.lost && !f.penalty && !f.ob && !f.unplayable && !f.embedded) {
+    return refAsk("¿Dónde puede estar? La búsqueda es de tres minutos.", ["Fuera de límites", "La vi entrar", "No la vi entrar", "La encontré", "Perdida en el área general"]);
+  }
+  if (f.penalty && !f.red && !f.yellow) {
+    return refAsk("¿Estacas o líneas rojas, o amarillas?", ["Estacas rojas", "Estacas amarillas", "No la vi entrar"]);
+  }
+  if (f.penalty && (f.red || f.yellow) && !f.unplayable) {
+    const lateral = f.red
+      ? "Como es roja, además puedes dropear a dos palos del punto por donde cruzó por última vez el margen, sin acercarte al hoyo."
+      : "Como es amarilla, no hay alivio lateral.";
+    const cites = [
+      { rule: "17.1c", point: "hace falta que sea conocido o virtualmente seguro que la bola está en el área." },
+      { rule: "17.1b", point: "se puede jugar como está: apoyar el palo y quitar impedimentos sueltos no se penaliza." },
+      { rule: "17.1d(1)", point: "golpe y distancia, un golpe de penalización." },
+      { rule: "17.1d(2)", point: "línea hacia atrás: el drop sobre la línea abre un área de un palo." }
+    ];
+    if (f.red) cites.push({ rule: "17.1d(3)", point: "alivio lateral de dos palos, solo en área roja, un golpe de penalización." });
+    cites.push(dropCite);
+    return refRule("Tiene que ser conocido o virtualmente seguro que la bola está en el área de penalización. Si no, es bola perdida y solo vale el golpe y distancia. Si lo es, puedes jugarla como está, sin penalización. Con un golpe de penalización: volver a jugar desde el golpe anterior, o dropear sobre la línea que va del hoyo al punto por donde la bola cruzó el margen por última vez. Donde la bola toque el suelo se abre un área de un palo. " + lateral + " " + drop, cites);
+  }
+  if (f.embedded && f.bunker) {
+    return refRule("Una bola empotrada en el búnker no tiene el alivio gratuito de bola empotrada. Puedes jugarla como está, sin apoyar el palo en la arena antes del golpe, o declararla injugable.", [
+      { rule: "16.3a(1)", point: "el alivio de bola empotrada solo existe en el área general." },
+      { rule: "12.2b", point: "en el búnker no se puede tocar la arena con el palo antes del golpe, salvo al quitar un impedimento o una obstrucción movible." },
+      { rule: "19.3", point: "injugable en búnker: las opciones de un golpe dejan la bola en el búnker; salir del búnker por la línea hacia atrás son dos golpes." }
+    ]);
+  }
+  if (f.embedded && f.penalty) {
+    return refRule("Dentro de un área de penalización no hay alivio gratuito por bola empotrada. Se juega como está o se toma el alivio del área de penalización, con un golpe.", [
+      { rule: "16.3a", point: "no hay alivio de bola empotrada fuera del área general." },
+      { rule: "17.3", point: "en el área de penalización no se usa el alivio de otras reglas para esa bola." }
+    ]);
+  }
+  if (f.embedded && f.green) {
+    return refRule("En el green no se usa el alivio de bola empotrada. Marca, levántala, repara la marca del impacto y vuelve a colocarla en el mismo sitio. Sin penalización.", [
+      { rule: "16.3a(1)", point: "en el green no hay alivio de bola empotrada." },
+      { rule: "13.1c(2)", point: "en el green se puede reparar el daño del impacto y reponer la bola." }
+    ]);
+  }
+  if (f.embedded && !f.general && !f.bunker && !f.penalty && !f.green) {
+    return refAsk("¿Dónde está empotrada?", ["En el área general", "En el búnker", "En el green", "En un área de penalización"]);
+  }
+  if (f.embedded && f.sand && !f.bunker) {
+    return refRule("Si está empotrada en arena del área general que no está cortada a altura de calle o menos, no hay alivio gratuito: se juega como está o la declaras injugable. Si esa arena sí está a altura de calle, el alivio es el de bola empotrada: un palo desde el punto justo detrás, sin acercarte al hoyo.", [
+      { rule: "16.3a", point: "no hay alivio de bola empotrada en arena del área general que no es calle." },
+      { rule: "16.3b", point: "si el alivio vale, es gratuito desde el punto justo detrás." },
+      { rule: "19.2", point: "si no hay alivio gratuito, puedes declararla injugable con un golpe." }
+    ]);
+  }
+  if (f.embedded) {
+    return refRule("Hay alivio sin penalización si está en su propio impacto, con parte de la bola por debajo del nivel del suelo, y está en el área general. El punto de referencia es el sitio justo detrás de la bola. Desde ahí, un palo, sin acercarte al hoyo, y dentro del área general. No vale si alguien la pisó, si no llegó a volar o si la empotraste al dropear. " + drop, [
+      { rule: "16.3a", point: "bola empotrada solo en el área general y en su propio impacto." },
+      { rule: "16.3b", point: "alivio gratuito: un palo desde el punto justo detrás, sin acercarse al hoyo." },
+      dropCite
+    ]);
+  }
+  if (f.unplayable && f.penalty) {
+    return refRule("Dentro de un área de penalización no puedes declararla injugable. Solo puedes jugarla como está o tomar el alivio del área de penalización.", [
+      { rule: "19.1", point: "el alivio de bola injugable no existe dentro de un área de penalización." },
+      { rule: "17.1d", point: "el alivio del área de penalización es el que corresponde, con un golpe." }
+    ]);
+  }
+  if (f.unplayable && !f.bunker && !f.green && !f.general && !f.penalty) {
+    return refAsk("¿Dónde está la bola injugable?", ["En el área general", "En el búnker", "En el green", "En un área de penalización"]);
+  }
+  if (f.unplayable && f.bunker) {
+    return refRule("Tú decides si es injugable. En el búnker, con un golpe de penalización: golpe y distancia; línea hacia atrás, dropeando dentro del búnker; o dos palos laterales, también dentro del búnker. Para salir del búnker por la línea hacia atrás son dos golpes en total. " + drop, [
+      { rule: "19.3a", point: "las tres opciones de un golpe obligan a que la bola quede en el búnker, salvo el golpe y distancia." },
+      { rule: "19.3b", point: "la línea hacia atrás fuera del búnker son dos golpes de penalización." },
+      { rule: "19.2b", point: "en la línea hacia atrás, el punto donde la bola toca el suelo abre un área de un palo." },
+      dropCite
+    ]);
+  }
+  if (f.unplayable) {
+    return refRule("Solo tú puedes declararla injugable, y no si está en un área de penalización. Con un golpe de penalización hay tres opciones: volver a jugar desde el golpe anterior; dropear sobre la línea hacia atrás entre el hoyo y la bola; o dos palos desde donde está, sin acercarte al hoyo. Para las dos últimas tienes que saber el punto donde está la bola. " + drop, [
+      { rule: "19.1", point: "la declara injugable el jugador, en cualquier sitio salvo un área de penalización." },
+      { rule: "19.2a", point: "golpe y distancia, un golpe de penalización." },
+      { rule: "19.2b", point: "línea hacia atrás, un golpe de penalización." },
+      { rule: "19.2c", point: "alivio lateral de dos palos, sin acercarse al hoyo, un golpe de penalización." },
+      dropCite
+    ]);
+  }
+  if (f.footprint && f.bunker && !acc) {
+    return refRule("Una pisada en la arena no es, por sí sola, una condición anormal del campo. No hay alivio gratuito salvo que el comité tenga una regla local. Juegas la bola como está, sin apoyar el palo en la arena antes del golpe, o la declaras injugable.", [
+      { rule: "12.2", point: "la bola en el búnker se juega como está, sin tocar la arena antes del golpe." },
+      { rule: "19.3", point: "si la declaras injugable, las opciones de un golpe dejan la bola en el búnker." }
+    ]);
+  }
+  if (acc && f.penalty) {
+    return refRule("Si la bola está en un área de penalización, no hay alivio gratuito por " + refAcc(f) + ". Se juega como está o se toma el alivio del área, con un golpe.", [
+      { rule: "16.1a", point: "no hay alivio de condición anormal cuando la bola está en un área de penalización." },
+      { rule: "17.3", point: "dentro del área no se aplican los alivios de otras reglas." }
+    ]);
+  }
+  if (acc && f.lineOnly && !f.touching && !f.green) {
+    return refRule("Fuera del green no hay alivio gratuito si " + refAcc(f) + " solo te molesta en la línea de juego y no está en la bola, el stance o el swing.", [
+      { rule: "16.1a", point: "la interferencia es de bola, stance o swing; la línea de juego solo cuenta en el green." }
+    ]);
+  }
+  if (acc && !f.touching && !f.lineOnly && !f.bunker && !f.green && !f.penalty) {
+    return refAsk("¿La bola, el stance o el swing están en esa condición, o solo te tapa la línea?", ["La bola está en el camino", "Solo me tapa la línea", "En el búnker", "En el green"]);
+  }
+  if (acc && f.bunker) {
+    return refRule("Si " + refAcc(f) + " interfiere con la bola, el stance o el swing dentro del búnker, hay alivio sin penalización, pero el drop tiene que quedar en el búnker: punto más cercano con alivio completo y un palo, sin acercarte al hoyo. También puedes salir del búnker por la línea hacia atrás, y eso es un golpe de penalización. " + drop, [
+      { rule: "16.1c", point: "alivio gratuito dentro del búnker, o línea hacia atrás fuera del búnker con un golpe." },
+      dropCite
+    ]);
+  }
+  if (acc && f.green) {
+    return refRule("En el green, si " + refAcc(f) + " interfiere con la bola, el stance, el swing o la línea de putt, hay alivio sin penalización. Se coloca la bola en el punto más cercano con alivio completo. Ese punto puede estar fuera del green.", [
+      { rule: "16.1d", point: "en el green el alivio incluye la línea de juego y la bola se coloca, no se dropea." }
+    ]);
+  }
+  if (acc) {
+    return refRule("Si " + refAcc(f) + " interfiere con la bola, el stance o el área de swing, hay alivio sin penalización en el área general. Busca el punto más cercano con alivio completo y, desde ahí, un palo sin acercarte al hoyo, en el área general. No vale si solo molesta en la línea, ni si el stance es claramente absurdo para conseguir el alivio. " + drop, [
+      { rule: "16.1a", point: "alivio gratuito por condición anormal del campo cuando hay interferencia real." },
+      { rule: "16.1b", point: "punto más cercano de alivio completo y un palo, sin acercarse al hoyo." },
+      dropCite
+    ]);
+  }
+  if (f.movable) {
+    return refRule("Un rastrillo, una lata, una toalla o cualquier obstrucción movible se puede quitar en cualquier sitio, sin penalización. Si al quitarla la bola se mueve, no hay penalización y la repones. Si la bola estaba encima o dentro, la levantas, quitas el objeto y dropeas a un palo del punto de debajo, sin acercarte al hoyo y en la misma zona del campo. En el green, en ese caso, se coloca.", [
+      { rule: "15.2a", point: "obstrucción movible: se quita sin penalización y, si la bola se mueve, se repone." }
+    ]);
+  }
+  if (f.loose) {
+    return refRule("Hojas, piedras sueltas, ramas o piñas se pueden quitar en cualquier sitio, también en el búnker y en un área de penalización. Si al quitarlo se mueve tu bola y no estaba en el green ni en el tee, es un golpe de penalización y tienes que reponerla. En el green, si se mueve sin querer, no hay penalización y también se repone.", [
+      { rule: "15.1a", point: "el impedimento suelto se puede quitar en cualquier sitio." },
+      { rule: "15.1b", point: "si al quitarlo se mueve la bola fuera del green y del tee, un golpe y se repone." },
+      { rule: "13.1d", point: "en el green, mover la bola sin querer no se penaliza." }
+    ]);
+  }
+  if (f.interfere) {
+    return refRule("Si una bola en reposo ayuda o estorba, se puede marcar y levantar. Quien tiene que jugar puede pedir que se levante la que estorba. No se limpia, salvo que esté en el green, y se vuelve a colocar en el mismo sitio.", [
+      { rule: "15.3", point: "bola que ayuda o interfiere: se puede marcar y levantar, y hay que reponerla." }
+    ]);
+  }
+  if (f.moved && f.searching && !f.playerMoved) {
+    return refRule("Si la bola se mueve sin querer mientras la buscas, no hay penalización. La repones en el sitio original. Si no estás seguro del punto, lo estimas.", [
+      { rule: "7.4", point: "no hay penalización si la bola se mueve sin querer al buscarla." },
+      { rule: "14.2", point: "se repone en el sitio original o en el punto estimado." }
+    ]);
+  }
+  if (f.moved && f.green && f.natural && !f.playerMoved) {
+    return refRule("En el green, si el viento u otra fuerza natural mueve la bola antes de haberla marcado, levantado y repuesto, se juega desde donde haya quedado. Si ya la habías levantado y repuesto, la vuelves a colocar en el sitio, sin penalización.", [
+      { rule: "13.1d(2)", point: "el viento en el green: se juega del sitio nuevo, salvo si ya se había levantado y repuesto." },
+      { rule: "9.3", point: "una bola movida por fuerzas naturales se juega desde el sitio nuevo, con esa excepción." }
+    ]);
+  }
+  if (f.moved && f.green) {
+    return refRule("En el green, si tú, otro jugador o tu marca movéis la bola sin querer, no hay penalización. La repones en el sitio original.", [
+      { rule: "13.1d(1)", point: "mover sin querer la bola o la marca en el green no se penaliza; se repone." }
+    ]);
+  }
+  if (f.moved && f.outside && !f.playerMoved) {
+    return refRule("Si una influencia exterior mueve la bola en reposo, no hay penalización. La repones donde estaba. Si no la encuentras y es conocido o virtualmente seguro que se la llevaron, puedes sustituirla en el sitio estimado.", [
+      { rule: "9.6", point: "bola movida por una influencia exterior: sin penalización y se repone." }
+    ]);
+  }
+  if (f.moved && f.natural && !f.playerMoved) {
+    return refRule("Si el viento, el agua o la gravedad mueven la bola en reposo, no hay penalización y se juega desde el sitio nuevo. No la repones, salvo que ya la hubieras levantado y vuelto a colocar.", [
+      { rule: "9.3", point: "fuerzas naturales: la bola se juega donde haya quedado." }
+    ]);
+  }
+  if (f.moved && !f.natural && !f.outside && !f.searching && !f.playerMoved && !f.loose && !f.movable) {
+    return refAsk("¿Quién o qué ha movido la bola?", ["La moví yo", "Se movió al buscarla", "La movió el viento", "La movió otra persona", "Se movió en el green"]);
+  }
+  if (f.moved) {
+    return refRule("Si tú haces que la bola se mueva, y no es en el green, ni en el tee, ni mientras la buscabas, es un golpe de penalización y tienes que reponerla. Si se movió al buscarla, no hay penalización y también se repone.", [
+      { rule: "9.4b", point: "el jugador que mueve su bola en reposo: un golpe y se repone." },
+      { rule: "7.4", point: "excepción: al buscarla, sin penalización." },
+      { rule: "13.1d", point: "excepción: en el green, sin penalización." }
+    ]);
+  }
+  if (f.flagstick) {
+    return refRule(f.attended
+      ? "Si la bola golpea la bandera mientras alguien la atiende, o golpea a quien la atiende, " + refGp(f) + ". La bola se juega donde haya quedado."
+      : "Puedes dejar la bandera, quitarla o hacer que la atiendan. Si la dejas puesta y nadie la atiende, y la bola la golpea, no hay penalización. Se juega como quede.", [
+      f.attended
+        ? { rule: "13.2b", point: "golpear la bandera atendida, o a quien la atiende, es penalización general." }
+        : { rule: "13.2a", point: "golpear la bandera que está en el hoyo sin atender no se penaliza." }
+    ]);
+  }
+  if (f.deflect && f.otherBall && f.green) {
+    return refRule("Si desde el green tu bola en movimiento golpea otra bola que también estaba en el green, " + refGp(f) + ". La otra bola se repone. La tuya se juega donde haya quedado.", [
+      { rule: "11.1a", point: "excepción en stroke play: golpear otra bola en el green son dos golpes." }
+    ]);
+  }
+  if (f.deflect && f.green) {
+    return refRule("Si el putt desvía por accidente contra ti, tu equipo o un animal, lo normal es repetir el golpe desde el mismo sitio, sin penalización, cuando es conocido o virtualmente seguro que ocurrió en el green. Si simplemente se va a otro sitio del green, se juega como quede, salvo ese caso.", [
+      { rule: "11.1b(2)", point: "un putt desviado en el green por una persona, un animal o una obstrucción movible se repite." }
+    ]);
+  }
+  if (f.deflect) {
+    return refRule("Si la bola en movimiento golpea por accidente a una persona, un animal o tu equipo, no hay penalización. Se juega donde haya quedado. Si queda encima de una persona, un animal o algo que se mueve, no se juega así: dropeas a un palo del punto de debajo, sin acercarte al hoyo.", [
+      { rule: "11.1a", point: "un desvío accidental no se penaliza." },
+      { rule: "11.1b", point: "la bola se juega como quede, salvo si se queda sobre una persona, un animal o algo en movimiento." }
+    ]);
+  }
+  if (f.inTree) {
+    return refRule("Si la identificas en el árbol, puedes jugarla como está. Si no puedes o no quieres, la declaras injugable: golpe y distancia, línea hacia atrás, o dos palos desde el punto donde está, sin acercarte al hoyo. Eso es un golpe de penalización. Si no la identificas en tres minutos, es bola perdida.", [
+      { rule: "19.2", point: "bola injugable en el área general: tres opciones, un golpe de penalización." },
+      { rule: "18.2", point: "si no se identifica a tiempo, es bola perdida: golpe y distancia." }
+    ]);
+  }
+  if (f.bunker) {
+    return refRule("En el búnker juegas la bola como está. Antes del golpe no puedes tocar la arena con la mano o el palo para probarla, ni en el swing de práctica, ni en el backswing, ni justo delante o detrás de la bola. Sí puedes quitar impedimentos sueltos y obstrucciones movibles. Si la declaras injugable, dímelo y te digo las cuatro opciones.", [
+      { rule: "12.2a", point: "se pueden quitar impedimentos sueltos y obstrucciones movibles en el búnker." },
+      { rule: "12.2b", point: "tocar la arena antes del golpe, en las condiciones que prohíbe la regla, es penalización general." },
+      { rule: "19.3", point: "la bola injugable en el búnker tiene opciones distintas dentro y fuera del búnker." }
+    ]);
+  }
+  if (f.dropHow) {
+    return refRule(drop + " Quien dropea eres tú, no el caddie.", [
+      dropCite,
+      { rule: "14.3b(1)", point: "el drop lo hace el jugador." }
+    ]);
+  }
+  if (f.green) {
+    return refAsk("En el green puedes marcar, levantar y limpiar la bola. ¿Qué ha pasado?", ["Se movió en el green", "He golpeado otra bola", "Me estorba otra bola", "Bandera", "Injugable", "Agua casual"]);
+  }
+  if (f.found && f.general) {
+    return refAsk("La bola está en juego. ¿Qué le pasa al lie?", ["Empotrada", "Injugable", "Camino o aspersor", "Impedimento suelto"]);
+  }
+  return refAsk("Dime dónde está la bola y qué ha pasado. Si en stroke play sigues en duda, la Regla 20.1c(3) permite jugar dos bolas: anúncialo, di cuál quieres que cuente si la regla lo permite y cuéntaselo al comité antes de entregar la tarjeta.", ["Bola perdida", "Fuera de límites", "En el agua", "Injugable", "Empotrada", "Búnker"]);
+}
+/* REFEREE_END */
+
+
+function ensureReferee() {
+  if (!state.referee) {
+    state.referee = {
+      facts: {},
+      lastKind: "intro",
+      messages: [{ role: "ref", text: REFEREE_INTRO, cites: [], chips: REFEREE_CHIPS.slice() }]
+    };
+  }
+  return state.referee;
+}
+function openReferee() {
+  if (state.screen !== "arbitro") state._refFrom = state.screen || "home";
+  ensureReferee();
+  go("arbitro");
+}
+function closeReferee() {
+  const back = state._refFrom && state._refFrom !== "arbitro" ? state._refFrom : "home";
+  go(back);
+}
+function refereeParagraphs(text) {
+  return escapeHtml(text).split("\n").filter(line => line.trim()).map(line => `<p>${line}</p>`).join("");
+}
+function renderReferee() {
+  const session = ensureReferee();
+  const log = document.getElementById("refLog");
+  const chips = document.getElementById("refChips");
+  if (!log || !chips) return;
+  log.innerHTML = session.messages.map(m => {
+    const cites = (m.cites || []).map(c => `<li><strong>Regla ${escapeHtml(c.rule)}</strong> — ${escapeHtml(c.point)}</li>`).join("");
+    const citeBlock = cites
+      ? `<div class="ref-cites"><div class="ref-cites-label">Citas</div><ul>${cites}</ul><p class="ref-note">${escapeHtml(REFEREE_NOTE)}</p></div>`
+      : "";
+    return `<div class="ref-bubble ${m.role === "user" ? "user" : "ref"}">${refereeParagraphs(m.text)}${citeBlock}</div>`;
+  }).join("");
+  const last = session.messages[session.messages.length - 1];
+  const options = last && last.role === "ref" ? (last.chips || []) : [];
+  chips.innerHTML = options.map((label, i) => `<button type="button" onclick="refereeChip(${i})">${escapeHtml(label)}</button>`).join("");
+  log.scrollTop = log.scrollHeight;
+}
+function refereeChip(i) {
+  const session = ensureReferee();
+  const last = session.messages[session.messages.length - 1];
+  const label = last && last.chips && last.chips[i];
+  if (label) refereeSend(label);
+}
+function submitReferee(ev) {
+  if (ev) ev.preventDefault();
+  const input = document.getElementById("refInput");
+  const text = input ? input.value : "";
+  if (input) input.value = "";
+  refereeSend(text);
+}
+function refereeSend(text) {
+  const clean = String(text || "").replace(/\s+/g, " ").trim().slice(0, 500);
+  if (!clean) return;
+  const session = ensureReferee();
+  if (clean === "Otro caso") {
+    session.facts = {};
+    session.lastKind = "intro";
+    session.messages.push({ role: "ref", text: "Siguiente caso. ¿Dónde está la bola y qué ha pasado?", cites: [], chips: REFEREE_CHIPS.slice() });
+    renderReferee();
+    return;
+  }
+  const incoming = refereeFacts(clean);
+  const startFresh = session.lastKind === "rule" && clean.length > 60;
+  const facts = startFresh ? incoming : mergeFacts(session.facts, incoming);
+  if (incoming.found) facts.lost = false;
+  if (incoming.kvcYes) facts.kvcNo = false;
+  if (incoming.kvcNo) facts.kvcYes = false;
+  if (incoming.red && !incoming.yellow) facts.yellow = false;
+  if (incoming.yellow && !incoming.red) facts.red = false;
+  const reply = refereeDecide(facts);
+  session.facts = facts;
+  session.lastKind = reply.kind;
+  session.messages.push({ role: "user", text: clean });
+  session.messages.push({ role: "ref", text: reply.text, cites: reply.cites || [], chips: reply.chips || [] });
+  renderReferee();
+}
+
 function openRules() {
   if (state.screen !== "reglas") state._rulesFrom = state.screen || "home";
   go("reglas");
@@ -2557,7 +3117,7 @@ function renderRules() {
       ${note}${extra}
     </div>`;
   }).join("");
-  body.innerHTML = `<p class="muted" style="margin:4px 0 12px;">Oficiales y sociales. Las que llevas en la partida van marcadas.</p>${cards}`;
+  body.innerHTML = `<button type="button" class="btn btn-primary mb-16" onclick="openReferee()">Consultar un lie</button><p class="muted" style="margin:4px 0 12px;">Oficiales y sociales. Las que llevas en la partida van marcadas.</p>${cards}`;
 }
 
 function go(name) {
@@ -2598,6 +3158,7 @@ function go(name) {
   if (name === "close") renderClose();
   if (name === "ajustes") renderAjustes();
   if (name === "reglas") renderRules();
+  if (name === "arbitro") renderReferee();
   updateNetBadge();
   updateHomeThru();
 }

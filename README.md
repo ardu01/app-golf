@@ -123,7 +123,7 @@ Las de cada modo se pueden leer cuando haga falta, también a mitad de hoyo. Vol
 
 [Abrir las reglas y volver a la ronda](docs/recorrido/videos/reglas.mp4)
 
-El chat del árbitro lo estuve probando con una bola en área roja. Si le falta un dato pregunta, y cuando ya puede decidir cita la regla al final. Esas capturas son de ese trabajo. El código del chat todavía no está en esta rama.
+El árbitro es un chat en la propia partida. Cuentas el lie. Si falta un dato, pregunta. Cuando ya puede decidir, aplica las Reglas de Golf y deja la cita al final. Esta es una bola en área roja.
 
 <img src="docs/recorrido/reglas/arbitro-area-roja.webp" alt="Árbitro, área roja" width="260">
 
