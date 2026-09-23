@@ -3,7 +3,7 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 
 const dir = dirname(fileURLToPath(import.meta.url));
-const files = ["scoring.mjs", "backup.mjs", "maps.mjs", "referee.mjs"];
+const files = ["scoring.mjs", "backup.mjs", "maps.mjs", "referee.mjs", "drive.mjs"];
 let failed = 0;
 for (const file of files) {
   const res = spawnSync(process.execPath, [join(dir, file)], { stdio: "inherit" });
