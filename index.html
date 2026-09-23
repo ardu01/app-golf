@@ -6644,7 +6644,6 @@ function renderPerfil() {
       <div class="btn-row">
         <button class="btn btn-primary" type="button" onclick="shareFairwayBackup()">Compartir copia</button>
         <button class="btn btn-ghost" type="button" onclick="importFairwayBackup()">Restaurar copia…</button>
-        <input id="fairwayImportInput" type="file" accept="application/json,.json" hidden />
       </div>
       <p class="micro mt-12">En Compartir elige Guardar en Archivos. Para recuperar, Restaurar y elige ese JSON.</p>
     </div>`;
@@ -6921,8 +6920,7 @@ function renderHistorial() {
       <div class="card"><p class="muted">Sin partidas aún</p></div>
       <p class="micro mt-16">Las vueltas se guardan al completar una ronda.</p>
       <button class="btn btn-ghost mt-16" type="button" onclick="shareFairwayBackup()">Hacer copia de seguridad</button>
-      <button class="btn btn-ghost mt-8" type="button" onclick="importFairwayBackup()">Restaurar copia…</button>
-      <input id="fairwayImportInput" type="file" accept="application/json,.json" hidden />`;
+      <button class="btn btn-ghost mt-8" type="button" onclick="importFairwayBackup()">Restaurar copia…</button>`;
     return;
   }
   const rows = rounds.slice(0, 20).map(r => {
@@ -6943,8 +6941,7 @@ function renderHistorial() {
     <div class="list-card">${rows}</div>
     <p class="micro mt-16">${rounds.length} vuelta${rounds.length===1?"":"s"}</p>
     <button class="btn btn-ghost mt-16" type="button" onclick="shareFairwayBackup()">Hacer copia de seguridad</button>
-    <button class="btn btn-ghost mt-8" type="button" onclick="importFairwayBackup()">Restaurar copia…</button>
-    <input id="fairwayImportInput" type="file" accept="application/json,.json" hidden />`;
+    <button class="btn btn-ghost mt-8" type="button" onclick="importFairwayBackup()">Restaurar copia…</button>`;
 }
 
 
