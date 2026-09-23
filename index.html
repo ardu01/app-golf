@@ -6254,7 +6254,10 @@ function collectFairwayBackup() {
 }
 
 function clipStr(v, max) {
-  return String(v == null ? "" : v).replace(/[\u0000-\u001F]/g, "").slice(0, max);
+  return String(v == null ? "" : v)
+    .replace(/[\u0000-\u001F]/g, "")
+    .replace(/[<>]/g, "")
+    .slice(0, max);
 }
 function sanitizeScoreMap(obj, maxVal) {
   const out = {};
