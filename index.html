@@ -177,11 +177,23 @@
     display: flex; align-items: center; justify-content: flex-end;
     min-height: 36px; margin-bottom: 2px;
   }
-  #screen-home .greeting-sub.as-link {
+  #screen-home .greeting-sub {
     display: block; width: 100%;
-    color: var(--tint); font-weight: 600; cursor: pointer;
-    background: none; border: none; padding: 0; font-family: inherit;
-    font-size: 15px; letter-spacing: -0.24px; margin-bottom: 16px; text-align: left;
+    margin: 0 0 16px; padding: 0;
+    border: none; background: transparent;
+    font-family: inherit; font-size: 15px; font-weight: 400;
+    letter-spacing: -0.24px; line-height: 1.3;
+    color: var(--ink-secondary); text-align: left;
+    cursor: default; pointer-events: none;
+    -webkit-appearance: none; appearance: none;
+    box-shadow: none; outline: none;
+  }
+  #screen-home .greeting-sub.as-link {
+    color: var(--tint); font-weight: 600;
+    cursor: pointer; pointer-events: auto;
+  }
+  #screen-home .greeting-sub.as-link:active {
+    opacity: 0.75;
   }
   #screen-home > .tabbar {
     position: relative;
@@ -421,6 +433,26 @@
     width: 28px; height: 28px; display: inline-flex;
     align-items: center; justify-content: center;
     border-radius: 8px; background: rgba(52,199,89,0.12);
+  }
+  .quick-tile .ico.ico-user {
+    font-size: 0;
+    flex-direction: column;
+    gap: 1px;
+  }
+  .quick-tile .ico.ico-user::before {
+    content: "";
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    border: 1.75px solid currentColor;
+    box-sizing: border-box;
+  }
+  .quick-tile .ico.ico-user::after {
+    content: "";
+    width: 15px; height: 7px;
+    border: 1.75px solid currentColor;
+    border-bottom: 0;
+    border-radius: 8px 8px 0 0;
+    box-sizing: border-box;
   }
   .tab.active { font-weight: 600; }
 
@@ -1855,7 +1887,7 @@
               <button type="button" class="topnav-action" onclick="go('perfil')" aria-label="Perfil">Perfil</button>
             </div>
             <div class="greeting">Buenos días</div>
-            <button type="button" class="greeting-sub as-link" id="homeGreetingSub" onclick="go('perfil')">Pon tu nombre y HCP en Perfil</button>
+            <p class="greeting-sub" id="homeGreetingSub">Pon tu nombre y HCP en Perfil</p>
             <button class="btn btn-primary mb-8" onclick="setupStart()">Nueva partida</button>
             <div class="round-card">
               <div class="eyebrow">Ronda en curso</div>
@@ -1879,7 +1911,7 @@
             <button class="quick-tile" onclick="go('scorecard')"><div class="ico" aria-hidden="true">▦</div><div class="t">Tarjeta</div><div class="d">Bruta · Neta</div></button>
             <button class="quick-tile" onclick="go('leader')"><div class="ico" aria-hidden="true">◆</div><div class="t">Clasif.</div><div class="d">Stroke · Social</div></button>
             <button class="quick-tile" onclick="go('historial')"><div class="ico" aria-hidden="true">◎</div><div class="t">Vueltas</div><div class="d">Ver · editar</div></button>
-            <button class="quick-tile" onclick="go('perfil')"><div class="ico" aria-hidden="true">☺</div><div class="t">Perfil</div><div class="d">Nombre · HCP</div></button>
+            <button class="quick-tile" onclick="go('perfil')"><div class="ico ico-user" aria-hidden="true"></div><div class="t">Perfil</div><div class="d">Nombre · HCP</div></button>
           </div>
         </div>
         <nav class="tabbar" aria-label="Navegación principal">
@@ -2710,11 +2742,12 @@ function updateHomeGreeting() {
     if (first) {
       sub.textContent = "¿Listo para el campo?";
       sub.classList.remove("as-link");
+      sub.removeAttribute("role");
       sub.onclick = null;
-      if (sub.tagName === "BUTTON") sub.removeAttribute("onclick");
     } else {
       sub.textContent = "Pon tu nombre y HCP en Perfil";
       sub.classList.add("as-link");
+      sub.setAttribute("role", "button");
       sub.onclick = function () { go("perfil"); };
     }
   }
