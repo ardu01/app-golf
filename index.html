@@ -6917,10 +6917,91 @@ function plaqueMeta() {
   const date = new Date().toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" });
   return {
     club: (typeof CLUB !== "undefined" && CLUB) || (course && course.name) || "Fairway",
+    courseId: (course && course.id) || (state.setup && state.setup.courseId) || "",
     date: date,
     tee: (state.setup && state.setup.tee) || "",
     par: (course && course.par) || (typeof FX !== "undefined" ? FX.par : "")
   };
+}
+
+function plaqueIsHerreria(meta) {
+  if (!meta) return false;
+  if (meta.courseId === "la-herreria") return true;
+  const club = String(meta.club || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  return club.indexOf("la herreria") !== -1;
+}
+
+/** Monasterio de El Escorial, la vista que se ve desde La Herrería. Solo silueta. */
+function drawEscorialSilhouette(ctx, x, y, w, h) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.beginPath();
+  ctx.rect(0, 0, w, h);
+  ctx.clip();
+  ctx.scale(w / 1000, h / 360);
+  ctx.beginPath();
+  // Lonja
+  ctx.moveTo(20, 332);
+  ctx.lineTo(980, 332);
+  ctx.lineTo(980, 300);
+  ctx.lineTo(20, 300);
+  ctx.closePath();
+  // Cuerpo sur, largo y bajo
+  ctx.moveTo(70, 300);
+  ctx.lineTo(70, 168);
+  ctx.lineTo(930, 168);
+  ctx.lineTo(930, 300);
+  ctx.closePath();
+  // Torre suroeste
+  ctx.moveTo(70, 168);
+  ctx.lineTo(70, 108);
+  ctx.lineTo(108, 52);
+  ctx.lineTo(146, 108);
+  ctx.lineTo(176, 108);
+  ctx.lineTo(176, 168);
+  ctx.closePath();
+  // Torre sureste
+  ctx.moveTo(824, 168);
+  ctx.lineTo(824, 108);
+  ctx.lineTo(862, 52);
+  ctx.lineTo(900, 108);
+  ctx.lineTo(930, 108);
+  ctx.lineTo(930, 168);
+  ctx.closePath();
+  // Basílica
+  ctx.moveTo(390, 168);
+  ctx.lineTo(390, 118);
+  ctx.lineTo(430, 78);
+  ctx.lineTo(455, 78);
+  ctx.lineTo(500, 40);
+  ctx.lineTo(545, 78);
+  ctx.lineTo(570, 78);
+  ctx.lineTo(610, 118);
+  ctx.lineTo(610, 168);
+  ctx.closePath();
+  // Cúpula
+  ctx.moveTo(445, 86);
+  ctx.bezierCurveTo(445, 18, 555, 18, 555, 86);
+  ctx.lineTo(445, 86);
+  ctx.closePath();
+  // Linterna y cruz
+  ctx.moveTo(482, 28);
+  ctx.lineTo(482, 8);
+  ctx.lineTo(518, 8);
+  ctx.lineTo(518, 28);
+  ctx.closePath();
+  ctx.moveTo(494, 8);
+  ctx.lineTo(506, 8);
+  ctx.lineTo(506, 0);
+  ctx.lineTo(494, 0);
+  ctx.closePath();
+  ctx.moveTo(478, 4);
+  ctx.lineTo(522, 4);
+  ctx.lineTo(522, 12);
+  ctx.lineTo(478, 12);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
 }
 
 function drawWinnerPlaque(payload) {
@@ -6953,6 +7034,17 @@ function drawWinnerPlaque(payload) {
   ctx.strokeStyle = "#C4A574";
   ctx.lineWidth = 1;
   ctx.strokeRect(cx + 17, cy + 17, cw - 34, ch - 34);
+
+  if (plaqueIsHerreria(payload)) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(cx + 20, cy + 80, cw - 40, ch - 98);
+    ctx.clip();
+    ctx.globalAlpha = 0.2;
+    ctx.fillStyle = "#1B3329";
+    drawEscorialSilhouette(ctx, cx + 28, cy + 214, cw - 56, 148);
+    ctx.restore();
+  }
 
   const midX = W / 2;
 
@@ -7045,6 +7137,7 @@ async function shareWinnerPlaque(row, meta) {
   try {
     const canvas = drawWinnerPlaque({
       club: meta.club,
+      courseId: meta.courseId || "",
       date: meta.date || row.date,
       tee: meta.tee || row.tee || "",
       par: meta.par,
@@ -7096,6 +7189,16 @@ function drawWinnerPlaquesSheet(list, meta) {
     const cw = W - margin * 2;
     ctx.fillStyle = "#F3EBDA";
     ctx.fillRect(x, y, cw, cardH);
+    if (plaqueIsHerreria(meta)) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x + 12, y + 12, cw - 24, cardH - 24);
+      ctx.clip();
+      ctx.globalAlpha = 0.15;
+      ctx.fillStyle = "#1B3329";
+      drawEscorialSilhouette(ctx, x + cw - 210, y + 78, 180, 58);
+      ctx.restore();
+    }
     ctx.strokeStyle = "#1B3329";
     ctx.lineWidth = 1.75;
     ctx.strokeRect(x + 5, y + 5, cw - 10, cardH - 10);
@@ -7140,6 +7243,7 @@ function shareDetallePlaqueAt(i) {
   const row = d.winners[i];
   shareWinnerPlaque(row, {
     club: d.club,
+    courseId: d.courseId || "",
     date: d.date,
     tee: d.tee || "",
     par: d.par
@@ -7151,7 +7255,7 @@ function shareDetalleAllPlaques() {
   const list = (d && d.winners) || [];
   if (!list.length) { showToast("Sin ganadores"); return; }
   window._lastPodium = list.slice();
-  window._lastPlaqueMeta = { club: d.club, date: d.date, tee: d.tee || "", par: d.par };
+  window._lastPlaqueMeta = { club: d.club, courseId: d.courseId || "", date: d.date, tee: d.tee || "", par: d.par };
   shareAllWinnerPlaques();
 }
 
@@ -8297,7 +8401,7 @@ function renderDetalle() {
   const sf = fmtStoredText(me.sf);
   const winList = d.winners || [];
   window._lastPodium = winList.slice();
-  window._lastPlaqueMeta = { club: d.club, date: d.date, tee: d.tee || "", par: d.par };
+  window._lastPlaqueMeta = { club: d.club, courseId: d.courseId || "", date: d.date, tee: d.tee || "", par: d.par };
   const winners = winList.length ? winList.map((w, i) =>
     `<div class="winner-row"><div class="medal" aria-hidden="true"></div><div><div class="mod">${escapeHtml(w.label)}</div><div class="name">${escapeHtml(w.winner)}</div><button type="button" class="placa-btn" onclick="shareDetallePlaqueAt(${i})">Compartir placa</button></div><div class="detail">${escapeHtml(w.detail)}</div></div>`
   ).join("") + `<div class="winners-actions"><button type="button" class="placa-link" onclick="shareDetalleAllPlaques()">Compartir todas las placas</button></div>` : `<p class="muted" style="padding:12px 14px;">Sin ganadores</p>`;
