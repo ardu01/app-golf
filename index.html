@@ -5246,7 +5246,6 @@ function renderLeader() {
   } else {
     const keyMap = { rey: "holeWins", birdie: "birdies", creative: "creativePts" };
     const key = keyMap[tab] || "holeWins";
-    const titles = { rey: "Rey del Hoyo", birdie: "Birdie Hunt", creative: "Creativo" };
     const data = rows.slice().sort((a, b) => (b[key]||0) - (a[key]||0));
     foot.textContent = live ? "Clasificación en vivo" : scope;
     listEl.innerHTML = `<div class="lb-list-wrap">` +
