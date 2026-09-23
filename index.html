@@ -4059,15 +4059,84 @@ const HOLE_MAP_COURSES = Object.freeze({
   "forus-las-rejas-pares-3": { dir: "holes/forus-las-rejas-pares-3", overviewOnly: true },
   "forus-las-rejas-pitch-putt": { dir: "holes/forus-las-rejas-pitch-putt", overviewOnly: true },
   "centro-tecnificacion-golf-madrid": { dir: "holes/centro-tecnificacion-golf-madrid", overviewOnly: true },
-  "centro-tecnificacion-pitch-putt": { dir: "holes/centro-tecnificacion-pitch-putt", overviewOnly: true }
+  "centro-tecnificacion-pitch-putt": { dir: "holes/centro-tecnificacion-pitch-putt", overviewOnly: true },
+  "aranjuez": { dir: "holes/aranjuez" },
+  "lafinca-golf": { dir: "holes/lafinca-golf" },
+  "torrejon": { dir: "holes/torrejon", overviewOnly: true }
 });
+
+/** Centros GPS para ortofoto IGN PNOA (vista satélite real, sin inventar esquemas). */
+const COURSE_GEO = Object.freeze({
+  "real-club-puerta-de-hierro": { lat: 40.46580, lon: -3.74070, span: 0.013, approx: true },
+  "puerta-de-hierro-abajo": { lat: 40.46250, lon: -3.73800, span: 0.013, approx: true },
+  "puerta-de-hierro-buenavista": { lat: 40.47050, lon: -3.73550, span: 0.009, approx: true },
+  "puerta-de-hierro-buenavista-rci": { lat: 40.47050, lon: -3.73550, span: 0.006, approx: true },
+  "puerta-de-hierro-buenavista-pp": { lat: 40.47050, lon: -3.73550, span: 0.006, approx: true },
+  "villa-de-madrid-pitch-putt": { lat: 40.44745, lon: -3.74540, span: 0.006 },
+  "barberan-y-collar": { lat: 40.49600, lon: -3.45800, span: 0.009, approx: true },
+  "race-jarama": { lat: 40.62470, lon: -3.59940, span: 0.013, approx: true },
+  "race-pares-3": { lat: 40.62470, lon: -3.59940, span: 0.006, approx: true },
+  "race-pitch-putt": { lat: 40.61933, lon: -3.59011, span: 0.006 },
+  "lomas-bosque-pares-3": { lat: 40.38033, lon: -3.94520, span: 0.006 },
+  "lomas-bosque-pitch-putt": { lat: 40.36750, lon: -3.92200, span: 0.006, approx: true },
+  "el-robledal": { lat: 40.44193, lon: -3.27300, span: 0.013 },
+  "encinas-boadilla-pitch-putt": { lat: 40.40500, lon: -3.87500, span: 0.006, approx: true },
+  "rshecc-pitch-putt": { lat: 40.44740, lon: -3.74540, span: 0.006, approx: true },
+  "rshecc-sur": { lat: 40.44745, lon: -3.74540, span: 0.013 },
+  "rshecc-norte": { lat: 40.60748, lon: -3.59066, span: 0.013 },
+  "green-paddock": { lat: 40.54000, lon: -3.64000, span: 0.006, approx: true },
+  "golf-park": { lat: 40.51633, lon: -3.65921, span: 0.006 },
+  "forus-las-rejas": { lat: 40.44502, lon: -3.86947, span: 0.009 },
+  "negralejo-pitch-putt": { lat: 40.40566, lon: -3.51794, span: 0.006 },
+  "negralejo": { lat: 40.40770, lon: -3.51361, span: 0.009 },
+  "moraleja-campo-4": { lat: 40.59850, lon: -3.52200, span: 0.013, approx: true },
+  "moraleja-campo-3": { lat: 40.60232, lon: -3.56911, span: 0.013 },
+  "moraleja-pitch-putt": { lat: 40.51450, lon: -3.63500, span: 0.006, approx: true },
+  "moraleja-campo-2": { lat: 40.51850, lon: -3.60569, span: 0.013 },
+  "la-dehesa": { lat: 40.45448, lon: -3.97857, span: 0.013 },
+  "aranjuez-pitch-putt": { lat: 40.04053, lon: -3.56919, span: 0.006 },
+  "pozuelo": { lat: 40.44247, lon: -3.77729, span: 0.013 },
+  "villa-el-escorial-pitch-putt": { lat: 40.58900, lon: -4.14700, span: 0.006, approx: true },
+  "villa-el-escorial": { lat: 40.55258, lon: -4.11723, span: 0.009 },
+  "olivar-hinojosa-rec-2": { lat: 40.46200, lon: -3.61000, span: 0.009, approx: true },
+  "cdscm-la-dehesa": { lat: 40.45450, lon: -3.97860, span: 0.013, approx: true },
+  "golf-santander": { lat: 40.39168, lon: -3.87103, span: 0.013 },
+  "el-encin-pitch-putt": { lat: 40.52250, lon: -3.31197, span: 0.006 },
+  "mistral-samaranch": { lat: 40.41000, lon: -3.73000, span: 0.006, approx: true }
+});
+
+function courseGeo(courseId) {
+  return (courseId && COURSE_GEO[courseId]) || null;
+}
+
+/** Ortofoto oficial IGN PNOA (CORS abierto). BBOX en EPSG:4326 lat,lon. */
+function pnoaOrthoUrl(lat, lon, span) {
+  const s = Number(span) > 0 ? Number(span) : 0.012;
+  const south = Number(lat) - s / 2;
+  const north = Number(lat) + s / 2;
+  const west = Number(lon) - s / 2;
+  const east = Number(lon) + s / 2;
+  const q = [
+    "SERVICE=WMS",
+    "VERSION=1.3.0",
+    "REQUEST=GetMap",
+    "LAYERS=OI.OrthoimageCoverage",
+    "CRS=EPSG:4326",
+    "BBOX=" + south.toFixed(6) + "," + west.toFixed(6) + "," + north.toFixed(6) + "," + east.toFixed(6),
+    "WIDTH=900",
+    "HEIGHT=900",
+    "FORMAT=image/jpeg",
+    "STYLES="
+  ].join("&");
+  return "https://www.ign.es/wms-inspire/pnoa-ma?" + q;
+}
 
 function holeMapConfig(courseId) {
   return (courseId && HOLE_MAP_COURSES[courseId]) || null;
 }
 
 function courseHasHoleMaps(courseId) {
-  return !!holeMapConfig(courseId);
+  return !!(holeMapConfig(courseId) || courseGeo(courseId));
 }
 
 function courseManifestHole(courseId, n) {
@@ -4192,6 +4261,15 @@ function updateHoleFoto() {
   img.onerror = null;
 
   if (!cfg) {
+    const geo = typeof courseGeo === "function" ? courseGeo(courseId) : null;
+    if (geo) {
+      const label = "Satélite IGN · vista del campo";
+      caption.textContent = label;
+      tryHoleFotoCandidates(img, caption, empty, token, label, [
+        pnoaOrthoUrl(geo.lat, geo.lon, geo.span)
+      ]);
+      return;
+    }
     empty.textContent = "Sin mapa de este hoyo";
     img.removeAttribute("src");
     return;
