@@ -49,7 +49,7 @@ Stats filtra las últimas 5, 10 o 20 vueltas, la temporada (desde enero), el úl
 
 ## Planos de hoyo
 
-Hay 54 campos con tarjeta. 22 traen plano, en `holes/`. Se pide al abrir ese hoyo, no al instalar la app.
+Hay 54 campos. 25 son de 18 hoyos, 7 de 9, 18 de pitch & putt y 4 de pares 3. 22 traen plano de cada hoyo y 4 solo una vista del campo. Son 404 webp, en `holes/`. Se piden al abrir ese hoyo, no al instalar la app.
 
 Las Rozas, El Encín y La Herrería, el 1:
 
@@ -136,6 +136,22 @@ Una F. Estos son los que pone en la pantalla de inicio.
 <img src="docs/recorrido/marca/logo-f.png" alt="La F" width="96">
 <img src="docs/recorrido/marca/icono-192.png" alt="Icono a 192" width="96">
 <img src="docs/recorrido/marca/icono-512.png" alt="Icono a 512" width="128">
+
+## Versión 3.0
+
+Esto es la 3.0. Lo que venga después va como 3.0.1, 3.0.2 y así.
+
+Si hay una ronda con golpes, una actualización no recarga el teléfono a mitad. Espera a volver al inicio, con la partida ya guardada. Los planos que ya abrí siguen en el caché aunque cambie la app, con un tope de 120 para que no crezca sin fin. El campo que no he abierto no se descarga al instalar.
+
+Sigue siendo un solo `index.html`. No lo he partido en módulos: la partida real depende de ese archivo y no quiero un build para abrirlo.
+
+`strokesRecv` aparece dos veces, una dentro de la clasificación de una vuelta guardada y otra al dibujar la tarjeta. No es la misma función repetida en el mismo sitio. Las dos llaman a `strokesOnHole`.
+
+La copia de seguridad sigue en el esquema 3, así que las de antes entran. El texto de versión dentro del JSON es 3.0.0. Si el historial o la ronda en curso se corrompen, hay una copia local anterior y no se pisa lo que no se puede leer.
+
+El árbitro sigue en el teléfono, sin llamar a nadie. Si falta un dato, pregunta. Si el comité tiene una regla local, esa manda.
+
+Las fórmulas de hándicap no las he tocado. Los tests están en `tests/` y se lanzan con `node tests/run.mjs`. Para jugar no hace falta npm.
 
 ## Para probarla
 
