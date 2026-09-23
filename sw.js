@@ -1,4 +1,4 @@
-const SHELL = "fairway-v3-193";
+const SHELL = "fairway-v3-194";
 const MAPS = "fairway-maps-v1";
 const MAPS_MAX = 120;
 const ASSETS = [
@@ -7,7 +7,8 @@ const ASSETS = [
   "./manifest.webmanifest",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
-  "./icons/apple-touch-icon.png"
+  "./icons/apple-touch-icon.png",
+  "./icons/escorial-monasterio.png"
 ];
 
 function isMapUrl(url) {
@@ -22,7 +23,8 @@ function isShellUrl(url) {
     || file === "manifest.webmanifest"
     || file === "icon-192.png"
     || file === "icon-512.png"
-    || file === "apple-touch-icon.png";
+    || file === "apple-touch-icon.png"
+    || file === "escorial-monasterio.png";
 }
 
 async function trimMaps(cache) {
