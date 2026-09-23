@@ -1,4 +1,4 @@
-const CACHE = "fairway-v3-185";
+const CACHE = "fairway-v3-186";
 const ASSETS = [
   "./",
   "./index.html",

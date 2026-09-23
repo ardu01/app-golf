@@ -1916,6 +1916,7 @@
             <button class="quick-tile" onclick="go('leader')"><div class="ico" aria-hidden="true">◆</div><div class="t">Clasif.</div><div class="d">Stroke · Social</div></button>
             <button class="quick-tile" onclick="go('historial')"><div class="ico" aria-hidden="true">◎</div><div class="t">Vueltas</div><div class="d">Ver · editar</div></button>
             <button class="quick-tile" onclick="go('perfil')"><div class="ico ico-user" aria-hidden="true"></div><div class="t">Perfil</div><div class="d">Nombre · HCP</div></button>
+            <button class="quick-tile" onclick="openRules()"><div class="ico" aria-hidden="true">☰</div><div class="t">Reglas</div><div class="d">Todos los modos</div></button>
           </div>
         </div>
         <nav class="tabbar" aria-label="Navegación principal">
@@ -1958,6 +1959,7 @@
         <div class="topnav">
           <button class="btn-icon" onclick="go('home')" aria-label="Inicio">‹</button>
           <div class="title"><span class="title-mark" aria-hidden="true">○</span> Marcador</div>
+          <button type="button" class="topnav-action" onclick="openRules()" aria-label="Reglas de los modos">Reglas</button>
           <button type="button" class="topnav-action" onclick="go('ajustes')" aria-label="Ajustes de la partida">Ajustes</button>
         </div>
         <div class="hole-header">
@@ -2104,7 +2106,10 @@
 
       <!-- LEADER -->
       <section id="screen-leader" class="screen theme-fairway">
-        <div class="topnav no-back"><div class="title">Clasificación</div></div>
+        <div class="topnav no-back">
+          <div class="title">Clasificación</div>
+          <button type="button" class="topnav-action" onclick="openRules()" aria-label="Reglas de los modos">Reglas</button>
+        </div>
         <div class="lb-tabs" id="lbTabs">
           <button class="lb-tab active" data-lb="stroke" onclick="switchLb(this)">Stroke</button>
           <button class="lb-tab" data-lb="stableford" onclick="switchLb(this)">Stableford</button>
@@ -2122,6 +2127,15 @@
           <button class="tab" onclick="go('scorecard')"><span class="ico" aria-hidden="true">▦</span>Tarjeta</button>
           <button class="tab active" onclick="go('leader')"><span class="ico">◆</span>Clasif.</button>
         </nav>
+      </section>
+
+      <!-- REGLAS -->
+      <section id="screen-reglas" class="screen theme-paper">
+        <div class="topnav">
+          <button class="btn-icon" onclick="closeRules()" aria-label="Atrás">‹</button>
+          <div class="title">Reglas</div>
+        </div>
+        <div class="scroll" id="reglasBody"></div>
       </section>
 
       <!-- CLOSE -->
@@ -2424,6 +2438,55 @@ function showToast(msg, paper) {
   showToast._tm = setTimeout(() => { t.className = "toast"; }, 2200);
 }
 
+function openRules() {
+  if (state.screen !== "reglas") state._rulesFrom = state.screen || "home";
+  go("reglas");
+}
+
+function closeRules() {
+  const back = state._rulesFrom && state._rulesFrom !== "reglas" ? state._rulesFrom : "home";
+  go(back);
+}
+
+function rulesCatalog() {
+  const ids = [];
+  OFFICIAL_FORMATS.forEach(m => { if (MODALITY_RULES[m.id]) ids.push(m.id); });
+  SOCIAL_TEMPLATES.forEach(m => { if (MODALITY_RULES[m.id]) ids.push(m.id); });
+  return ids;
+}
+
+function renderRules() {
+  const body = document.getElementById("reglasBody");
+  if (!body) return;
+  const on = new Set((state.setup && state.setup.modalities) || []);
+  const cards = rulesCatalog().map(id => {
+    const r = MODALITY_RULES[id];
+    const kind = r.official
+      ? `<span class="badge badge-oficial">Oficial</span>`
+      : `<span class="badge badge-social">Social</span>`;
+    const live = on.has(id) ? `<span class="badge badge-social">En esta ronda</span>` : "";
+    const note = r.note ? `<p class="note">${escapeHtml(r.note)}</p>` : "";
+    let extra = "";
+    if (id === "Creativo" && state.setup && state.setup.creative) {
+      const c = state.setup.creative;
+      const rules = (c.rulesText || "").trim();
+      const actions = (c.actions || []).map(a => {
+        const pts = Number(a.pts) || 0;
+        return `${a.label || a.trigger}: ${pts > 0 ? "+" : ""}${pts}`;
+      }).join(" · ");
+      if (rules || actions) {
+        extra = `<p class="micro mt-8">${rules ? escapeHtml(rules) : ""}${rules && actions ? "<br>" : ""}${actions ? escapeHtml(actions) : ""}</p>`;
+      }
+    }
+    return `<div class="rule-card">
+      <div class="rule-card-head"><span class="t">${escapeHtml(r.title)}</span>${kind}${live}</div>
+      <ul>${(r.how || []).map(h => `<li>${escapeHtml(h)}</li>`).join("")}</ul>
+      ${note}${extra}
+    </div>`;
+  }).join("");
+  body.innerHTML = `<p class="muted" style="margin:4px 0 12px;">Oficiales y sociales. Las que llevas en la partida van marcadas.</p>${cards}`;
+}
+
 function go(name) {
   if (name === "home" && state.screen === "setup" && state._newRoundArmed) {
     state._newRoundArmed = false;
@@ -2461,6 +2524,7 @@ function go(name) {
   if (name === "stats") renderStats();
   if (name === "close") renderClose();
   if (name === "ajustes") renderAjustes();
+  if (name === "reglas") renderRules();
   updateNetBadge();
   updateHomeThru();
 }
@@ -3550,7 +3614,8 @@ function renderSetup() {
         <div class="chip-row">${state.setup.modalities.map(m => `<span class="chip selected" style="cursor:default;padding:0 12px;height:32px;font-size:12px;">${m}</span>`).join("")}</div>
         ${creativeEnabled() && (state.setup.creative && state.setup.creative.rulesText) ? `<p class="micro mt-8">Creativo: ${escapeHtml((state.setup.creative.rulesText || "").slice(0, 120))}${(state.setup.creative.rulesText || "").length > 120 ? "…" : ""}</p>` : ""}
       </div>
-      <button type="button" class="link-btn" onclick="state.setupStep=5;renderSetup()">Ver reglas otra vez</button>`;
+      <button type="button" class="link-btn" onclick="state.setupStep=5;renderSetup()">Ver reglas otra vez</button>
+      <button type="button" class="link-btn" onclick="openRules()">Ver todas las reglas</button>`;
   }
   const scrollSteps = true; // todas las pestañas del setup hacen scroll en móvil
   body.style.overflowY = "auto";
@@ -6976,6 +7041,7 @@ function renderPerfil() {
       <button class="quick-tile" onclick="go('stats')"><div class="ico">◉</div><div class="t">Stats</div><div class="d">Promedios</div></button>
       <button class="quick-tile" onclick="document.getElementById('recordsBlock').scrollIntoView({behavior:'smooth'})"><div class="ico"></div><div class="t">Récords</div><div class="d">Mejores</div></button>
       <button class="quick-tile" onclick="go('lobby')"><div class="ico"></div><div class="t">Flight</div><div class="d">Este móvil</div></button>
+      <button class="quick-tile" onclick="openRules()"><div class="ico">☰</div><div class="t">Reglas</div><div class="d">Todos los modos</div></button>
     </div>
     <div class="card" id="recordsBlock">
       <div class="eyebrow">Récords</div>
