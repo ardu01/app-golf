@@ -1946,7 +1946,7 @@
         </div>
         <div class="scroll" id="lobbyBody"></div>
         <div class="setup-footer">
-          <button class="btn btn-ghost" onclick="openInvite()">Invitar</button>
+          <button class="btn btn-ghost" onclick="go('home')">Cerrar</button>
           <button class="btn btn-primary" onclick="go('hole')">Ir al hoyo</button>
         </div>
       </section>
@@ -1995,7 +1995,7 @@
             <div class="social-pills" id="socialPills" aria-label="Feedback social"></div>
             <div class="stats-collapse" id="statsCollapse">
               <button class="stats-toggle" onclick="toggleStats()">
-                <span>FIR · GIR <span class="micro">(opcional)</span> · <span class="micro" id="firGirFor"></span></span>
+                <span><span id="firGirTitle">FIR · GIR</span> <span class="micro">(opcional)</span> · <span class="micro" id="firGirFor"></span></span>
                 <span class="chev">▼</span>
               </button>
               <div class="stats-body">
@@ -2186,15 +2186,10 @@
       <div class="sheet-backdrop" id="inviteSheet" onclick="if(event.target===this)closeInvite()">
         <div class="sheet" role="dialog" aria-label="Invitar al flight">
           <div class="grab"></div>
-          <h2>Invitar al flight</h2>
-          <p class="muted" style="font-size:13px;margin-bottom:8px;">Compartir partida · código o enlace</p>
-          <div class="chip-row mb-8">
-            <button class="chip selected" id="invTabCode" onclick="setInviteTab('code')">Código</button>
-            <button class="chip" id="invTabLink" onclick="setInviteTab('link')">Enlace</button>
-          </div>
-          <div id="invitePane"></div>
-          <button class="btn btn-primary mt-16" onclick="copyInvite()">Copiar</button>
-          <button class="btn btn-ghost mt-8" onclick="closeInvite()">Cerrar</button>
+          <h2>Varios móviles</h2>
+          <p class="muted" style="font-size:13px;margin-bottom:8px;">Compartir código o enlace no está disponible. No hay sala entre dispositivos.</p>
+          <p class="micro">En esta partida un móvil anota a todos. Los invitados se añaden en Nueva ronda.</p>
+          <button class="btn btn-primary mt-16" onclick="closeInvite()">Entendido</button>
         </div>
       </div>
 
@@ -2428,8 +2423,21 @@ function showToast(msg, paper) {
 }
 
 function go(name) {
+  if (name === "home" && state.screen === "setup" && state._newRoundArmed) {
+    state._newRoundArmed = false;
+    try {
+      const restored = restoreActiveRound();
+      if (!restored && hasStoredActiveRound()) {
+        console.warn("restoreActiveRound failed with storage still present");
+        showToast("No se pudo recuperar la ronda anterior");
+      }
+    } catch (e) {
+      console.warn("restoreActiveRound", e);
+      showToast("No se pudo recuperar la ronda anterior");
+    }
+  }
   if (name === "home" && state._roundSaved) {
-    try { endActiveRoundMemory(); } catch (e) {}
+    try { endActiveRoundMemory(); } catch (e) { console.warn("endActiveRoundMemory", e); }
   }
   state.screen = name;
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
@@ -2453,6 +2461,10 @@ function go(name) {
   if (name === "ajustes") renderAjustes();
   updateNetBadge();
   updateHomeThru();
+}
+
+function hasStoredActiveRound() {
+  try { return !!localStorage.getItem(ACTIVE_KEY); } catch (e) { return false; }
 }
 
 function isRoundInProgress() {
@@ -2700,6 +2712,15 @@ function saveHostProfile() {
   } catch (e) {}
 }
 
+function escapeHtml(value) {
+  return String(value == null ? "" : value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function playerLabel(p) {
   const n = p && String(p.name || "").trim();
   return n || "Sin nombre";
@@ -2712,13 +2733,8 @@ function standingsName(d) {
 }
 
 function inviteCodeNow() {
-  if (FX.inviteCode && FX.inviteCode !== "H3RR4Y" && FX.inviteCode !== "FWAY01") return FX.inviteCode;
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let code = "FW";
-  for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
-  FX.inviteCode = code;
-  FX.inviteLink = "fairway.app/m/" + code.toLowerCase();
-  return code;
+  // No remote room exists. Do not invent fairway.app/m codes.
+  return "";
 }
 
 function hostFirstName() {
@@ -2791,11 +2807,39 @@ function setHostHcpFromPerfil(raw) {
 const ROUNDS_KEY = "fairway.rounds.v1";
 const ACTIVE_KEY = "fairway.activeRound.v1";
 
+let _roundsUnreadable = false;
 function loadRounds() {
-  try { return JSON.parse(localStorage.getItem(ROUNDS_KEY) || "[]"); } catch (e) { return []; }
+  try {
+    const raw = localStorage.getItem(ROUNDS_KEY);
+    if (!raw) { _roundsUnreadable = false; return []; }
+    const data = JSON.parse(raw);
+    if (!Array.isArray(data)) {
+      _roundsUnreadable = true;
+      console.warn("loadRounds: stored history is not a list");
+      if (typeof showToast === "function") showToast("El historial guardado no se pudo leer. No se ha borrado.");
+      return [];
+    }
+    _roundsUnreadable = false;
+    return data;
+  } catch (e) {
+    _roundsUnreadable = true;
+    console.warn("loadRounds", e);
+    if (typeof showToast === "function") showToast("El historial guardado no se pudo leer. No se ha borrado.");
+    return [];
+  }
 }
 function saveRounds(list) {
-  try { localStorage.setItem(ROUNDS_KEY, JSON.stringify(list)); } catch (e) {}
+  if (_roundsUnreadable) {
+    console.warn("saveRounds blocked: stored history is unreadable");
+    if (typeof showToast === "function") showToast("No se guarda encima de un historial dañado");
+    return;
+  }
+  try { localStorage.setItem(ROUNDS_KEY, JSON.stringify(list)); }
+  catch (e) {
+    console.warn("saveRounds", e);
+    if (typeof showToast === "function") showToast("No se pudo guardar el historial en este dispositivo");
+    return;
+  }
   if (typeof queueDriveSync === "function") queueDriveSync();
 }
 function formatRoundDate(iso) {
@@ -2821,6 +2865,7 @@ function snapshotPlayers() {
   }));
 }
 function persistActiveRound() {
+  if (state._newRoundArmed) return;
   try {
     const course = typeof getSelectedCourse === "function" ? getSelectedCourse() : null;
     const payload = {
@@ -2838,7 +2883,10 @@ function persistActiveRound() {
       setupPlayers: (state.setup && state.setup.players) ? state.setup.players.slice() : [true]
     };
     localStorage.setItem(ACTIVE_KEY, JSON.stringify(payload));
-  } catch (e) {}
+  } catch (e) {
+    console.warn("persistActiveRound", e);
+    if (typeof showToast === "function") showToast("No se pudo guardar la ronda en curso");
+  }
 }
 function clearActiveRound() {
   try { localStorage.removeItem(ACTIVE_KEY); } catch (e) {}
@@ -2952,8 +3000,10 @@ function buildRoundRecord() {
     const gir = pSnap.gir || {};
     let puttSum = 0, puttN = 0, firHit = 0, firAtt = 0, girYes = 0, girAtt = 0;
     Object.keys(scores).forEach(k => {
+      const hole = (typeof HOLES !== "undefined") ? HOLES[Number(k) - 1] : null;
+      const par3 = hole && Number(hole.par) === 3;
       if (putts[k] != null) { puttSum += Number(putts[k]) || 0; puttN++; }
-      if (fir[k] === "hit" || fir[k] === "miss") { firAtt++; if (fir[k] === "hit") firHit++; }
+      if (!par3 && (fir[k] === "hit" || fir[k] === "miss")) { firAtt++; if (fir[k] === "hit") firHit++; }
       if (gir[k] === "yes" || gir[k] === "no") { girAtt++; if (gir[k] === "yes") girYes++; }
     });
     return {
@@ -2987,6 +3037,7 @@ function buildRoundRecord() {
     tee: state.setup.tee,
     par: (course && course.par) || 72,
     holes: state.setup.holes || 18,
+    holesPlayed: meSnap ? countMarkedHoles(meSnap.scores, state.setup.holes || 18) : 0,
     modalities: (state.setup.modalities || []).slice(),
     creative: creativeEnabled() ? JSON.parse(JSON.stringify(ensureCreativeSetup())) : null,
     official: !!(course && course.official),
@@ -3144,10 +3195,10 @@ function renderSavedRoster() {
   }
   el.innerHTML = `<div class="sr-title">Guardados</div>` + list.map(x => `
     <div class="sr-row">
-      <div class="name">${x.name}</div>
+      <div class="name">${escapeHtml(x.name)}</div>
       <div class="hcp">HCP ${fmtHcp(x.hcp)}</div>
-      <button type="button" onclick="addFromRoster('${x.id}')">Añadir</button>
-      <button type="button" class="danger" onclick="removeRosterPlayer('${x.id}')">Borrar</button>
+      <button type="button" onclick="addFromRoster(${escapeHtml(JSON.stringify(String(x.id || "")))})">Añadir</button>
+      <button type="button" class="danger" onclick="removeRosterPlayer(${escapeHtml(JSON.stringify(String(x.id || "")))})">Borrar</button>
     </div>`).join("");
 }
 function addFromRoster(id) {
@@ -3221,7 +3272,8 @@ function adjPlayerHcp(i, delta) {
 function clampHcp(v) {
   let n = Number(String(v).replace(",", "."));
   if (!Number.isFinite(n)) n = 18;
-  if (n < 0) n = 0;
+  // Plus handicap is a negative Handicap Index. Floor at −10; do not invent a lower band.
+  if (n < -10) n = -10;
   if (n > 54) n = 54;
   return Math.round(n * 10) / 10;
 }
@@ -3255,8 +3307,8 @@ function fmtHcp(h) {
 function setupStart() {
   state._roundSaved = null;
   state.editingRoundId = null;
-  clearActiveRound();
-  try { localStorage.removeItem(ACTIVE_KEY); } catch (e) {}
+  state._newRoundArmed = true;
+  if (state.setup) state.setup.writeMode = "single_device";
   state.setupStep = 0;
   state.setup.writeModeOpen = false;
   go("setup");
@@ -3319,16 +3371,15 @@ function renderSetup() {
       <button class="chip ${state.setup.holes===18?"selected":""}" onclick="state.setup.holes=18;if(typeof refreshPlayerHandicaps==='function')refreshPlayerHandicaps();renderSetup()">18 hoyos</button>
     </div>`;
   } else if (step === 3) {
-    const wmOpen = !!state.setup.writeModeOpen;
-    const wmLabel = state.setup.writeMode === "multi_device" ? "Cada uno" : "Un móvil";
+    state.setup.writeMode = "single_device";
     html = `<p class="muted mb-8">Quién juega hoy</p>
       <p class="micro mb-12">Nombre, HI y bola. Puedes editarlo después en Ajustes.</p>
       <div class="player-list">` +
       PLAYERS.map((p, i) => `
         <div class="plist-item">
           <div class="plist-main">
-            <div class="avatar ${p.avatar||""}">${p.initials}</div>
-            <div class="name">${playerLabel(p)}</div>
+            <div class="avatar ${p.avatar||""}">${escapeHtml(p.initials)}</div>
+            <div class="name">${escapeHtml(playerLabel(p))}</div>
             <div class="hcp-step" aria-label="Hándicap">
               <button type="button" aria-label="Bajar hándicap" onclick="adjPlayerHcp(${i}, -0.1)">−</button>
               <input class="val hcp-input" type="text" inputmode="decimal" enterkeyhint="done"
@@ -3343,7 +3394,7 @@ function renderSetup() {
           <div class="plist-ball">
             <span class="dot" aria-hidden="true"></span>
             <input type="text" placeholder="Bola · marca · nº · color" maxlength="48"
-              value="${(p.ball||"").replace(/"/g,"&quot;")}"
+              value="${escapeHtml(p.ball||"")}"
               onchange="setPlayerBall(${i}, this.value)" onblur="setPlayerBall(${i}, this.value)" />
           </div>
         </div>`).join("") + `
@@ -3373,25 +3424,7 @@ function renderSetup() {
           <button class="btn btn-primary" type="button" onclick="addGuestPlayer()" style="width:100%;">Añadir a la partida</button>
         </div>
       </div>
-      <button type="button" class="setup-disclosure ${wmOpen ? "open" : ""}" onclick="toggleSetupWriteMode()">
-        <span>
-          <div class="t">Cómo se anota</div>
-          <div class="d">${wmLabel} · toca para cambiar</div>
-        </span>
-        <span class="chev" aria-hidden="true">▾</span>
-      </button>
-      <div class="setup-disclosure-body" ${wmOpen ? "" : "hidden"}>
-        <div class="write-mode">
-          <button class="option ${state.setup.writeMode==='single_device'?'selected':''}" type="button" onclick="state.setup.writeMode='single_device';renderSetup()">
-            <span class="radio"></span>
-            <span class="body"><span class="t">Un móvil</span><span class="d">Una persona anota a todos</span></span>
-          </button>
-          <button class="option ${state.setup.writeMode==='multi_device'?'selected':''}" type="button" onclick="state.setup.writeMode='multi_device';renderSetup()">
-            <span class="radio"></span>
-            <span class="body"><span class="t">Cada uno</span><span class="d">Cada jugador anota en su móvil</span></span>
-          </button>
-        </div>
-      </div>
+      <p class="micro mt-12">Un móvil anota a todos. Anotar cada uno en el suyo necesita sincronización entre dispositivos y aún no está disponible.</p>
       <div class="saved-roster" id="savedRoster"></div>`;
   } else if (step === 4) {
     html = `<p class="muted mb-8">¿Cómo queréis jugar?</p>
@@ -3431,9 +3464,7 @@ function renderSetup() {
         ${note}
       </div>`;
     }).filter(Boolean).join("");
-    const wmLine = state.setup.writeMode === 'multi_device'
-      ? 'Cada jugador anota en su móvil'
-      : 'Un móvil anota a todos';
+    const wmLine = 'Un móvil anota a todos';
     let creativeHtml = "";
     
     if (selected.includes("Creativo")) {
@@ -3460,7 +3491,7 @@ function renderSetup() {
         <p class="micro" style="margin:-4px 0 8px;padding-left:2px;">${tr ? tr.hint : ""}</p>`;
       }).join("");
       const presetOpts = presets.length
-        ? presets.map(p => `<option value="${String(p.name).replace(/"/g, "&quot;")}">${p.name}</option>`).join("")
+        ? presets.map(p => `<option value="${escapeHtml(p.name)}">${escapeHtml(p.name)}</option>`).join("")
         : `<option value="">Sin configs guardadas</option>`;
       creativeHtml = `
         <div class="rule-card creative-editor creative-builder">
@@ -3479,7 +3510,7 @@ function renderSetup() {
 
           <div class="cb-section">Normas (texto libre)</div>
           <textarea class="creative-rules" rows="4" placeholder="Ej: Hoy premiamos FIR y castigamos 3-putts. Birdies netos valen doble el fin de semana…"
-            oninput="setCreativeRulesText(this.value)">${(c.rulesText || "").replace(/</g, "&lt;")}</textarea>
+            oninput="setCreativeRulesText(this.value)">${escapeHtml(c.rulesText || "")}</textarea>
 
           <div class="cb-section">Qué puntúa · toca para activar</div>
           <div class="creative-chip-add">${chipAdd}</div>
@@ -3511,11 +3542,11 @@ function renderSetup() {
         <div class="mt-8">${course.official ? '<span class="badge badge-oficial">OFICIAL</span>' : ''}</div>
         <div class="divider"></div>
         <p class="micro mb-8">Jugadores (${active.length})</p>
-        ${active.map(p => `<div class="row mb-8"><div class="avatar ${p.avatar||""}" style="width:28px;height:28px;font-size:10px;">${p.initials}</div><span style="font-size:14px;">${playerLabel(p)} · HI ${fmtHcp(p.hcp)}</span></div>`).join("")}
+        ${active.map(p => `<div class="row mb-8"><div class="avatar ${p.avatar||""}" style="width:28px;height:28px;font-size:10px;">${escapeHtml(p.initials)}</div><span style="font-size:14px;">${escapeHtml(playerLabel(p))} · HI ${fmtHcp(p.hcp)}</span></div>`).join("")}
         <div class="divider"></div>
         <p class="micro mb-8">Modalidades</p>
         <div class="chip-row">${state.setup.modalities.map(m => `<span class="chip selected" style="cursor:default;padding:0 12px;height:32px;font-size:12px;">${m}</span>`).join("")}</div>
-        ${creativeEnabled() && (state.setup.creative && state.setup.creative.rulesText) ? `<p class="micro mt-8">Creativo: ${(state.setup.creative.rulesText || "").slice(0, 120)}${(state.setup.creative.rulesText || "").length > 120 ? "…" : ""}</p>` : ""}
+        ${creativeEnabled() && (state.setup.creative && state.setup.creative.rulesText) ? `<p class="micro mt-8">Creativo: ${escapeHtml((state.setup.creative.rulesText || "").slice(0, 120))}${(state.setup.creative.rulesText || "").length > 120 ? "…" : ""}</p>` : ""}
       </div>
       <button type="button" class="link-btn" onclick="state.setupStep=5;renderSetup()">Ver reglas otra vez</button>`;
   }
@@ -3900,6 +3931,11 @@ function setupNext() {
     state.setupStep++;
     renderSetup();
   } else {
+    if (hasStoredActiveRound()) {
+      const ok = window.confirm("Hay una ronda guardada en este móvil. Si empiezas otra, se sustituye y dejas de poder continuar la anterior. ¿Empezar la nueva ronda?");
+      if (!ok) return;
+      clearActiveRound();
+    }
     state.hole = 1;
     state.activePlayer = 0;
     refreshPlayerHandicaps();
@@ -3913,6 +3949,7 @@ function setupNext() {
     state.activePlayer = 0;
     state._roundSaved = null;
     state.editingRoundId = null;
+    state._newRoundArmed = false;
     persistActiveRound();
     go("hole");
   }
@@ -3928,77 +3965,44 @@ function setupBack() {
 /* —— Lobby / Invite —— */
 function renderLobby() {
   const body = document.getElementById("lobbyBody");
+  if (!body) return;
+  if (state.setup) state.setup.writeMode = "single_device";
+  if (typeof FX === "object") FX.write_mode = "single_device";
+  state.writeMode = "A";
   const seats = (PLAYERS || []).filter(Boolean).map((p, i) => ({
-    p, role: i === 0 ? "host" : "user", away: false
+    p, role: i === 0 ? "host" : "user"
   }));
-  const modeLabel = (FX.write_mode === "multi_device" || state.writeMode === "B") ? "Cada uno en el suyo" : "Un móvil anota a todos";
   body.innerHTML = `
-    <p class="muted mb-16">${CLUB} · ${FX.tee} · ${(state.setup && state.setup.holes) || 18} hoyos</p>
-    <div class="row gap-8 mb-16">
-      <button class="chip selected" id="wmA" onclick="setWriteModeDemo('A')">Un móvil</button>
-      <button class="chip" id="wmB" onclick="setWriteModeDemo('B')">Cada uno</button>
-    </div>
-    <p class="micro mb-12">${modeLabel}</p>
+    <p class="muted mb-16">${escapeHtml(CLUB)} · ${escapeHtml(FX.tee)} · ${(state.setup && state.setup.holes) || 18} hoyos</p>
+    <p class="micro mb-12">Un móvil anota a todos. Varios móviles a la vez no está disponible: no hay sala ni sincronización.</p>
     ${seats.map(s => `
       <div class="player-row">
-        <div class="avatar ${s.p.avatar||""}">${s.p.initials}</div>
-        <div class="name">${playerLabel(s.p)}${s.role==='host'?' · anfitrión':''}
-          ${s.away?' <span class="guest-chip">Ausente</span>':''}
-        </div>
+        <div class="avatar ${s.p.avatar||""}">${escapeHtml(s.p.initials)}</div>
+        <div class="name">${escapeHtml(playerLabel(s.p))}${s.role==='host'?' · anfitrión':''}</div>
         <div class="hcp">HCP ${s.p.hcp != null ? fmtHcp(s.p.hcp) : '—'}</div>
       </div>`).join("")}
-    <div class="row gap-8 mt-16">
-      <button class="btn btn-secondary" style="flex:1" onclick="openInvite()">Añadir</button>
-    </div>
-    <p class="micro mt-12">Invitado sin cuenta · se guarda en el roster</p>
-    <div class="card mt-16">
-      <div class="eyebrow">Código de invitación</div>
-      <div class="invite-code" style="font-size:22px;letter-spacing:0.14em;">${inviteCodeNow()}</div>
-      <button class="btn btn-ghost btn-sm" onclick="copyInvite()">Copiar código</button>
-    </div>`;
-  const a = document.getElementById("wmA");
-  const b = document.getElementById("wmB");
-  if (a && b) {
-    const isB = state.writeMode === "B";
-    a.classList.toggle("selected", !isB);
-    b.classList.toggle("selected", isB);
-  }
+    <p class="micro mt-12">Los invitados se añaden en Nueva ronda, en este dispositivo.</p>`;
 }
 function setWriteModeDemo(m) {
-  state.writeMode = m;
-  if (typeof FX === "object") FX.write_mode = m === "B" ? "multi_device" : "single_device";
-  renderLobby();
-  showToast(m === "B" ? "Cada uno en el suyo" : "Un móvil anota a todos", true);
+  state.writeMode = "A";
+  if (typeof FX === "object") FX.write_mode = "single_device";
+  if (state.setup) state.setup.writeMode = "single_device";
+  if (m === "B") showToast("Varios móviles aún no está disponible");
+  else showToast("Un móvil anota a todos", true);
+  if (state.screen === "lobby") renderLobby();
 }
 
 function openInvite() {
-  document.getElementById("inviteSheet").classList.add("open");
-  setInviteTab(state.inviteTab);
+  showToast("Invitar por código o enlace aún no está disponible");
 }
 function closeInvite() {
   document.getElementById("inviteSheet").classList.remove("open");
 }
-function setInviteTab(tab) {
-  state.inviteTab = tab;
-  document.getElementById("invTabCode").classList.toggle("selected", tab==="code");
-  document.getElementById("invTabLink").classList.toggle("selected", tab==="link");
-  const pane = document.getElementById("invitePane");
-  if (tab === "code") {
-    pane.innerHTML = `<div class="invite-code">${inviteCodeNow()}</div><p class="micro" style="text-align:center;">Comparte este código con el flight</p>`;
-  } else {
-    const link = (FX.inviteLink && !String(FX.inviteLink).includes("demo"))
-      ? FX.inviteLink
-      : ("fairway.app/m/" + inviteCodeNow().toLowerCase());
-    FX.inviteLink = link;
-    pane.innerHTML = `<div class="card" style="text-align:center;font-weight:600;">${link}</div><p class="micro mt-8" style="text-align:center;">Compartir partida</p>`;
-  }
+function setInviteTab() {
+  showToast("Invitar por código o enlace aún no está disponible");
 }
 function copyInvite() {
-  const val = state.inviteTab === "link"
-    ? (FX.inviteLink || ("fairway.app/m/" + inviteCodeNow().toLowerCase()))
-    : inviteCodeNow();
-  if (navigator.clipboard) navigator.clipboard.writeText(val).catch(()=>{});
-  showToast("Código copiado", true);
+  showToast("Invitar por código o enlace aún no está disponible");
 }
 
 /* —— Hole (Modo A · un asiento · golpes + putts) —— */
@@ -4371,14 +4375,14 @@ function renderHole(opts) {
     const scoreOnChip = hasScore && scoreChips.includes(score);
     const ballRaw = (p.ball || "").trim();
     const ballLine = ballRaw
-      ? `<div class="ball-chip">${ballRaw.replace(/</g, "&lt;")}</div>`
+      ? `<div class="ball-chip">${escapeHtml(ballRaw)}</div>`
       : "";
     return `
       <div class="player-card ${active} ${flash}" data-idx="${idx}" onclick="selectPlayer(${idx})">
         <div class="pc-head">
-          <div class="avatar ${p.avatar||""}">${p.initials}${done?`<span class="done-check"></span>`:""}</div>
+          <div class="avatar ${p.avatar||""}">${escapeHtml(p.initials)}${done?`<span class="done-check"></span>`:""}</div>
           <div class="pc-id">
-            <div class="name">${playerLabel(p)}${strokeHint}</div>
+            <div class="name">${escapeHtml(playerLabel(p))}${strokeHint}</div>
             <div class="micro">${subLine}</div>
             ${ballLine}
           </div>
@@ -4416,7 +4420,7 @@ function renderHole(opts) {
   dots.innerHTML = list.map((p, idx) => {
     const on = idx === state.activePlayer ? "on" : "";
     const done = holeDone(p);
-    return `<button type="button" class="player-dot ${on}" onclick="selectPlayer(${idx})" aria-label="${p.name}">
+    return `<button type="button" class="player-dot ${on}" onclick="selectPlayer(${idx})" aria-label="${escapeHtml(p.name)}">
       ${p.initials.slice(0,2)}${done?`<span class="dot-check"></span>`:""}
     </button>`;
   }).join("");
@@ -4626,7 +4630,24 @@ function getActiveFirGir() {
   };
 }
 
+function currentHolePar() {
+  const h = (typeof HOLES !== "undefined") ? HOLES[state.hole - 1] : null;
+  return h ? Number(h.par) : 4;
+}
+
 function syncFirGirUI() {
+  const par3 = currentHolePar() === 3;
+  const firEl = document.getElementById("segFir");
+  if (firEl && firEl.parentElement) firEl.parentElement.hidden = par3;
+  const title = document.getElementById("firGirTitle");
+  if (title) title.textContent = par3 ? "GIR · FIR no aplica en par 3" : "FIR · GIR";
+  const list = activePlayers();
+  const p = list[state.activePlayer] || list[0];
+  if (par3 && p) {
+    ensurePlayerFirGir(p);
+    const cur = p.fir[state.hole];
+    if (cur === "hit" || cur === "miss") p.fir[state.hole] = "na";
+  }
   const { fir, gir } = getActiveFirGir();
   state.fir = fir;
   state.gir = gir;
@@ -4638,11 +4659,7 @@ function syncFirGirUI() {
     });
   });
   const who = document.getElementById("firGirFor");
-  if (who) {
-    const list = activePlayers();
-    const p = list[state.activePlayer] || list[0];
-    who.textContent = p ? p.name : "";
-  }
+  if (who) who.textContent = p ? p.name : "";
 }
 
 function resetFirGirUI() {
@@ -4651,6 +4668,11 @@ function resetFirGirUI() {
 }
 
 function setSeg(kind, btn) {
+  if (kind === "fir" && currentHolePar() === 3) {
+    showToast("FIR no aplica en par 3");
+    syncFirGirUI();
+    return;
+  }
   const parent = btn.parentElement;
   parent.querySelectorAll("button").forEach(b => b.classList.remove("on"));
   btn.classList.add("on");
@@ -4764,7 +4786,7 @@ function renderScorecard() {
   if (thead) {
     thead.innerHTML = "<th>#</th><th>Par</th>" + list.map(p => {
       const ch = playerCourseHcp(p);
-      return `<th>${(p.short || p.initials || p.name || "?").toString().slice(0, 3)}<span class="ch-mini">CH ${ch}</span></th>`;
+      return `<th>${escapeHtml((p.short || p.initials || p.name || "?").toString().slice(0, 3))}<span class="ch-mini">CH ${ch}</span></th>`;
     }).join("");
   }
 
@@ -4931,6 +4953,13 @@ function switchLb(btn) {
 }
 
 /* —— Live scoring from activePlayers (no fixture winners) —— */
+function countMarkedHoles(scores, maxH) {
+  let n = 0;
+  const lim = maxH || 18;
+  if (!scores) return 0;
+  for (let i = 1; i <= lim; i++) if (scores[i] != null) n++;
+  return n;
+}
 function playerHasMarkedHoles(p) {
   const s = (p && p.scores) || {};
   return Object.keys(s).some(k => s[k] != null);
@@ -5011,10 +5040,10 @@ function renderTotalsEntry() {
     const disabled = marked ? "disabled" : "";
     const hint = marked ? "Hoyos marcados" : "Si no marcas hoyos";
     return `<div class="te-row">
-      <div><div class="te-name">${playerLabel(p)}</div><div class="te-hint">${hint}</div></div>
-      <input type="number" inputmode="numeric" ${disabled} placeholder="Golpes" aria-label="Golpes totales ${p.name||""}"
+      <div><div class="te-name">${escapeHtml(playerLabel(p))}</div><div class="te-hint">${escapeHtml(hint)}</div></div>
+      <input type="number" inputmode="numeric" ${disabled} placeholder="Golpes" aria-label="Golpes totales ${escapeHtml(p.name||"")}"
         value="${gVal}" onchange="setPlayerTotalsGross(${pi}, this.value)" onblur="setPlayerTotalsGross(${pi}, this.value)" />
-      <input type="number" inputmode="numeric" placeholder="Putts" aria-label="Putts totales ${p.name||""}"
+      <input type="number" inputmode="numeric" placeholder="Putts" aria-label="Putts totales ${escapeHtml(p.name||"")}"
         value="${ptVal}" onchange="setPlayerTotalsPutts(${pi}, this.value)" onblur="setPlayerTotalsPutts(${pi}, this.value)" />
     </div>`;
   }).join("");
@@ -5239,7 +5268,7 @@ function renderLbRoundPick() {
   rounds.forEach(r => {
     const sel = state.lbRoundId === r.id ? "selected" : "";
     const label = (r.club || "Partida").split(" ").slice(0, 2).join(" ") + " · " + (r.date || "");
-    html += `<button type="button" class="chip ${sel}" onclick="setLbRound('${r.id}')">${label.replace(/</g, "")}</button>`;
+    html += `<button type="button" class="chip ${sel}" onclick="setLbRound(${escapeHtml(JSON.stringify(String(r.id || "")))})">${escapeHtml(label)}</button>`;
   });
   if (!rounds.length) {
     html += `<span class="micro" style="align-self:center;padding:0 4px;">Sin historial aún</span>`;
@@ -5300,7 +5329,7 @@ function standingsFromSavedRound(d) {
         else if (pt === 2) puttPts += 1;
         else if (pt >= 3) puttPts -= 1;
       }
-      if (fir[i] === "hit" || fir[i] === "miss") { firAtt++; if (fir[i] === "hit") firHit++; }
+      if (Number(h.par) !== 3 && (fir[i] === "hit" || fir[i] === "miss")) { firAtt++; if (fir[i] === "hit") firHit++; }
       if (gir[i] === "yes" || gir[i] === "no") { girAtt++; if (gir[i] === "yes") girYes++; }
     }
     for (let i = 1; i <= maxH; i++) {
@@ -5340,7 +5369,8 @@ function leaderboardRows() {
     const maxH = state.setup.holes || 18;
     for (let i = 1; i <= maxH; i++) {
       if (r.p.putts && r.p.putts[i] != null) { puttSum += Number(r.p.putts[i]) || 0; puttN++; }
-      if (r.p.fir && (r.p.fir[i] === "hit" || r.p.fir[i] === "miss")) { firAtt++; if (r.p.fir[i] === "hit") firHit++; }
+      const holePar = HOLES[i - 1] && Number(HOLES[i - 1].par);
+      if (holePar !== 3 && r.p.fir && (r.p.fir[i] === "hit" || r.p.fir[i] === "miss")) { firAtt++; if (r.p.fir[i] === "hit") firHit++; }
       if (r.p.gir && (r.p.gir[i] === "yes" || r.p.gir[i] === "no")) { girAtt++; if (r.p.gir[i] === "yes") girYes++; }
     }
     r.puttsTotal = puttN ? puttSum : null;
@@ -5406,8 +5436,8 @@ function renderLeader() {
       data.map((d, i) => {
         return `<div class="lb-row ${d.me?"me":""}">
           <div class="lb-pos">${i+1}</div>
-          <div class="avatar ${d.avatar||""}" style="width:32px;height:32px;font-size:11px;">${d.initials||"?"}</div>
-          <div class="lb-info"><div class="n">${standingsName(d)}</div><div class="s">${modeSubline(d, "stroke")}</div></div>
+          <div class="avatar ${d.avatar||""}" style="width:32px;height:32px;font-size:11px;">${escapeHtml(d.initials||"?")}</div>
+          <div class="lb-info"><div class="n">${escapeHtml(standingsName(d))}</div><div class="s">${escapeHtml(modeSubline(d, "stroke"))}</div></div>
           <div class="lb-pts"><div class="big">${d.thru?d.net:"—"}</div><div class="sub">net</div></div>
         </div>`;
       }).join("") + `</div>`;
@@ -5418,8 +5448,8 @@ function renderLeader() {
       data.map((d, i) => {
         return `<div class="lb-row ${d.me?"me":""}">
           <div class="lb-pos">${i+1}</div>
-          <div class="avatar ${d.avatar||""}" style="width:32px;height:32px;font-size:11px;">${d.initials||"?"}</div>
-          <div class="lb-info"><div class="n">${standingsName(d)}</div><div class="s">${modeSubline(d, "stableford")}</div></div>
+          <div class="avatar ${d.avatar||""}" style="width:32px;height:32px;font-size:11px;">${escapeHtml(d.initials||"?")}</div>
+          <div class="lb-info"><div class="n">${escapeHtml(standingsName(d))}</div><div class="s">${escapeHtml(modeSubline(d, "stableford"))}</div></div>
           <div class="lb-pts"><div class="big">${d.sf}</div><div class="sub">pts</div></div>
         </div>`;
       }).join("") + `</div>`;
@@ -5430,8 +5460,8 @@ function renderLeader() {
       data.map((d, i) => {
         return `<div class="lb-row ${d.me?"me":""}">
           <div class="lb-pos">${i+1}</div>
-          <div class="avatar ${d.avatar||""}" style="width:32px;height:32px;font-size:11px;">${d.initials||"?"}</div>
-          <div class="lb-info"><div class="n">${standingsName(d)}</div><div class="s">${modeSubline(d, "putting")}</div></div>
+          <div class="avatar ${d.avatar||""}" style="width:32px;height:32px;font-size:11px;">${escapeHtml(d.initials||"?")}</div>
+          <div class="lb-info"><div class="n">${escapeHtml(standingsName(d))}</div><div class="s">${escapeHtml(modeSubline(d, "putting"))}</div></div>
           <div class="lb-pts"><div class="big">${d.puttPts||0}</div><div class="sub">pts</div></div>
         </div>`;
       }).join("") + `</div>`;
@@ -5444,8 +5474,8 @@ function renderLeader() {
       data.map((d, i) => {
         return `<div class="lb-row ${d.me?"me":""}">
           <div class="lb-pos">${i+1}</div>
-          <div class="avatar ${d.avatar||""}" style="width:32px;height:32px;font-size:11px;">${d.initials||"?"}</div>
-          <div class="lb-info"><div class="n">${standingsName(d)}</div><div class="s">${modeSubline(d, tab)}</div></div>
+          <div class="avatar ${d.avatar||""}" style="width:32px;height:32px;font-size:11px;">${escapeHtml(d.initials||"?")}</div>
+          <div class="lb-info"><div class="n">${escapeHtml(standingsName(d))}</div><div class="s">${escapeHtml(modeSubline(d, tab))}</div></div>
           <div class="lb-pts"><div class="big">${d[key]||0}</div><div class="sub">puntos</div></div>
         </div>`;
       }).join("") + `</div>`;
@@ -6090,6 +6120,9 @@ function renderClose() {
     ? '<span class="badge badge-oficial" style="margin-left:6px;">OFICIAL</span>'
     : "";
 
+  const planned = (state.setup && state.setup.holes) || 18;
+  const played = me && me.p ? countMarkedHoles(me.p.scores, planned) : 0;
+  const playedNote = (me && me.totalsOnly) ? "Total, sin hoyo a hoyo" : (played ? (played + " hoyos con resultado") : "");
   const gross = me && me.thru ? me.gross : "—";
   const toPar = me && me.toPar != null ? ((me.toPar > 0 ? "+" : "") + me.toPar) : "—";
   const sfPts = me && me.thru ? me.sf : "—";
@@ -6099,8 +6132,8 @@ function renderClose() {
     <div class="close-hero">
       <div class="trophy" aria-hidden="true"></div>
       <div class="eyebrow">Ronda completada</div>
-      <h1 style="font-size:22px;">${CLUB}</h1>
-      <p class="micro mt-8">${layout} · ${state.setup.tee} · Par ${par}${officialBadge}</p>
+      <h1 style="font-size:22px;">${escapeHtml(CLUB)}</h1>
+      <p class="micro mt-8">${escapeHtml(layout)} · ${escapeHtml(state.setup.tee)} · Par ${par}${officialBadge}${playedNote ? " · " + escapeHtml(playedNote) : ""}</p>
     </div>
     <div class="close-stats">
       <div class="close-stat"><div class="v">${gross}</div><div class="l">Gross</div></div>
@@ -6114,11 +6147,11 @@ function renderClose() {
         <div class="winner-row">
           <div class="medal" aria-hidden="true"></div>
           <div>
-            <div class="mod">${row.label}</div>
-            <div class="name">${row.winner}</div>
+            <div class="mod">${escapeHtml(row.label)}</div>
+            <div class="name">${escapeHtml(row.winner)}</div>
             <button type="button" class="placa-btn" onclick="shareWinnerPlaqueAt(${i})">Compartir placa</button>
           </div>
-          <div class="detail">${row.detail}</div>
+          <div class="detail">${escapeHtml(row.detail)}</div>
         </div>`).join("") + `
         <div class="winners-actions">
           <button type="button" class="placa-link" onclick="shareAllWinnerPlaques()">Compartir todas las placas</button>
@@ -6169,12 +6202,12 @@ function driveStatusText() {
     return { cls: "warn", text: "Drive necesita HTTPS (no abras el HTML a pelo). Usa el enlace del servidor o un host." };
   }
   const id = getDriveClientId();
-  if (!id) return { cls: "warn", text: "Pega tu Client ID de Google Cloud abajo para conectar." };
+  if (!id) return { cls: "warn", text: "Experimental. En producción el Client ID lo configura la app, no cada jugador." };
   const meta = getDriveMeta();
   if (meta.lastSync) {
-    return { cls: "ok", text: "Conectado · última sync " + meta.lastSyncLabel };
+    return { cls: "ok", text: "Experimental · última sync " + meta.lastSyncLabel };
   }
-  return { cls: "", text: "Listo para conectar con Google Drive." };
+  return { cls: "", text: "Experimental. Solo para desarrollo en este origen." };
 }
 
 function collectFairwayBackup() {
@@ -6199,8 +6232,10 @@ function collectFairwayBackup() {
     return Object.assign({}, r, { players: players });
   });
   return {
-    version: 2,
+    version: 3,
     app: "Fairway",
+    appVersion: "3.184",
+    exportedAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     includes: ["rounds", "players.scores", "players.putts", "players.fir", "players.gir", "players.ball", "players.withdrawn", "roster", "host", "activeRound", "winners", "standings"],
     rounds: rounds,
@@ -6218,8 +6253,165 @@ function collectFairwayBackup() {
   };
 }
 
+function clipStr(v, max) {
+  return String(v == null ? "" : v)
+    .replace(/[\u0000-\u001F]/g, "")
+    .replace(/[<>]/g, "")
+    .slice(0, max);
+}
+function sanitizeScoreMap(obj, maxVal) {
+  const out = {};
+  if (!obj || typeof obj !== "object" || Array.isArray(obj)) return out;
+  Object.keys(obj).forEach(k => {
+    const n = Number(k);
+    if (!Number.isFinite(n) || n < 1 || n > 18) return;
+    const val = Number(obj[k]);
+    if (!Number.isFinite(val)) return;
+    out[String(Math.floor(n))] = Math.max(0, Math.min(maxVal, Math.round(val)));
+  });
+  return out;
+}
+function sanitizeMarkMap(obj, allowed) {
+  const out = {};
+  if (!obj || typeof obj !== "object" || Array.isArray(obj)) return out;
+  Object.keys(obj).forEach(k => {
+    const n = Number(k);
+    if (!Number.isFinite(n) || n < 1 || n > 18) return;
+    const v = String(obj[k] || "");
+    if (allowed.indexOf(v) >= 0) out[String(Math.floor(n))] = v;
+  });
+  return out;
+}
+function sanitizeImportedPlayer(p) {
+  if (!p || typeof p !== "object") return null;
+  return {
+    id: clipStr(p.id, 64),
+    name: clipStr(p.name, 40),
+    short: clipStr(p.short, 8),
+    initials: clipStr(p.initials, 4),
+    hcp: Number.isFinite(Number(p.hcp)) ? clampHcp(p.hcp) : null,
+    ch: Number.isFinite(Number(p.ch)) ? Math.max(-18, Math.min(54, Math.round(Number(p.ch)))) : null,
+    ph: Number.isFinite(Number(p.ph)) ? Math.max(-18, Math.min(54, Math.round(Number(p.ph)))) : null,
+    guest: !!p.guest,
+    ball: clipStr(p.ball, 48),
+    withdrawn: !!p.withdrawn,
+    scores: sanitizeScoreMap(p.scores, 30),
+    putts: sanitizeScoreMap(p.putts, 15),
+    fir: sanitizeMarkMap(p.fir, ["hit", "miss", "na"]),
+    gir: sanitizeMarkMap(p.gir, ["yes", "no", "na"]),
+    totalsGross: Number.isFinite(Number(p.totalsGross)) ? Math.round(Number(p.totalsGross)) : null,
+    totalsPutts: Number.isFinite(Number(p.totalsPutts)) ? Math.round(Number(p.totalsPutts)) : null,
+    creativePts: Number.isFinite(Number(p.creativePts)) ? Math.round(Number(p.creativePts)) : 0,
+    creativeLog: Array.isArray(p.creativeLog) ? p.creativeLog.slice(0, 40) : []
+  };
+}
+function sanitizeImportedRound(r) {
+  if (!r || typeof r !== "object" || Array.isArray(r)) return null;
+  const id = clipStr(r.id, 64);
+  if (!id) return null;
+  const players = Array.isArray(r.players) ? r.players.slice(0, 8).map(sanitizeImportedPlayer).filter(Boolean) : [];
+  const winners = Array.isArray(r.winners) ? r.winners.slice(0, 12).map(w => ({
+    label: clipStr(w && w.label, 40),
+    winner: clipStr(w && w.winner, 40),
+    detail: clipStr(w && w.detail, 80)
+  })) : [];
+  const creative = (r.creative && typeof r.creative === "object") ? {
+    rulesText: clipStr(r.creative.rulesText, 2000),
+    actions: Array.isArray(r.creative.actions) ? r.creative.actions.slice(0, 30) : []
+  } : null;
+  return {
+    id: id,
+    dateISO: clipStr(r.dateISO, 40),
+    date: clipStr(r.date, 40),
+    club: clipStr(r.club, 80),
+    courseId: clipStr(r.courseId, 80),
+    layout: clipStr(r.layout, 40),
+    tee: clipStr(r.tee, 40),
+    par: Number.isFinite(Number(r.par)) ? Math.round(Number(r.par)) : null,
+    holes: Number.isFinite(Number(r.holes)) ? Math.max(1, Math.min(18, Math.round(Number(r.holes)))) : 18,
+    holesPlayed: Number.isFinite(Number(r.holesPlayed)) ? Math.max(0, Math.min(18, Math.round(Number(r.holesPlayed)))) : null,
+    modalities: Array.isArray(r.modalities) ? r.modalities.slice(0, 12).map(m => clipStr(m, 40)) : [],
+    creative: creative,
+    official: !!r.official,
+    players: players,
+    me: (r.me && typeof r.me === "object") ? r.me : null,
+    winners: winners,
+    standings: Array.isArray(r.standings) ? r.standings.slice(0, 8) : []
+  };
+}
+function validateFairwayBackup(data) {
+  if (!data || typeof data !== "object" || Array.isArray(data) || !Array.isArray(data.rounds)) {
+    return { ok: false, reason: "JSON no válido" };
+  }
+  if (data.rounds.length > 200) return { ok: false, reason: "Demasiadas partidas en la copia" };
+  const rounds = data.rounds.map(sanitizeImportedRound).filter(Boolean);
+  const out = {
+    version: Number(data.version) || 1,
+    rounds: rounds,
+    roster: Array.isArray(data.roster) ? data.roster.slice(0, 80).map(p => {
+      if (!p || typeof p !== "object") return null;
+      const name = clipStr(p.name, 40);
+      const id = clipStr(p.id, 64);
+      if (!name || !id) return null;
+      return {
+        id: id,
+        name: name,
+        hcp: Number.isFinite(Number(p.hcp)) ? clampHcp(p.hcp) : 18,
+        initials: clipStr(p.initials, 4),
+        short: clipStr(p.short, 8)
+      };
+    }).filter(Boolean) : [],
+    host: (data.host && typeof data.host === "object") ? {
+      name: clipStr(data.host.name, 40),
+      hcp: (data.host.hcp != null && data.host.hcp !== "" && Number.isFinite(Number(data.host.hcp))) ? clampHcp(data.host.hcp) : null
+    } : null,
+    activeRound: null,
+    newer: Number(data.version) > 3
+  };
+  if (data.activeRound && typeof data.activeRound === "object" && Array.isArray(data.activeRound.players)) {
+    out.activeRound = {
+      v: 1,
+      hole: Number.isFinite(Number(data.activeRound.hole)) ? Math.max(1, Math.min(18, Math.round(Number(data.activeRound.hole)))) : 1,
+      activePlayer: Number.isFinite(Number(data.activeRound.activePlayer)) ? Math.max(0, Math.round(Number(data.activeRound.activePlayer))) : 0,
+      editingRoundId: data.activeRound.editingRoundId ? clipStr(data.activeRound.editingRoundId, 64) : null,
+      dataTier: clipStr(data.activeRound.dataTier || "score", 16),
+      scNine: data.activeRound.scNine === "in" ? "in" : "out",
+      scCard: data.activeRound.scCard === "net" ? "net" : "gross",
+      club: clipStr(data.activeRound.club, 80),
+      setup: (function () {
+        const s = data.activeRound.setup;
+        if (!s || typeof s !== "object") return null;
+        return {
+          courseId: clipStr(s.courseId, 80),
+          club: clipStr(s.club, 80),
+          tee: clipStr(s.tee, 40),
+          holes: Number.isFinite(Number(s.holes)) ? Math.max(1, Math.min(18, Math.round(Number(s.holes)))) : 18,
+          modalities: Array.isArray(s.modalities) ? s.modalities.slice(0, 12).map(m => clipStr(m, 40)) : [],
+          players: Array.isArray(s.players) ? s.players.slice(0, 8).map(Boolean) : [],
+          writeMode: "single_device",
+          creative: (s.creative && typeof s.creative === "object") ? {
+            rulesText: clipStr(s.creative.rulesText, 2000),
+            actions: Array.isArray(s.creative.actions) ? s.creative.actions.slice(0, 30) : []
+          } : null
+        };
+      })(),
+      players: data.activeRound.players.slice(0, 8).map(sanitizeImportedPlayer).filter(Boolean),
+      setupPlayers: Array.isArray(data.activeRound.setupPlayers) ? data.activeRound.setupPlayers.slice(0, 8).map(Boolean) : []
+    };
+  }
+  return { ok: true, data: out };
+}
+
 function mergeFairwayBackup(remote) {
-  if (!remote || typeof remote !== "object") return;
+  const checked = validateFairwayBackup(remote);
+  if (!checked.ok) {
+    if (typeof showToast === "function") showToast(checked.reason || "JSON no válido");
+    return false;
+  }
+  remote = checked.data;
+  if (remote.newer && typeof showToast === "function") {
+    showToast("Copia de una versión más nueva · se importan las partidas reconocidas");
+  }
   // Merge rounds by id (keep newest dateISO / updated)
   const local = loadRounds();
   const byId = {};
@@ -6257,15 +6449,31 @@ function mergeFairwayBackup(remote) {
         if (remote.host.name) applyHostName(remote.host.name, false);
       }
       if (typeof updateHomeGreeting === "function") updateHomeGreeting();
-    } catch (e) {}
+    } catch (e) {
+      console.warn("merge host", e);
+      if (typeof showToast === "function") showToast("No se pudo restaurar el perfil");
+    }
   }
   if (remote.activeRound && typeof remote.activeRound === "object") {
-    try { localStorage.setItem(ACTIVE_KEY, JSON.stringify(remote.activeRound)); } catch (e) {}
+    try { localStorage.setItem(ACTIVE_KEY, JSON.stringify(remote.activeRound)); }
+    catch (e) {
+      console.warn("merge activeRound", e);
+      if (typeof showToast === "function") showToast("No se pudo restaurar la ronda en curso");
+    }
   }
+  return true;
 }
 
 function ensureGis(cb) {
   if (window.google && google.accounts && google.accounts.oauth2) { cb(); return; }
+  if (!document.getElementById("fairwayGis")) {
+    const s = document.createElement("script");
+    s.id = "fairwayGis";
+    s.src = "https://accounts.google.com/gsi/client";
+    s.async = true;
+    s.onerror = function () { showToast("No carga Google Sign-In"); };
+    document.head.appendChild(s);
+  }
   let n = 0;
   const t = setInterval(() => {
     n++;
@@ -6535,15 +6743,12 @@ function importFairwayBackup() {
     try {
       const text = await file.text();
       const data = JSON.parse(text);
-      if (!data || typeof data !== "object" || !Array.isArray(data.rounds)) {
-        showToast("JSON no válido");
-        return;
-      }
-      mergeFairwayBackup(data);
+      if (!mergeFairwayBackup(data)) return;
       showToast("Copia restaurada · " + (data.rounds.length || 0) + " partidas");
       if (typeof renderPerfil === "function") renderPerfil();
       if (typeof renderHistorial === "function" && state.screen === "historial") renderHistorial();
     } catch (e) {
+      console.warn("importFairwayBackup", e);
       showToast("No se pudo leer el archivo");
     }
   };
@@ -6558,12 +6763,12 @@ function renderPerfil() {
   const initials = (p.name && p.initials) ? p.initials : "?";
   document.getElementById("perfilBody").innerHTML = `
     <div class="profile-hero">
-      <div class="avatar-lg">${initials}</div>
+      <div class="avatar-lg">${escapeHtml(initials)}</div>
       <p class="muted" style="margin-top:8px;">Tu perfil en este dispositivo</p>
     </div>
     <div class="card mb-16">
       <div class="eyebrow">Nombre</div>
-      <input class="perfil-input" type="text" maxlength="40" value="${String(p.name || "").replace(/"/g, "&quot;")}"
+      <input class="perfil-input" type="text" maxlength="40" value="${escapeHtml(p.name || "")}"
         onchange="setHostNameFromPerfil(this.value)"
         onblur="setHostNameFromPerfil(this.value);renderPerfil()"
         placeholder="Tu nombre" autocomplete="name" />
@@ -6584,7 +6789,7 @@ function renderPerfil() {
       <button class="quick-tile" onclick="go('historial')"><div class="ico"></div><div class="t">Historial</div><div class="d">Mis vueltas</div></button>
       <button class="quick-tile" onclick="go('stats')"><div class="ico">◉</div><div class="t">Stats</div><div class="d">Promedios</div></button>
       <button class="quick-tile" onclick="document.getElementById('recordsBlock').scrollIntoView({behavior:'smooth'})"><div class="ico"></div><div class="t">Récords</div><div class="d">Mejores</div></button>
-      <button class="quick-tile" onclick="go('lobby')"><div class="ico"></div><div class="t">Amigos</div><div class="d">Flight</div></button>
+      <button class="quick-tile" onclick="go('lobby')"><div class="ico"></div><div class="t">Flight</div><div class="d">Este móvil</div></button>
     </div>
     <div class="card" id="recordsBlock">
       <div class="eyebrow">Récords</div>
@@ -6596,10 +6801,21 @@ function renderPerfil() {
       <div class="btn-row">
         <button class="btn btn-primary" type="button" onclick="shareFairwayBackup()">Compartir copia</button>
         <button class="btn btn-ghost" type="button" onclick="importFairwayBackup()">Restaurar copia…</button>
-        <input id="fairwayImportInput" type="file" accept="application/json,.json" hidden />
       </div>
       <p class="micro mt-12">En Compartir elige Guardar en Archivos. Para recuperar, Restaurar y elige ese JSON.</p>
-    </div>`;
+    </div>
+    <details class="card drive-card">
+      <summary class="eyebrow">Funciones experimentales</summary>
+      <p class="micro mt-8">Google Drive no está terminado. Hace falta un cliente OAuth de la aplicación, con el origen autorizado. No pegues secretos y no trates esto como copia de seguridad fiable.</p>
+      <div class="eyebrow mt-12">Client ID de desarrollo</div>
+      <input id="driveClientIdInput" class="perfil-input" type="text" autocomplete="off" spellcheck="false"
+        value="${escapeHtml(getDriveClientId())}" placeholder="Solo si estás probando OAuth" />
+      <div class="btn-row mt-8">
+        <button class="btn btn-ghost" type="button" onclick="saveDriveClientIdFromUi()">Guardar Client ID</button>
+        <button class="btn btn-ghost" type="button" onclick="driveConnect()">Probar sync</button>
+      </div>
+      <p class="micro mt-8">${escapeHtml(driveStatusText().text)}</p>
+    </details>`;
 }
 function _perfilRecordsHtml() {
   const rounds = loadRounds().filter(r => r.me && r.me.thru);
@@ -6607,8 +6823,8 @@ function _perfilRecordsHtml() {
   const bestGross = rounds.slice().sort((a,b) => (a.me.gross||999) - (b.me.gross||999))[0];
   const bestSf = rounds.slice().sort((a,b) => (b.me.sf||0) - (a.me.sf||0))[0];
   return `<p class="muted mt-8">${rounds.length} vuelta${rounds.length===1?"":"s"} guardadas</p>
-      <p class="micro mt-8">Mejor gross: ${bestGross.me.gross} · ${bestGross.club}</p>
-      <p class="micro">Mejor Stableford: ${bestSf.me.sf} pts · ${bestSf.club}</p>`;
+      <p class="micro mt-8">Mejor gross: ${bestGross.me.gross} · ${escapeHtml(bestGross.club)}</p>
+      <p class="micro">Mejor Stableford: ${bestSf.me.sf} pts · ${escapeHtml(bestSf.club)}</p>`;
 }
 
 /* —— Ajustes de partida (mid-round) —— */
@@ -6647,7 +6863,7 @@ function renderAjustes() {
       <div class="aj-player ${wd ? "wd" : ""}">
         <div class="row" style="justify-content:space-between;align-items:center;">
           <div>
-            <strong>${playerLabel(p).replace(/</g, "&lt;")}</strong>
+            <strong>${escapeHtml(playerLabel(p))}</strong>
             ${wd ? '<span class="badge badge-demo" style="margin-left:6px;">RETIRADO</span>' : ""}
             ${!included ? '<span class="badge badge-demo" style="margin-left:6px;">FUERA</span>' : ""}
           </div>
@@ -6655,20 +6871,20 @@ function renderAjustes() {
         </div>
         <div class="aj-label">Nombre</div>
         <div class="aj-row">
-          <input type="text" value="${(p.name || "").replace(/"/g, "&quot;")}" maxlength="24"
+          <input type="text" value="${escapeHtml(p.name || "")}" maxlength="24"
             onchange="ajSetName(${i}, this.value)" onkeydown="if(event.key==='Enter'){this.blur();}" />
         </div>
         <div class="aj-label">Handicap Index</div>
         <div class="aj-row">
           <button type="button" class="btn btn-ghost" style="width:44px;height:40px;padding:0;" onclick="ajAdjHcp(${i},-0.1)">−</button>
-          <input type="number" step="0.1" min="0" max="54" value="${fmtHcp(p.hcp)}"
+          <input type="number" step="0.1" min="-10" max="54" value="${fmtHcp(p.hcp)}"
             onchange="ajSetHcp(${i}, this.value)" />
           <button type="button" class="btn btn-ghost" style="width:44px;height:40px;padding:0;" onclick="ajAdjHcp(${i},0.1)">+</button>
         </div>
         <div class="aj-label">Bola (marca · nº · color)</div>
         <div class="aj-row">
           <input type="text" placeholder="Titleist Pro V1 · 3 · rojo"
-            value="${(p.ball || "").replace(/"/g, "&quot;")}" maxlength="48"
+            value="${escapeHtml(p.ball || "")}" maxlength="48"
             onchange="ajSetBall(${i}, this.value)" onkeydown="if(event.key==='Enter'){this.blur();}" />
         </div>
         <div class="aj-actions">
@@ -6699,7 +6915,7 @@ function renderAjustes() {
         <div class="aj-label">Handicap Index</div>
         <div class="aj-row">
           <button type="button" class="btn btn-ghost" style="width:44px;height:44px;padding:0;flex:0 0 44px;" onclick="ajDraftHcp(-0.1)">−</button>
-          <input type="number" id="ajGuestHcp" step="0.1" min="0" max="54" value="18.0" title="HI" />
+          <input type="number" id="ajGuestHcp" step="0.1" min="-10" max="54" value="18.0" title="HI" />
           <button type="button" class="btn btn-ghost" style="width:44px;height:44px;padding:0;flex:0 0 44px;" onclick="ajDraftHcp(0.1)">+</button>
         </div>
         <div class="aj-label">Bola (marca · nº · color)</div>
@@ -6873,20 +7089,20 @@ function renderHistorial() {
       <div class="card"><p class="muted">Sin partidas aún</p></div>
       <p class="micro mt-16">Las vueltas se guardan al completar una ronda.</p>
       <button class="btn btn-ghost mt-16" type="button" onclick="shareFairwayBackup()">Hacer copia de seguridad</button>
-      <button class="btn btn-ghost mt-8" type="button" onclick="importFairwayBackup()">Restaurar copia…</button>
-      <input id="fairwayImportInput" type="file" accept="application/json,.json" hidden />`;
+      <button class="btn btn-ghost mt-8" type="button" onclick="importFairwayBackup()">Restaurar copia…</button>`;
     return;
   }
   const rows = rounds.slice(0, 20).map(r => {
     const me = r.me || {};
     const gross = me.gross != null ? me.gross : "—";
     const toPar = me.toPar != null ? ((me.toPar > 0 ? "+" : "") + me.toPar) : "";
-    const micro = `${r.date} · ${gross}${toPar ? " (" + toPar + ")" : ""} · ${r.tee || ""}`;
+    const playedBit = r.holesPlayed ? (" · " + r.holesPlayed + " hoyos") : "";
+    const micro = `${r.date} · ${gross}${toPar ? " (" + toPar + ")" : ""}${playedBit} · ${r.tee || ""}`;
     return `<button class="list-row" type="button" onclick="openDetalle('${r.id}')">
       <div class="lr-score">${gross}</div>
       <div class="lr-body">
-        <div class="lr-title">${r.club}</div>
-        <div class="lr-micro">${micro}</div>
+        <div class="lr-title">${escapeHtml(r.club)}</div>
+        <div class="lr-micro">${escapeHtml(micro)}</div>
       </div>
       <div class="lr-chev">›</div>
     </button>`;
@@ -6895,8 +7111,7 @@ function renderHistorial() {
     <div class="list-card">${rows}</div>
     <p class="micro mt-16">${rounds.length} vuelta${rounds.length===1?"":"s"}</p>
     <button class="btn btn-ghost mt-16" type="button" onclick="shareFairwayBackup()">Hacer copia de seguridad</button>
-    <button class="btn btn-ghost mt-8" type="button" onclick="importFairwayBackup()">Restaurar copia…</button>
-    <input id="fairwayImportInput" type="file" accept="application/json,.json" hidden />`;
+    <button class="btn btn-ghost mt-8" type="button" onclick="importFairwayBackup()">Restaurar copia…</button>`;
 }
 
 
@@ -6926,19 +7141,19 @@ function renderDetalle() {
   window._lastPodium = winList.slice();
   window._lastPlaqueMeta = { club: d.club, date: d.date, tee: d.tee || "", par: d.par };
   const winners = winList.length ? winList.map((w, i) =>
-    `<div class="winner-row"><div class="medal" aria-hidden="true"></div><div><div class="mod">${w.label}</div><div class="name">${w.winner}</div><button type="button" class="placa-btn" onclick="shareDetallePlaqueAt(${i})">Compartir placa</button></div><div class="detail">${w.detail}</div></div>`
+    `<div class="winner-row"><div class="medal" aria-hidden="true"></div><div><div class="mod">${escapeHtml(w.label)}</div><div class="name">${escapeHtml(w.winner)}</div><button type="button" class="placa-btn" onclick="shareDetallePlaqueAt(${i})">Compartir placa</button></div><div class="detail">${escapeHtml(w.detail)}</div></div>`
   ).join("") + `<div class="winners-actions"><button type="button" class="placa-link" onclick="shareDetalleAllPlaques()">Compartir todas las placas</button></div>` : `<p class="muted" style="padding:12px 14px;">Sin ganadores</p>`;
   const players = (d.players || []).map(p => {
     const g = Object.keys(p.scores || {}).reduce((a, k) => a + (p.scores[k] || 0), 0);
     const ball = (p.ball || "").trim();
     const wd = p.withdrawn ? " · RETIRADO" : "";
-    return `<div class="list-row static"><div class="lr-body"><div class="lr-title">${p.name}${wd}</div><div class="lr-micro">HI ${fmtHcp(p.hcp)} · CH ${p.ch != null ? p.ch : "—"} · Gross ${g || "—"}${ball ? " · ● " + ball.replace(/</g, "&lt;") : ""}</div></div></div>`;
+    return `<div class="list-row static"><div class="lr-body"><div class="lr-title">${escapeHtml(p.name)}${wd}</div><div class="lr-micro">HI ${fmtHcp(p.hcp)} · CH ${p.ch != null ? p.ch : "—"} · Gross ${g || "—"}${ball ? " · ● " + escapeHtml(ball) : ""}</div></div></div>`;
   }).join("");
   document.getElementById("detalleBody").innerHTML = `
     <div class="card mb-16">
       <div class="eyebrow">${d.date}</div>
-      <h1 style="font-size:22px;margin:4px 0;">${d.club}</h1>
-      <p class="micro">${d.layout} · ${d.tee} · Par ${d.par}</p>
+      <h1 style="font-size:22px;margin:4px 0;">${escapeHtml(d.club)}</h1>
+      <p class="micro">${escapeHtml(d.layout)} · ${escapeHtml(d.tee)} · Par ${d.par}</p>
       <div class="close-stats" style="margin-top:12px;">
         <div class="close-stat"><div class="v">${gross}</div><div class="l">Gross</div></div>
         <div class="close-stat"><div class="v">${toPar}</div><div class="l">Al par</div></div>
