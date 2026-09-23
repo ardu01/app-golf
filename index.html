@@ -456,6 +456,79 @@
     border-radius: 8px 8px 0 0;
     box-sizing: border-box;
   }
+  .quick-tile .ico.mark { font-size: 0; position: relative; }
+  .btn .mark {
+    position: relative; width: 18px; height: 18px; flex: 0 0 18px;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .mark-list::before {
+    content: ""; width: 14px; height: 12px; display: block;
+    background:
+      linear-gradient(currentColor, currentColor) 0 0 / 14px 1.75px no-repeat,
+      linear-gradient(currentColor, currentColor) 0 5px / 14px 1.75px no-repeat,
+      linear-gradient(currentColor, currentColor) 0 10px / 10px 1.75px no-repeat;
+  }
+  .mark-chart::before {
+    content: ""; width: 16px; height: 14px; display: block;
+    background:
+      linear-gradient(currentColor, currentColor) 0 6px / 3px 8px no-repeat,
+      linear-gradient(currentColor, currentColor) 6px 0 / 3px 14px no-repeat,
+      linear-gradient(currentColor, currentColor) 12px 4px / 3px 10px no-repeat;
+  }
+  .mark-diamond::before {
+    content: ""; width: 8px; height: 8px; display: block;
+    border: 1.75px solid currentColor; box-sizing: border-box;
+    transform: rotate(45deg);
+  }
+  .mark-pair::before, .mark-pair::after {
+    content: ""; position: absolute; top: 50%; width: 6px; height: 6px; margin-top: -4px;
+    border: 1.75px solid currentColor; border-radius: 50%; box-sizing: border-box;
+  }
+  .mark-pair::before { left: 3px; }
+  .mark-pair::after { right: 3px; }
+  .mark-doc::before {
+    content: ""; width: 12px; height: 14px; display: block;
+    border: 1.75px solid currentColor; border-radius: 2px; box-sizing: border-box;
+  }
+  .mark-hole::before {
+    content: ""; width: 12px; height: 12px; display: block;
+    border: 1.75px solid currentColor; border-radius: 50%; box-sizing: border-box;
+  }
+  .mark-grid::before {
+    content: ""; width: 4px; height: 4px; display: block; background: currentColor;
+    box-shadow: 6px 0 0 currentColor, 0 6px 0 currentColor, 6px 6px 0 currentColor;
+  }
+  .mark-out::before, .mark-in::before {
+    content: ""; position: absolute; left: 50%; width: 1.75px; height: 8px; margin-left: -1px;
+    background: currentColor;
+  }
+  .mark-out::before { top: 5px; }
+  .mark-out::after {
+    content: ""; position: absolute; top: 1px; left: 50%; margin-left: -4px;
+    border-left: 4px solid transparent; border-right: 4px solid transparent;
+    border-bottom: 5px solid currentColor;
+  }
+  .mark-in::before { top: 2px; }
+  .mark-in::after {
+    content: ""; position: absolute; bottom: 1px; left: 50%; margin-left: -4px;
+    border-left: 4px solid transparent; border-right: 4px solid transparent;
+    border-top: 5px solid currentColor;
+  }
+  .mark-box::before {
+    content: ""; width: 11px; height: 11px; display: block;
+    border: 1.75px solid currentColor; border-radius: 2px; box-sizing: border-box;
+  }
+  .mark-x::before, .mark-x::after {
+    content: ""; position: absolute; left: 3px; right: 3px; height: 1.75px;
+    background: currentColor; top: 50%; margin-top: -1px;
+  }
+  .mark-x::before { transform: rotate(45deg); }
+  .mark-x::after { transform: rotate(-45deg); }
+  .mark-back::before {
+    content: ""; width: 7px; height: 7px; display: block;
+    border-left: 1.75px solid currentColor; border-bottom: 1.75px solid currentColor;
+    transform: rotate(45deg); margin-left: 2px; box-sizing: border-box;
+  }
   .tab.active { font-weight: 600; }
 
   .badge {
@@ -2259,7 +2332,7 @@
       <!-- STATS -->
       <section id="screen-stats" class="screen theme-paper">
         <div class="topnav">
-          <button class="btn-icon" onclick="go('home')" aria-label="Atrás">‹</button>
+          <button class="btn-icon" onclick="closeStats()" aria-label="Atrás">‹</button>
           <div class="title">Stats</div>
         </div>
         <div class="scroll" id="statsBody"></div>
@@ -7598,11 +7671,11 @@ function renderPerfil() {
       ${hasHcp ? `<div class="row gap-8 mt-12" style="justify-content:flex-start;"><span class="badge badge-oficial">HI ${hi}</span></div>` : ""}
     </div>
     <div class="quick-grid mb-16">
-      <button class="quick-tile" onclick="go('historial')"><div class="ico"></div><div class="t">Historial</div><div class="d">Mis vueltas</div></button>
-      <button class="quick-tile" onclick="go('stats')"><div class="ico">◉</div><div class="t">Stats</div><div class="d">Promedios</div></button>
-      <button class="quick-tile" onclick="document.getElementById('recordsBlock').scrollIntoView({behavior:'smooth'})"><div class="ico"></div><div class="t">Récords</div><div class="d">Mejores</div></button>
-      <button class="quick-tile" onclick="go('lobby')"><div class="ico"></div><div class="t">Flight</div><div class="d">Este móvil</div></button>
-      <button class="quick-tile" onclick="openRules()"><div class="ico">☰</div><div class="t">Reglas</div><div class="d">Todos los modos</div></button>
+      <button class="quick-tile" onclick="go('historial')"><div class="ico mark mark-list" aria-hidden="true"></div><div class="t">Historial</div><div class="d">Mis vueltas</div></button>
+      <button class="quick-tile" onclick="openStats()"><div class="ico mark mark-chart" aria-hidden="true"></div><div class="t">Stats</div><div class="d">Promedios</div></button>
+      <button class="quick-tile" onclick="document.getElementById('recordsBlock').scrollIntoView({behavior:'smooth'})"><div class="ico mark mark-diamond" aria-hidden="true"></div><div class="t">Récords</div><div class="d">Mejores</div></button>
+      <button class="quick-tile" onclick="go('lobby')"><div class="ico mark mark-pair" aria-hidden="true"></div><div class="t">Flight</div><div class="d">Este móvil</div></button>
+      <button class="quick-tile" onclick="openRules()"><div class="ico mark mark-doc" aria-hidden="true"></div><div class="t">Reglas</div><div class="d">Todos los modos</div></button>
     </div>
     <div class="card" id="recordsBlock">
       <div class="eyebrow">Récords</div>
@@ -7612,8 +7685,8 @@ function renderPerfil() {
       <div class="eyebrow">Copia de seguridad</div>
       <p class="drive-status">Las partidas se guardan en este dispositivo. Haz una copia cuando quieras.</p>
       <div class="btn-row">
-        <button class="btn btn-primary" type="button" onclick="shareFairwayBackup()">Compartir copia</button>
-        <button class="btn btn-ghost" type="button" onclick="importFairwayBackup()">Restaurar copia…</button>
+        <button class="btn btn-primary" type="button" onclick="shareFairwayBackup()"><span class="mark mark-out" aria-hidden="true"></span>Compartir copia</button>
+        <button class="btn btn-ghost" type="button" onclick="importFairwayBackup()"><span class="mark mark-in" aria-hidden="true"></span>Restaurar copia…</button>
       </div>
       <p class="micro mt-12">En Compartir elige Guardar en Archivos. Para recuperar, Restaurar y elige ese JSON.</p>
     </div>
@@ -7624,8 +7697,8 @@ function renderPerfil() {
       <input id="driveClientIdInput" class="perfil-input" type="text" autocomplete="off" spellcheck="false"
         value="${escapeHtml(getDriveClientId())}" placeholder="Solo si estás probando OAuth" />
       <div class="btn-row mt-8">
-        <button class="btn btn-ghost" type="button" onclick="saveDriveClientIdFromUi()">Guardar Client ID</button>
-        <button class="btn btn-ghost" type="button" onclick="driveConnect()">Probar sync</button>
+        <button class="btn btn-ghost" type="button" onclick="saveDriveClientIdFromUi()"><span class="mark mark-box" aria-hidden="true"></span>Guardar Client ID</button>
+        <button class="btn btn-ghost" type="button" onclick="driveConnect()"><span class="mark mark-out" aria-hidden="true"></span>Probar sync</button>
       </div>
       <p class="micro mt-8">${escapeHtml(driveStatusText().text)}</p>
     </details>`;
@@ -7901,8 +7974,8 @@ function renderHistorial() {
     document.getElementById("historialBody").innerHTML = `
       <div class="card"><p class="muted">Sin partidas aún</p></div>
       <p class="micro mt-16">Las vueltas se guardan al completar una ronda.</p>
-      <button class="btn btn-ghost mt-16" type="button" onclick="shareFairwayBackup()">Hacer copia de seguridad</button>
-      <button class="btn btn-ghost mt-8" type="button" onclick="importFairwayBackup()">Restaurar copia…</button>`;
+      <button class="btn btn-ghost mt-16" type="button" onclick="shareFairwayBackup()"><span class="mark mark-out" aria-hidden="true"></span>Hacer copia de seguridad</button>
+      <button class="btn btn-ghost mt-8" type="button" onclick="importFairwayBackup()"><span class="mark mark-in" aria-hidden="true"></span>Restaurar copia…</button>`;
     return;
   }
   const rows = rounds.slice(0, 20).map(r => {
@@ -7923,8 +7996,8 @@ function renderHistorial() {
   document.getElementById("historialBody").innerHTML = `
     <div class="list-card">${rows}</div>
     <p class="micro mt-16">${rounds.length} vuelta${rounds.length===1?"":"s"}</p>
-    <button class="btn btn-ghost mt-16" type="button" onclick="shareFairwayBackup()">Hacer copia de seguridad</button>
-    <button class="btn btn-ghost mt-8" type="button" onclick="importFairwayBackup()">Restaurar copia…</button>`;
+    <button class="btn btn-ghost mt-16" type="button" onclick="shareFairwayBackup()"><span class="mark mark-out" aria-hidden="true"></span>Hacer copia de seguridad</button>
+    <button class="btn btn-ghost mt-8" type="button" onclick="importFairwayBackup()"><span class="mark mark-in" aria-hidden="true"></span>Restaurar copia…</button>`;
 }
 
 
@@ -7982,12 +8055,12 @@ function renderDetalle() {
       <div class="winners-head">Ganadores</div>
       ${winners}
     </div>
-    <button class="btn btn-primary" onclick="reopenRound('${d.id}','hole')">Abrir partida</button>
-    <button class="btn btn-ghost" onclick="reopenRound('${d.id}','scorecard')">Ver tarjeta</button>
-    <button class="btn btn-ghost" onclick="openLeaderForRound('${d.id}')">Clasificación</button>
-    <button class="btn btn-ghost" onclick="shareRoundWhatsApp('${d.id}')">Compartir</button>
-    <button class="btn btn-ghost" onclick="deleteRound('${d.id}')">Eliminar</button>
-    <button class="btn btn-ghost" onclick="go('historial')">Volver</button>`;
+    <button class="btn btn-primary" onclick="reopenRound('${d.id}','hole')"><span class="mark mark-hole" aria-hidden="true"></span>Abrir partida</button>
+    <button class="btn btn-ghost" onclick="reopenRound('${d.id}','scorecard')"><span class="mark mark-grid" aria-hidden="true"></span>Ver tarjeta</button>
+    <button class="btn btn-ghost" onclick="openLeaderForRound('${d.id}')"><span class="mark mark-diamond" aria-hidden="true"></span>Clasificación</button>
+    <button class="btn btn-ghost" onclick="shareRoundWhatsApp('${d.id}')"><span class="mark mark-out" aria-hidden="true"></span>Compartir</button>
+    <button class="btn btn-ghost" onclick="deleteRound('${d.id}')"><span class="mark mark-x" aria-hidden="true"></span>Eliminar</button>
+    <button class="btn btn-ghost" onclick="go('historial')"><span class="mark mark-back" aria-hidden="true"></span>Volver</button>`;
 }
 
 const VIS_CYCLE = ["Solo yo", "Amigos", "Público"];
@@ -8012,20 +8085,149 @@ function softDeleteDetalle() {
 }
 
 
+function openStats() {
+  if (state.screen !== "stats") state._statsFrom = state.screen || "perfil";
+  go("stats");
+}
+function closeStats() {
+  const back = state._statsFrom && state._statsFrom !== "stats" ? state._statsFrom : "perfil";
+  go(back);
+}
+function statsNum(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+function statsRoundTime(r) {
+  const t = Date.parse(r && r.dateISO);
+  return Number.isFinite(t) ? t : 0;
+}
+function savedRoundsForStats() {
+  return loadRounds().filter(r => {
+    if (state.deletedRounds && state.deletedRounds[r.id]) return false;
+    const me = r.me || {};
+    const played = statsNum(r.holesPlayed) || statsNum(me.thru) || 0;
+    return played > 0 && statsNum(me.gross) != null;
+  }).sort((a, b) => statsRoundTime(b) - statsRoundTime(a));
+}
+function filterStatsRounds(all) {
+  const period = state.statsPeriod || "last_10";
+  if (period === "last_5") return all.slice(0, 5);
+  if (period === "last_10") return all.slice(0, 10);
+  if (period === "last_20") return all.slice(0, 20);
+  if (period === "season") {
+    const start = new Date();
+    start.setMonth(0, 1);
+    start.setHours(0, 0, 0, 0);
+    return all.filter(r => statsRoundTime(r) >= start.getTime());
+  }
+  if (period === "year") {
+    const start = Date.now() - 365 * 24 * 60 * 60 * 1000;
+    return all.filter(r => statsRoundTime(r) >= start);
+  }
+  return all;
+}
+function statsAvg(nums) {
+  if (!nums.length) return null;
+  return nums.reduce((s, n) => s + n, 0) / nums.length;
+}
+function fmtToParAvg(n) {
+  if (n == null || !Number.isFinite(n)) return "—";
+  const r = Math.round(n * 10) / 10;
+  const txt = Number.isInteger(r) ? String(r) : r.toFixed(1);
+  return (r > 0 ? "+" : "") + txt;
+}
+function fmtStat(n, digits) {
+  if (n == null || !Number.isFinite(n)) return "—";
+  return digits ? n.toFixed(digits) : String(Math.round(n));
+}
 function renderStats() {
   const periods = [
     {k:"last_5",l:"5"},{k:"last_10",l:"10"},{k:"last_20",l:"20"},
     {k:"season",l:"Temp"},{k:"year",l:"Año"},{k:"all",l:"Todo"}
   ];
+  const hints = {
+    last_5: "Últimas 5 vueltas con hoyos anotados",
+    last_10: "Últimas 10 vueltas con hoyos anotados",
+    last_20: "Últimas 20 vueltas con hoyos anotados",
+    season: "Temporada: desde el 1 de enero",
+    year: "Últimos 12 meses",
+    all: "Todas las vueltas guardadas"
+  };
+  const period = state.statsPeriod || "last_10";
+  const all = savedRoundsForStats();
+  const rounds = filterStatsRounds(all);
+  const chips = `<div class="period-chips chip-row">
+      ${periods.map(x => `<button class="chip ${period===x.k?"selected":""}" onclick="state.statsPeriod='${x.k}';renderStats()">${x.l}</button>`).join("")}
+    </div>
+    <p class="micro" style="margin:-8px 0 12px;">${hints[period] || ""}</p>`;
+  if (!all.length) {
+    document.getElementById("statsBody").innerHTML = `
+      ${chips}
+      <div class="card mb-16">
+        <p class="muted">Sin partidas aún</p>
+        <p class="micro mt-8">Las estadísticas aparecerán cuando completes vueltas.</p>
+      </div>
+      <p class="footer-note" style="position:static;padding:4px 0;">Basado en golpes y par</p>`;
+    return;
+  }
+  if (!rounds.length) {
+    document.getElementById("statsBody").innerHTML = `
+      ${chips}
+      <div class="card mb-16">
+        <p class="muted">Sin vueltas en este periodo</p>
+        <p class="micro mt-8">Hay ${all.length} guardada${all.length===1?"":"s"}. Prueba Todo.</p>
+      </div>`;
+    return;
+  }
+  const toPars = rounds.map(r => statsNum(r.me && r.me.toPar)).filter(n => n != null);
+  const sfs = rounds.map(r => statsNum(r.me && r.me.sf)).filter(n => n != null);
+  const birdies = rounds.map(r => statsNum(r.me && r.me.birdies)).filter(n => n != null);
+  let puttSum = 0, puttHoles = 0, firHit = 0, firAtt = 0, girYes = 0, girAtt = 0;
+  rounds.forEach(r => {
+    const me = r.me || {};
+    if (statsNum(me.puttsTotal) != null && statsNum(me.puttsHoles)) {
+      puttSum += me.puttsTotal;
+      puttHoles += me.puttsHoles;
+    }
+    if (statsNum(me.firAtt)) { firAtt += me.firAtt; firHit += statsNum(me.firHit) || 0; }
+    if (statsNum(me.girAtt)) { girAtt += me.girAtt; girYes += statsNum(me.girYes) || 0; }
+  });
+  const layouts = rounds.map(r => statsNum(r.holes)).filter(n => n === 9 || n === 18);
+  const sameLayout = layouts.length === rounds.length && layouts.every(n => n === layouts[0]);
+  const grosses = sameLayout ? rounds.map(r => statsNum(r.me && r.me.gross)).filter(n => n != null) : [];
+  const pills = [
+    [`${rounds.length}`, "Vueltas"],
+    [fmtToParAvg(statsAvg(toPars)), "Al par"]
+  ];
+  if (grosses.length) pills.push([fmtStat(statsAvg(grosses), 1), "Gross · " + layouts[0]]);
+  if (sfs.length) pills.push([fmtStat(statsAvg(sfs), 1), "Stableford"]);
+  if (puttHoles) pills.push([fmtStat(puttSum / puttHoles, 2), "Putts / hoyo"]);
+  if (firAtt) pills.push([Math.round(100 * firHit / firAtt) + "%", "FIR"]);
+  if (girAtt) pills.push([Math.round(100 * girYes / girAtt) + "%", "GIR"]);
+  if (birdies.length) pills.push([String(birdies.reduce((s, n) => s + n, 0)), "Birdies"]);
+  const best = toPars.length ? Math.min.apply(null, toPars) : null;
+  if (best != null) pills.push([fmtToParAvg(best), "Mejor al par"]);
+  const pillsHtml = pills.map(([v, l]) => `<div class="close-stat"><div class="v">${escapeHtml(v)}</div><div class="l">${escapeHtml(l)}</div></div>`).join("");
+  const rows = rounds.slice(0, 12).map(r => {
+    const me = r.me || {};
+    const tp = statsNum(me.toPar);
+    const tpTxt = tp == null ? "" : " · " + fmtToParAvg(tp);
+    const played = statsNum(r.holesPlayed) || statsNum(me.thru);
+    const micro = `${r.date || ""} · ${me.gross}${tpTxt}${played ? " · " + played + " hoyos" : ""}`;
+    return `<button class="list-row" type="button" onclick="openDetalle('${r.id}')">
+      <div class="lr-score">${escapeHtml(me.gross)}</div>
+      <div class="lr-body">
+        <div class="lr-title">${escapeHtml(r.club || "Vuelta")}</div>
+        <div class="lr-micro">${escapeHtml(micro)}</div>
+      </div>
+      <div class="lr-chev">›</div>
+    </button>`;
+  }).join("");
   document.getElementById("statsBody").innerHTML = `
-    <div class="period-chips chip-row">
-      ${periods.map(x => `<button class="chip ${state.statsPeriod===x.k?"selected":""}" onclick="state.statsPeriod='${x.k}';renderStats()">${x.l}</button>`).join("")}
-    </div>
-    <div class="card mb-16">
-      <p class="muted">Sin partidas aún</p>
-      <p class="micro mt-8">Las estadísticas aparecerán cuando completes vueltas.</p>
-    </div>
-    <p class="footer-note" style="position:static;padding:4px 0;">Basado en golpes y par</p>`;
+    ${chips}
+    <div class="close-stats">${pillsHtml}</div>
+    <div class="list-card mb-16">${rows}</div>
+    <p class="footer-note" style="position:static;padding:4px 0;">Al par es la media de cada vuelta anotada, de 9 o de 18. FIR no cuenta los pares 3.</p>`;
 }
 
 // Init — default official course, fresh round

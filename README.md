@@ -2,7 +2,7 @@
 
 Lo uso para apuntar la vuelta en el móvil. Golpes, putts, bruto, neto, Stableford. El hándicap del campo ya viene repartido. Pueden anotar varios en el mismo teléfono. No hay cuenta: la partida se queda en ese aparato, haya cobertura o no.
 
-Las fotos las fui sacando mientras lo hacía. Si una pantalla cambia en otra rama, puede que no coincida al píxel.
+Las fotos las fui sacando mientras lo hacía. Alguna pantalla ya no es exactamente así (los iconos del perfil, sobre todo, y stats, que antes no calculaba nada).
 
 <img src="docs/recorrido/partida/inicio.webp" alt="Inicio, con la ronda a medias" width="260">
 
@@ -38,6 +38,14 @@ El perfil guarda el nombre y el Handicap Index. El historial cuelga de ahí. Si 
 <img src="docs/recorrido/partida/reabrir.webp" alt="Reabrir una partida guardada" width="200">
 
 [Un paseo por las pantallas](docs/recorrido/videos/recorrido-interfaz.mp4)
+
+Stats filtra las últimas 5, 10 o 20 vueltas, la temporada (desde enero), el último año, o todo. La media de golpes brutos solo la saco si todas las del filtro son del mismo largo. Nueve y dieciocho juntos no dan un solo número.
+
+<img src="docs/recorrido/stats/stats_con_vueltas.png" alt="Stats con varias vueltas" width="200">
+<img src="docs/recorrido/stats/stats_temporada.png" alt="Filtro de temporada" width="200">
+<img src="docs/recorrido/stats/perfil_iconos.png" alt="Perfil, con los iconos geométricos" width="200">
+
+[Stats y los iconos del perfil](docs/recorrido/videos/stats-perfil.mp4)
 
 ## Planos de hoyo
 
