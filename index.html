@@ -213,30 +213,54 @@
     flex-shrink: 0;
   }
 
-  /* Tarjeta: scroll de página completa — la tabla no se aplasta a 0 */
+  /* Tarjeta: columna con scroll — sin solapes ni tabla aplastada */
   #screen-scorecard .fit {
+    display: block;
     overflow-x: hidden;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain;
-    padding-bottom: 20px;
+    padding-bottom: 28px;
   }
-  #screen-scorecard .fit > .card {
-    flex: 0 0 auto;
-    min-height: 220px;
+  #screen-scorecard .fit > * {
+    position: relative;
+    z-index: 0;
+  }
+  #screen-scorecard .sc-score-card {
+    display: block;
+    padding: 8px 10px;
+    margin: 0;
+    overflow: visible;
   }
   #screen-scorecard .sc-table-wrap {
+    display: block;
+    width: 100%;
     overflow-x: auto;
     overflow-y: visible;
-    flex: none;
-    min-height: 180px;
     -webkit-overflow-scrolling: touch;
+    min-height: 0;
+    flex: none;
   }
-  #screen-scorecard .sc-legend,
-  #screen-scorecard .stat-row,
-  #screen-scorecard .totals-entry,
+  #screen-scorecard .sc-legend {
+    margin-top: 8px;
+  }
+  #screen-scorecard .stat-row {
+    margin-top: 10px;
+  }
+  #screen-scorecard .totals-entry {
+    position: relative;
+    z-index: 1;
+    margin-top: 14px;
+    background: var(--bg-paper-elevated);
+    border: 1px solid var(--border-paper);
+    box-shadow: none;
+  }
   #screen-scorecard #scWhatsApp {
-    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    margin-top: 12px;
+    margin-bottom: 8px;
   }
 
   /* Clasificación: lista con scroll propio */
@@ -1056,6 +1080,12 @@
   .sc-nine-tabs { display: flex; gap: 8px; padding: 0; flex-shrink: 0; }
   .sc-nine-tabs .chip { flex: 1; justify-content: center; height: 36px; }
   .sc-table-wrap { overflow: hidden; margin: 0; flex: 1; min-height: 0; }
+  #screen-scorecard .sc-table-wrap {
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    flex: none !important;
+    min-height: 0 !important;
+  }
   table.scorecard { width: 100%; border-collapse: collapse; font-size: 15px; font-variant-numeric: tabular-nums; }
   table.scorecard th, table.scorecard td {
     padding: 0 4px; height: 32px; text-align: center;
@@ -2005,7 +2035,7 @@
             <button type="button" class="chip selected" data-nine="out" onclick="setScNine('out')">F9 · Ida</button>
             <button type="button" class="chip" data-nine="in" onclick="setScNine('in')">B9 · Vuelta</button>
           </div>
-          <div class="card" style="flex:1;min-height:0;display:flex;flex-direction:column;padding:8px 10px;">
+          <div class="card sc-score-card">
             <div class="sc-table-wrap">
               <table class="scorecard" id="scoreTable">
                 <thead>
@@ -2020,11 +2050,13 @@
               <span><i class="leg" style="display:inline-block;outline:1.5px solid rgba(139,58,47,0.55);border-radius:4px;"></i> Bogey+</span>
             </div>
           </div>
-          <div class="stat-row" style="flex-shrink:0;margin-top:0;">
+          <div class="stat-row" style="margin-top:0;">
             <div class="stat-pill"><div class="v" id="scOut">—</div><div class="l">Out</div></div>
             <div class="stat-pill"><div class="v" id="scIn">—</div><div class="l">In</div></div>
             <div class="stat-pill"><div class="v" id="scToPar">—</div><div class="l">Al par</div></div>
           </div>
+          <div class="totals-entry" id="scTotalsEntry"></div>
+          <button type="button" class="btn btn-ghost" id="scWhatsApp" onclick="shareScorecardWhatsApp()">Compartir tarjeta</button>
         </div>
         <nav class="tabbar">
           <button class="tab" onclick="go('home')"><span class="ico">⌂</span>Inicio</button>
@@ -4737,16 +4769,8 @@ function renderScorecard() {
   }
 
   let wa = document.getElementById("scWhatsApp");
-  if (!wa) {
-    wa = document.createElement("button");
-    wa.id = "scWhatsApp";
-    wa.type = "button";
-    wa.className = "btn btn-ghost";
-    wa.style.cssText = "width:100%;margin-top:12px;";
-    wa.textContent = "Compartir tarjeta";
+  if (wa) {
     wa.onclick = shareScorecardWhatsApp;
-    const fit = document.querySelector("#screen-scorecard .fit");
-    if (fit) fit.appendChild(wa);
   }
 
   const me = list[0] || PLAYERS[0];
@@ -4869,17 +4893,8 @@ function setPlayerTotalsPutts(pi, raw) {
 }
 
 function renderTotalsEntry() {
-  let box = document.getElementById("scTotalsEntry");
-  const fit = document.querySelector("#screen-scorecard .fit");
-  if (!fit) return;
-  if (!box) {
-    box = document.createElement("div");
-    box.id = "scTotalsEntry";
-    box.className = "totals-entry";
-    const wa = document.getElementById("scWhatsApp");
-    if (wa && wa.parentNode === fit) fit.insertBefore(box, wa);
-    else fit.appendChild(box);
-  }
+  const box = document.getElementById("scTotalsEntry");
+  if (!box) return;
   const list = activePlayers();
   const rows = list.map((p, pi) => {
     const marked = playerHasMarkedHoles(p);
