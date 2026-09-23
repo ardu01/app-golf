@@ -467,6 +467,33 @@
     background: var(--surface); border-bottom: 1px solid var(--border);
     border-left: 1px solid var(--border); border-right: 1px solid var(--border); margin-bottom: 0;
   }
+  .player-block {
+    border-left: 1px solid var(--border); border-right: 1px solid var(--border);
+    background: var(--surface); margin-bottom: 0;
+  }
+  .player-block:first-of-type {
+    border-radius: var(--r-md) var(--r-md) 0 0; border-top: 1px solid var(--border);
+  }
+  .player-block:last-of-type {
+    border-radius: 0 0 var(--r-md) var(--r-md); margin-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .player-block .player-row {
+    border-left: none; border-right: none; border-bottom: none; border-radius: 0;
+    margin-bottom: 0;
+  }
+  .player-block .player-row:first-of-type,
+  .player-block .player-row:last-of-type { border-radius: 0; margin-bottom: 0; border-top: none; }
+  .player-ball-row {
+    padding: 0 14px 12px; display: block;
+  }
+  .player-ball-row input,
+  .player-ball-input {
+    display: block; width: 100%; box-sizing: border-box;
+    height: 40px; border-radius: 10px;
+    border: 1px solid var(--separator); background: #fff;
+    padding: 0 12px; font: inherit; font-size: 14px; color: var(--ink);
+  }
   .player-row:first-of-type { border-radius: var(--r-md) var(--r-md) 0 0; border-top: 1px solid var(--border); }
   .player-row:last-of-type { border-radius: 0 0 var(--r-md) var(--r-md); margin-bottom: 8px; }
   .avatar {
@@ -939,15 +966,30 @@
     border-radius: var(--r-lg); padding: 12px; margin-bottom: 10px;
   }
   .aj-player.wd { opacity: 0.55; }
-  .aj-player .aj-row { display: flex; gap: 8px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
-  .aj-player input[type="text"], .aj-player input[type="number"] {
-    flex: 1; min-width: 0; height: 40px; border-radius: 10px;
+  .aj-row { display: flex; gap: 8px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
+  .aj-player input[type="text"], .aj-player input[type="number"],
+  .aj-add input[type="text"], .aj-add input[type="number"],
+  .aj-section .aj-row input[type="text"], .aj-section .aj-row input[type="number"] {
+    flex: 1; min-width: 0; width: 100%; box-sizing: border-box;
+    height: 44px; border-radius: 10px;
     border: 1px solid var(--border-paper); background: #fff;
     padding: 0 12px; font: inherit; font-size: 15px; color: var(--ink);
   }
-  .aj-player .aj-label { font-size: 11px; color: var(--ink-secondary); width: 100%; margin-bottom: -4px; }
+  .aj-label {
+    font-size: 11px; color: var(--ink-secondary); width: 100%;
+    margin: 8px 0 0; font-weight: 600;
+  }
   .aj-player .aj-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
   .aj-player .aj-actions .btn { flex: 1; min-width: 120px; height: 40px; font-size: 13px; }
+  .aj-add {
+    background: var(--bg-paper-elevated); border: 1px solid var(--border-paper);
+    border-radius: var(--r-lg); padding: 12px; margin-bottom: 10px;
+  }
+  .aj-add .aj-row { flex-direction: column; align-items: stretch; }
+  .aj-add .aj-hcp-row {
+    display: flex; gap: 8px; align-items: center; width: 100%;
+  }
+  .aj-add .aj-hcp-row input { flex: 1; }
   .ball-chip {
     display: inline-flex; align-items: center; gap: 4px;
     font-size: 11px; font-weight: 600; color: var(--ink-secondary);
@@ -1172,18 +1214,39 @@
     background: var(--bg-paper-elevated); border: 1px solid var(--border-paper);
   }
   .guest-add .ga-title { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
-  .guest-add .ga-row { display: flex; gap: 8px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
+  .guest-add .ga-row {
+    display: flex; flex-direction: column; gap: 8px; margin-top: 10px;
+  }
+  .guest-add .ga-row-name {
+    display: flex; gap: 8px; align-items: center; width: 100%;
+  }
   .guest-add input[type="text"] {
-    flex: 1; min-width: 120px; height: 40px; border-radius: var(--r-md);
+    display: block; width: 100%; box-sizing: border-box;
+    flex: 1; min-width: 0; height: 44px; border-radius: var(--r-md);
     border: 1px solid var(--border-paper); background: #fff; padding: 0 12px;
     font: inherit; font-size: 15px; color: var(--ink);
   }
-  .guest-add .ga-hcp { display: flex; align-items: center; gap: 6px; }
-  .guest-add .ga-hcp button {
-    width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border-paper);
-    background: #fff; font-size: 18px; cursor: pointer;
+  .guest-add .ga-hcp {
+    display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+    height: 44px; padding: 0 6px; border-radius: var(--r-md);
+    border: 1px solid var(--border-paper); background: #fff;
   }
-  .guest-add .ga-hcp .val { min-width: 36px; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .guest-add .ga-hcp button {
+    width: 36px; height: 36px; min-width: 36px; border-radius: 8px; border: 1px solid var(--border-paper);
+    background: var(--fill); font-size: 18px; cursor: pointer; color: var(--tint);
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .guest-add .ga-hcp .val,
+  .guest-add .ga-hcp .hcp-input {
+    min-width: 48px; width: 52px; text-align: center; font-weight: 600;
+    font-variant-numeric: tabular-nums; border: none; background: transparent;
+  }
+  .guest-add .ga-ball {
+    display: block; width: 100%; box-sizing: border-box;
+    height: 44px; margin-top: 0; border-radius: var(--r-md);
+    border: 1px solid var(--border-paper); background: #fff; padding: 0 12px;
+    font: inherit; font-size: 14px; color: var(--ink);
+  }
   .guest-chip {
     font-size: 9px; font-weight: 700; letter-spacing: 0.06em; padding: 2px 6px;
     border-radius: var(--r-pill); background: rgba(26,26,24,0.06); color: var(--ink-secondary);
@@ -1225,7 +1288,8 @@
   .mod-chip-card.selected .sub { color: inherit; opacity: 0.75; }
   .write-mode {
     display: flex; flex-direction: column; gap: 0; border: 1px solid var(--border);
-    border-radius: var(--r-md); overflow: hidden; margin-top: 12px;
+    border-radius: var(--r-md); overflow: hidden; margin-top: 16px;
+    position: relative; z-index: 1; background: var(--bg-paper-elevated);
   }
   .lb-tabs { flex-wrap: wrap; }
   .lb-tab { flex: 1 1 22%; min-width: 72px; font-size: 12px; }
@@ -3025,23 +3089,26 @@ function renderSetup() {
       <p class="micro mb-8">Puedes cambiar nombre, HI y bola también durante la partida en <b>Ajustes</b>.</p>
       <p class="micro mb-16">Misma tarjeta · captura A o B · HI en pasos de 0,1</p>` +
       PLAYERS.map((p, i) => `
-        <div class="player-row" style="flex-wrap:wrap;">
-          <div class="avatar ${p.avatar||""}">${p.initials}</div>
-          <div class="name">${p.name}${p.ball ? `<div class="micro" style="font-weight:500;">● ${(p.ball||"").replace(/</g,"&lt;")}</div>` : ""}</div>
-          <div class="hcp-step" aria-label="Hándicap">
-            <button type="button" aria-label="Bajar hándicap" onclick="adjPlayerHcp(${i}, -0.1)">−</button>
-            <input class="val hcp-input" type="text" inputmode="decimal" enterkeyhint="done"
-              value="${fmtHcp(p.hcp)}"
-              onchange="setPlayerHcp(${i}, this.value)"
-              onblur="setPlayerHcp(${i}, this.value)"
-              onclick="this.select()" />
-            <button type="button" aria-label="Subir hándicap" onclick="adjPlayerHcp(${i}, 0.1)">+</button>
+        <div class="player-block">
+          <div class="player-row">
+            <div class="avatar ${p.avatar||""}">${p.initials}</div>
+            <div class="name">${p.name || "Jugador"}</div>
+            <div class="hcp-step" aria-label="Hándicap">
+              <button type="button" aria-label="Bajar hándicap" onclick="adjPlayerHcp(${i}, -0.1)">−</button>
+              <input class="val hcp-input" type="text" inputmode="decimal" enterkeyhint="done"
+                value="${fmtHcp(p.hcp)}"
+                onchange="setPlayerHcp(${i}, this.value)"
+                onblur="setPlayerHcp(${i}, this.value)"
+                onclick="this.select()" />
+              <button type="button" aria-label="Subir hándicap" onclick="adjPlayerHcp(${i}, 0.1)">+</button>
+            </div>
+            <button class="toggle ${state.setup.players[i]?"on":""}" aria-label="Incluir" onclick="state.setup.players[${i}]=!state.setup.players[${i}];renderSetup()"></button>
           </div>
-          <button class="toggle ${state.setup.players[i]?"on":""}" aria-label="Incluir" onclick="state.setup.players[${i}]=!state.setup.players[${i}];renderSetup()"></button>
-          <input type="text" placeholder="Bola · marca · nº · color" maxlength="48"
-            value="${(p.ball||"").replace(/"/g,"&quot;")}"
-            style="flex:1 1 100%;height:36px;margin-top:6px;border-radius:8px;border:1px solid var(--separator);padding:0 10px;font:inherit;font-size:13px;"
-            onchange="setPlayerBall(${i}, this.value)" onblur="setPlayerBall(${i}, this.value)" />
+          <div class="player-ball-row">
+            <input class="player-ball-input" type="text" placeholder="Bola · marca · nº · color" maxlength="48"
+              value="${(p.ball||"").replace(/"/g,"&quot;")}"
+              onchange="setPlayerBall(${i}, this.value)" onblur="setPlayerBall(${i}, this.value)" />
+          </div>
         </div>`).join("") +
       `<div class="write-mode mt-16">
         <button class="option ${state.setup.writeMode==='single_device'?'selected':''}" type="button" onclick="state.setup.writeMode='single_device';renderSetup()">
@@ -3058,19 +3125,20 @@ function renderSetup() {
         <div class="ga-title">Añadir invitado</div>
         <p class="micro">Sin app · nombre, hándicap y bola</p>
         <div class="ga-row">
-          <input id="guestNameInput" type="text" placeholder="Nombre" maxlength="24" autocomplete="off" />
-          <div class="ga-hcp" aria-label="Hándicap invitado">
-            <button type="button" onclick="adjGuestDraftHcp(-0.1)">−</button>
-            <input class="val hcp-input" id="guestHcpVal" type="text" inputmode="decimal" enterkeyhint="done"
-              value="${fmtHcp(state.guestDraftHcp)}"
-              onchange="setGuestDraftHcp(this.value)"
-              onblur="setGuestDraftHcp(this.value)"
-              onclick="this.select()" />
-            <button type="button" onclick="adjGuestDraftHcp(0.1)">+</button>
+          <div class="ga-row-name">
+            <input id="guestNameInput" type="text" placeholder="Nombre" maxlength="24" autocomplete="off" />
+            <div class="ga-hcp" aria-label="Hándicap invitado">
+              <button type="button" onclick="adjGuestDraftHcp(-0.1)">−</button>
+              <input class="val hcp-input" id="guestHcpVal" type="text" inputmode="decimal" enterkeyhint="done"
+                value="${fmtHcp(state.guestDraftHcp)}"
+                onchange="setGuestDraftHcp(this.value)"
+                onblur="setGuestDraftHcp(this.value)"
+                onclick="this.select()" />
+              <button type="button" onclick="adjGuestDraftHcp(0.1)">+</button>
+            </div>
           </div>
+          <input id="guestBallInput" class="ga-ball" type="text" placeholder="Bola · ej. Titleist Pro V1 · 3 · rojo" maxlength="48" autocomplete="off" />
         </div>
-        <input id="guestBallInput" type="text" placeholder="Bola · ej. Titleist Pro V1 · 3 · rojo" maxlength="48" autocomplete="off"
-          style="width:100%;height:40px;margin-top:8px;border-radius:10px;border:1px solid var(--separator);padding:0 12px;font:inherit;font-size:14px;" />
         <button class="btn btn-primary mt-12" type="button" onclick="addGuestPlayer()" style="width:100%;">Añadir a la partida</button>
       </div>
       <button class="btn btn-ghost mt-16" onclick="go('lobby')">Abrir lobby · código H3RR4Y</button>`;
@@ -6171,14 +6239,17 @@ function renderAjustes() {
       <h3>Jugadores</h3>
       <p class="micro mb-8">Cambia nombre, HI, bola o retira a alguien sin crear una partida nueva.</p>
       ${playersHtml}
-      <div class="card" style="padding:12px;">
-        <div class="aj-label">Añadir jugador</div>
+      <div class="aj-add">
+        <div class="aj-label" style="margin-top:0;">Añadir jugador</div>
         <div class="aj-row">
           <input type="text" id="ajGuestName" placeholder="Nombre" maxlength="24" />
-          <input type="number" id="ajGuestHcp" step="0.1" min="0" max="54" value="18.0" style="flex:0 0 72px;" title="HI" />
-        </div>
-        <div class="aj-label">Bola (opcional)</div>
-        <div class="aj-row">
+          <div class="aj-label">Handicap Index</div>
+          <div class="aj-hcp-row">
+            <button type="button" class="btn btn-ghost" style="width:44px;height:44px;padding:0;flex:0 0 44px;" onclick="(function(){var el=document.getElementById('ajGuestHcp');if(!el)return;el.value=(Math.max(0,Math.min(54,(Number(String(el.value).replace(',','.'))||18)-0.1))).toFixed(1);})()">−</button>
+            <input type="number" id="ajGuestHcp" step="0.1" min="0" max="54" value="18.0" title="HI" />
+            <button type="button" class="btn btn-ghost" style="width:44px;height:44px;padding:0;flex:0 0 44px;" onclick="(function(){var el=document.getElementById('ajGuestHcp');if(!el)return;el.value=(Math.max(0,Math.min(54,(Number(String(el.value).replace(',','.'))||18)+0.1))).toFixed(1);})()">+</button>
+          </div>
+          <div class="aj-label">Bola (opcional)</div>
           <input type="text" id="ajGuestBall" placeholder="Marca · nº · color" maxlength="48" />
         </div>
         <button type="button" class="btn btn-primary mt-8" style="width:100%;" onclick="ajAddPlayer()">Añadir a la partida</button>
@@ -6535,7 +6606,27 @@ loadHostHcp();
 <script>
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", function () {
-    navigator.serviceWorker.register("./sw.js").catch(function () {});
+    navigator.serviceWorker.register("./sw.js").then(function (reg) {
+      try { reg.update(); } catch (e) {}
+      if (reg.waiting) {
+        try { reg.waiting.postMessage("SKIP_WAITING"); } catch (e) {}
+      }
+      reg.addEventListener("updatefound", function () {
+        var nw = reg.installing;
+        if (!nw) return;
+        nw.addEventListener("statechange", function () {
+          if (nw.state === "installed" && navigator.serviceWorker.controller) {
+            try { nw.postMessage("SKIP_WAITING"); } catch (e) {}
+          }
+        });
+      });
+    }).catch(function () {});
+    var refreshing = false;
+    navigator.serviceWorker.addEventListener("controllerchange", function () {
+      if (refreshing) return;
+      refreshing = true;
+      try { location.reload(); } catch (e) {}
+    });
   });
 }
 </script>
