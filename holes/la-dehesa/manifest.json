@@ -1,0 +1,115 @@
+{
+  "courseId": "la-dehesa",
+  "source": "https://www.golfladehesa.es/el-campo/",
+  "note": "Fotos oficiales por hoyo (guía del campo del club).",
+  "holes": [
+    {
+      "n": 1,
+      "file": "01.webp",
+      "source": "https://www.golfladehesa.es/wp-content/uploads/2024/11/1-scaled.jpg",
+      "name": "Un comienzo retador"
+    },
+    {
+      "n": 2,
+      "file": "02.webp",
+      "source": "https://www.golfladehesa.es/wp-content/uploads/2018/03/IMG_5434-scaled.jpeg",
+      "name": "El primer Par 5 del recorrido"
+    },
+    {
+      "n": 3,
+      "file": "03.webp",
+      "source": "https://www.golfladehesa.es/wp-content/uploads/2018/03/IMG_5436-1-scaled.jpeg",
+      "name": "El primer Par 3 del recorrido"
+    },
+    {
+      "n": 4,
+      "file": "04.webp",
+      "source": "https://www.golfladehesa.es/wp-content/uploads/2024/11/IMG_5439-scaled.jpeg",
+      "name": "Un hoyo de recuperación"
+    },
+    {
+      "n": 5,
+      "file": "05.webp",
+      "source": "https://www.golfladehesa.es/wp-content/uploads/2024/11/IMG_0698-scaled.jpg",
+      "name": "Un par 4 con una calle muy amplia"
+    },
+    {
+      "n": 6,
+      "file": "06.webp",
+      "source": "https://www.golfladehesa.es/wp-content/uploads/2024/11/HOYO-6-2-scaled.jpg",
+      "name": "Solo los pegadores podrán llegar al green en dos golpes"
+    },
+    {
+      "n": 7,
+      "file": "07.webp",
+      "source": "https://www.golfladehesa.es/wp-content/uploads/2024/11/IMG_0701-scaled.jpg",
+      "name": "Hoyo de recuperación si eres conservador desde el tee"
+    },
+    {
+      "n": 8,
+      "file": "08.webp",
+      "source": "https://www.golfladehesa.es/wp-content/uploads/2024/11/8-VERTICAL-scaled.jpg",
+      "name": "Uno de los hoyos más espectaculares"
+    },
+    {
+      "n": 9,
+      "file": "09.webp",
+      "source": "https://www.golfladehesa.es/wp-content/uploads/2024/11/dji_fly_20240410_080900_208_1712729359377_photo_optimized-scaled.jpg",
+      "name": "Final de primera vuelta épico"
+    },
+    {
+      "n": 10,
+      "file": "10.webp",
+      "source": "https://www.golfladehesa.es/wp-content/uploads/2024/12/dji_fly_20241217_125502_325_1734436714190_photo_optimized-scaled.jpeg",
+      "name": "Confía a la encina de la derecha, te marcará la línea de salida"
+    },
+    {
+      "n": 11,
+      "file": "11.webp",
+      "source": "https://www.golfladehesa.es/wp-content/uploads/2024/12/771342b1-47ea-4afb-aae8-87cb7fa95068.jpg",
+      "name": "Par 5 de las encinas centenarias"
+    },
+    {
+      "n": 12,
+      "file": "12.webp",
+      "source": "https://www.golfladehesa.es/wp-content/uploads/2024/12/dji_fly_20240314_074738_86_1710398868460_photo_optimized-scaled.jpg",
+      "name": "Calle con mucho movimiento parecida a una montaña rusa"
+    },
+    {
+      "n": 13,
+      "file": "13.webp",
+      "source": "https://www.golfladehesa.es/wp-content/uploads/2024/12/IMG_2190-scaled.jpg",
+      "name": "Signature Hole"
+    },
+    {
+      "n": 14,
+      "file": "14.webp",
+      "source": "https://www.golfladehesa.es/wp-content/uploads/2024/12/1415-Y-11-scaled.jpg",
+      "name": "Salida muy técnica con un ligero dogleg izquierda"
+    },
+    {
+      "n": 15,
+      "file": "15.webp",
+      "source": "https://www.golfladehesa.es/wp-content/uploads/2024/12/DJI_0272-scaled.jpg",
+      "name": "Serpenteando entre el Parque Natural del Guadarrama"
+    },
+    {
+      "n": 16,
+      "file": "16.webp",
+      "source": "https://www.golfladehesa.es/wp-content/uploads/2024/12/IMG_3758-scaled.jpeg",
+      "name": "Par 4 Riesgo y Recompensa"
+    },
+    {
+      "n": 17,
+      "file": "17.webp",
+      "source": "https://www.golfladehesa.es/wp-content/uploads/2024/12/DJI_0279-scaled.jpg",
+      "name": "Uno de los hoyos más difíciles del campo"
+    },
+    {
+      "n": 18,
+      "file": "18.webp",
+      "source": "https://www.golfladehesa.es/wp-content/uploads/2024/12/DJI_0285-scaled.jpg",
+      "name": "El final de vuelta magistral"
+    }
+  ]
+}
