@@ -289,8 +289,9 @@
   .card-elevated { background: var(--surface); box-shadow: none; border: 1px solid var(--border); }
 
   .topnav { display: flex; align-items: center; gap: 12px; padding: 4px var(--pad-x) 8px; min-height: 44px; }
-  .topnav .title { flex: 1; font-size: 17px; font-weight: 600; letter-spacing: -0.2px; text-align: center; margin-right: 44px; }
+  .topnav .title { flex: 1; font-size: 17px; font-weight: 600; letter-spacing: -0.2px; text-align: center; }
   .topnav.no-back .title { margin-right: 0; }
+  .topnav > .btn-icon { flex-shrink: 0; width: 40px; }
 
   .tabbar {
     display: flex; align-items: stretch; justify-content: space-around;
@@ -896,11 +897,63 @@
   .sc-eagle { background: rgba(52,199,89,0.28); border-radius: 6px; color: #248A3D; }
   .sc-bogey { outline: 1.5px solid rgba(255,59,48,0.55); border-radius: 4px; }
   .sc-dbl { outline: 1.5px solid rgba(255,59,48,0.55); box-shadow: inset 0 0 0 2px rgba(255,59,48,0.25); border-radius: 4px; }
+  /* Marcas profesionales (tarjeta neta): círculo = bajo par · cuadrado = sobre par */
+  .sc-mark {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 26px; height: 26px; font-weight: 700; font-size: 14px;
+    font-variant-numeric: tabular-nums; line-height: 1; margin: 0 auto;
+  }
+  .sc-mark.circle {
+    border: 1.75px solid #1B7A3E; border-radius: 50%; color: #1B7A3E;
+  }
+  .sc-mark.circle.eagle {
+    box-shadow: inset 0 0 0 1.5px #1B7A3E;
+  }
+  .sc-mark.square {
+    border: 1.75px solid #C0392B; border-radius: 3px; color: #C0392B;
+  }
+  .sc-mark.square.dbl {
+    box-shadow: inset 0 0 0 1.5px #C0392B;
+  }
+  .sc-sf {
+    display: block; font-size: 9px; font-weight: 600; color: var(--brand-brass);
+    line-height: 1; margin-top: 1px;
+  }
+  .sc-card-tabs { display: flex; gap: 8px; padding: 0; flex-shrink: 0; margin-bottom: 4px; }
+  .sc-card-tabs .chip { flex: 1; justify-content: center; height: 34px; }
   .sc-totals { background: rgba(26,26,24,0.04); }
   .sc-totals td { font-weight: 600; color: var(--ink); border-bottom: none; }
   .sc-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; font-size: 11px; color: var(--ink-secondary); }
   .sc-legend span { display: inline-flex; align-items: center; gap: 5px; }
   .leg { width: 14px; height: 14px; border-radius: 4px; }
+  .leg-circle { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid #1B7A3E; box-sizing: border-box; }
+  .leg-square { width: 12px; height: 12px; border-radius: 2px; border: 1.5px solid #C0392B; box-sizing: border-box; }
+
+  .aj-section { margin-bottom: 16px; }
+  .aj-section h3 {
+    font-size: 13px; font-weight: 700; letter-spacing: 0.04em;
+    text-transform: uppercase; color: var(--ink-secondary); margin: 0 0 8px;
+  }
+  .aj-player {
+    background: var(--bg-paper-elevated); border: 1px solid var(--border-paper);
+    border-radius: var(--r-lg); padding: 12px; margin-bottom: 10px;
+  }
+  .aj-player.wd { opacity: 0.55; }
+  .aj-player .aj-row { display: flex; gap: 8px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
+  .aj-player input[type="text"], .aj-player input[type="number"] {
+    flex: 1; min-width: 0; height: 40px; border-radius: 10px;
+    border: 1px solid var(--border-paper); background: #fff;
+    padding: 0 12px; font: inherit; font-size: 15px; color: var(--ink);
+  }
+  .aj-player .aj-label { font-size: 11px; color: var(--ink-secondary); width: 100%; margin-bottom: -4px; }
+  .aj-player .aj-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .aj-player .aj-actions .btn { flex: 1; min-width: 120px; height: 40px; font-size: 13px; }
+  .ball-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11px; font-weight: 600; color: var(--ink-secondary);
+    margin-top: 2px;
+  }
+  .ball-chip::before { content: "●"; font-size: 8px; color: var(--brand-brass); }
 
   .lb-tabs { display: flex; gap: 4px; padding: 0 var(--pad-x) 8px; }
   .lb-tab {
@@ -1564,6 +1617,7 @@
                 <span class="badge badge-tier">tier: score</span>
               </div>
               <button class="btn btn-ghost" data-continue-hole onclick="go('hole')">Continuar · Hoyo 1</button>
+              <button class="btn btn-ghost" data-round-ajustes onclick="go('ajustes')" style="display:none">Ajustes de la partida</button>
               <button class="btn btn-ghost" data-finish-round onclick="finishRoundEarly()" style="display:none">Cerrar ronda</button>
               <div class="stat-row">
                 <div class="stat-pill"><div class="v" id="homeToPar">—</div><div class="l">Al par</div></div>
@@ -1574,9 +1628,9 @@
           </div>
           <div class="section-label"><h2>Accesos</h2></div>
           <div class="quick-grid">
-            <button class="quick-tile" onclick="go('scorecard')"><div class="ico" aria-hidden="true">▦</div><div class="t">Tarjeta</div><div class="d">Scorecard</div></button>
+            <button class="quick-tile" onclick="go('scorecard')"><div class="ico" aria-hidden="true">▦</div><div class="t">Tarjeta</div><div class="d">Bruta · Neta</div></button>
             <button class="quick-tile" onclick="go('leader')"><div class="ico" aria-hidden="true">◆</div><div class="t">Clasif.</div><div class="d">Stroke · Social</div></button>
-            <button class="quick-tile" onclick="go('perfil')"><div class="ico" aria-hidden="true">◎</div><div class="t">Perfil</div><div class="d">Historial</div></button>
+            <button class="quick-tile" onclick="go('historial')"><div class="ico" aria-hidden="true">◎</div><div class="t">Vueltas</div><div class="d">Ver · editar</div></button>
             <button class="quick-tile" onclick="go('lobby')"><div class="ico" aria-hidden="true">☰</div><div class="t">Lobby</div><div class="d">Flight</div></button>
           </div>
         </div>
@@ -1620,6 +1674,7 @@
         <div class="topnav">
           <button class="btn-icon" onclick="go('home')" aria-label="Inicio">‹</button>
           <div class="title"><span class="title-mark" aria-hidden="true">○</span> Marcador</div>
+          <button class="btn-icon" onclick="go('ajustes')" aria-label="Ajustes de la partida" title="Ajustes" style="font-size:18px;">⚙</button>
         </div>
         <div class="hole-header">
           <div class="hole-meta">
@@ -1723,6 +1778,10 @@
             <a id="scCallCaddie" href="tel:+34918905111"><span class="call-mark" aria-hidden="true"></span>Caddie master</a>
             <a id="scCallRest" href="tel:+34918905630"><span class="call-mark" aria-hidden="true"></span>Restaurante</a>
           </div>
+          <div class="sc-card-tabs" id="scCardTabs">
+            <button type="button" class="chip selected" data-card="gross" onclick="setScCard('gross')">Bruta</button>
+            <button type="button" class="chip" data-card="net" onclick="setScCard('net')">Neta</button>
+          </div>
           <div class="sc-nine-tabs" id="scNineTabs">
             <button type="button" class="chip selected" data-nine="out" onclick="setScNine('out')">F9 · Ida</button>
             <button type="button" class="chip" data-nine="in" onclick="setScNine('in')">B9 · Vuelta</button>
@@ -1736,7 +1795,7 @@
                 <tbody id="scoreBody"></tbody>
               </table>
             </div>
-            <div class="sc-legend" style="margin-top:6px;">
+            <div class="sc-legend" id="scLegend" style="margin-top:6px;">
               <span><i class="leg sc-eagle" style="display:inline-block;"></i> Eagle+</span>
               <span><i class="leg sc-birdie" style="display:inline-block;"></i> Birdie</span>
               <span><i class="leg" style="display:inline-block;outline:1.5px solid rgba(139,58,47,0.55);border-radius:4px;"></i> Bogey+</span>
@@ -1802,7 +1861,7 @@
       <!-- HISTORIAL -->
       <section id="screen-historial" class="screen theme-paper">
         <div class="topnav">
-          <button class="btn-icon" onclick="go('perfil')" aria-label="Atrás">‹</button>
+          <button class="btn-icon" onclick="go('home')" aria-label="Atrás">‹</button>
           <div class="title">Mis vueltas</div>
         </div>
         <div class="scroll" id="historialBody"></div>
@@ -1815,6 +1874,19 @@
           <div class="title">Detalle</div>
         </div>
         <div class="scroll" id="detalleBody"></div>
+      </section>
+
+      <!-- AJUSTES DE PARTIDA -->
+      <section id="screen-ajustes" class="screen theme-paper">
+        <div class="topnav">
+          <button class="btn-icon" onclick="go('hole')" aria-label="Atrás">‹</button>
+          <div class="title">Ajustes de la partida</div>
+        </div>
+        <div class="scroll" id="ajustesBody"></div>
+        <div class="setup-footer">
+          <button class="btn btn-ghost" onclick="go('hole')">Volver al hoyo</button>
+          <button class="btn btn-primary" onclick="go('scorecard')">Ver tarjeta</button>
+        </div>
       </section>
 
       <!-- STATS -->
@@ -1885,7 +1957,8 @@ let CLUB = (COURSES.find(c => c.id === "la-herreria") || COURSES[0] || {name:"Fa
 let PLAYERS = [{
   id: "p1", rp: "rp-host", name: "", short: "", initials: "?",
   hcp: null, ph: null, ch: null, avatar: "", guest: false, scores: {}, putts: {}, fir: {}, gir: {},
-  totalsGross: null, totalsPutts: null, creativePts: 0, creativeLog: []
+  totalsGross: null, totalsPutts: null, creativePts: 0, creativeLog: [],
+  ball: "", withdrawn: false
 }];
 let HOLES = FX.holes.map(h => ({ n: h.n, par: h.par, m: h.m, hcp: h.hcp }));
 
@@ -1926,6 +1999,8 @@ let state = {
   inviteTab: "code",
   statsPeriod: "last_10",
   scNine: "out",
+  scCard: "gross",
+  editingRoundId: null,
   flashPlayer: false,
   guestDraftHcp: 18.0,
   deletedRounds: {},
@@ -2093,6 +2168,7 @@ function go(name) {
   if (name === "detalle") renderDetalle();
   if (name === "stats") renderStats();
   if (name === "close") renderClose();
+  if (name === "ajustes") renderAjustes();
   updateNetBadge();
   updateHomeThru();
 }
@@ -2154,6 +2230,9 @@ function updateHomeThru() {
   document.querySelectorAll("[data-finish-round]").forEach(btn => {
     btn.style.display = live ? "" : "none";
   });
+  document.querySelectorAll("[data-round-ajustes]").forEach(btn => {
+    btn.style.display = live ? "" : "none";
+  });
   // Card always on Home; Continuar/Cerrar only when live
   const roundCard = document.querySelector("#screen-home .round-card");
   if (roundCard) {
@@ -2167,6 +2246,11 @@ function updateNetBadge() {
 }
 
 function activePlayers() {
+  return PLAYERS.filter((p, i) => state.setup.players[i] && !p.withdrawn);
+}
+
+function scoringPlayers() {
+  // Incluye retirados para historial/tarjeta completa si se necesita
   return PLAYERS.filter((_, i) => state.setup.players[i]);
 }
 
@@ -2406,6 +2490,8 @@ function snapshotPlayers() {
   return PLAYERS.map(p => ({
     id: p.id, name: p.name, short: p.short, initials: p.initials,
     hcp: p.hcp, ch: p.ch, ph: p.ph, guest: !!p.guest,
+    ball: (p.ball || "").toString().slice(0, 48),
+    withdrawn: !!p.withdrawn,
     scores: Object.assign({}, p.scores),
     putts: Object.assign({}, p.putts),
     fir: Object.assign({}, p.fir || {}),
@@ -2426,6 +2512,8 @@ function persistActiveRound() {
       activePlayer: state.activePlayer,
       dataTier: state.dataTier,
       scNine: state.scNine,
+      scCard: state.scCard || "gross",
+      editingRoundId: state.editingRoundId || null,
       setup: JSON.parse(JSON.stringify(state.setup)),
       club: typeof CLUB !== "undefined" ? CLUB : (course && course.name),
       players: snapshotPlayers(),
@@ -2455,12 +2543,16 @@ function endActiveRoundMemory() {
   });
   state.hole = 1;
   state.activePlayer = 0;
+  state.editingRoundId = null;
   try {
     document.querySelectorAll("[data-continue-hole]").forEach(btn => {
       btn.style.display = "none";
       btn.textContent = "Continuar · Hoyo 1";
     });
     document.querySelectorAll("[data-finish-round]").forEach(btn => {
+      btn.style.display = "none";
+    });
+    document.querySelectorAll("[data-round-ajustes]").forEach(btn => {
       btn.style.display = "none";
     });
     const card = document.querySelector("#screen-home .round-card");
@@ -2483,6 +2575,8 @@ function restoreActiveRound() {
     state.activePlayer = data.activePlayer || 0;
     state.dataTier = data.dataTier || "score";
     state.scNine = data.scNine || "out";
+    state.scCard = data.scCard === "net" ? "net" : "gross";
+    state.editingRoundId = data.editingRoundId || null;
     // Rebuild PLAYERS from snapshot
     PLAYERS.length = 0;
     data.players.forEach(p => {
@@ -2491,6 +2585,8 @@ function restoreActiveRound() {
         short: p.short || (p.name || "?").slice(0, 3),
         initials: p.initials || (p.name || "?").slice(0, 2).toUpperCase(),
         hcp: p.hcp, ch: p.ch, ph: p.ph, guest: !!p.guest,
+        ball: (p.ball || "").toString(),
+        withdrawn: !!p.withdrawn,
         avatar: "", scores: p.scores || {}, putts: p.putts || {},
         fir: p.fir || {}, gir: p.gir || {},
         totalsGross: (p.totalsGross != null ? Number(p.totalsGross) : null),
@@ -2592,16 +2688,35 @@ function persistCompletedRound() {
     return state._roundSaved;
   }
   const { rows } = liveStandings();
-  const any = rows.some(r => r.thru > 0);
+  const any = rows.some(r => r.thru > 0) || PLAYERS.some(p =>
+    Object.keys(p.scores || {}).length || p.totalsGross != null
+  );
   if (!any) {
     endActiveRoundMemory();
+    state.editingRoundId = null;
     return null;
   }
   const rec = buildRoundRecord();
   const list = loadRounds();
+  if (state.editingRoundId) {
+    const idx = list.findIndex(r => r.id === state.editingRoundId);
+    if (idx >= 0) {
+      const prev = list[idx];
+      rec.id = prev.id;
+      rec.dateISO = prev.dateISO || rec.dateISO;
+      rec.date = prev.date || rec.date;
+      list[idx] = rec;
+      saveRounds(list.slice(0, 50));
+      state._roundSaved = rec.id;
+      state.editingRoundId = null;
+      endActiveRoundMemory();
+      return rec.id;
+    }
+  }
   list.unshift(rec);
   saveRounds(list.slice(0, 50));
   state._roundSaved = rec.id;
+  state.editingRoundId = null;
   endActiveRoundMemory();
   return rec.id;
 }
@@ -2611,6 +2726,92 @@ function getRoundById(id) {
 function deleteSavedRound(id) {
   saveRounds(loadRounds().filter(r => r.id !== id));
   state.deletedRounds[id] = true;
+}
+
+/** Carga una vuelta del historial para ver/editar la tarjeta y el marcador */
+function reopenRound(id, dest) {
+  const d = getRoundById(id);
+  if (!d || !d.players || !d.players.length) {
+    showToast("Sin partida", true);
+    return false;
+  }
+  if (isRoundInProgress() && state.editingRoundId !== id) {
+    showToast("Cierra antes la partida en curso", true);
+    return false;
+  }
+  state._roundSaved = null;
+  state.editingRoundId = id;
+  state.setup = Object.assign({}, state.setup, {
+    courseId: d.courseId || state.setup.courseId,
+    tee: d.tee || state.setup.tee,
+    holes: d.holes || state.setup.holes || 18,
+    modalities: Array.isArray(d.modalities) ? d.modalities.slice() : (state.setup.modalities || []).slice(),
+    creative: d.creative ? JSON.parse(JSON.stringify(d.creative)) : state.setup.creative
+  });
+  if (d.courseId) {
+    const course = COURSES.find(c => c.id === d.courseId);
+    if (course) applyCourseData(course, d.tee || state.setup.tee, false);
+  }
+  PLAYERS.length = 0;
+  d.players.forEach(p => {
+    PLAYERS.push({
+      id: p.id || ("p" + Date.now() + Math.random().toString(16).slice(2, 6)),
+      rp: "rp-" + (p.id || "x"),
+      name: p.name || "Jugador",
+      short: p.short || (p.name || "?").slice(0, 3),
+      initials: p.initials || guestInitials(p.name || "?"),
+      hcp: p.hcp, ch: p.ch, ph: p.ph, guest: !!p.guest,
+      ball: (p.ball || "").toString(),
+      withdrawn: !!p.withdrawn,
+      avatar: "",
+      scores: Object.assign({}, p.scores || {}),
+      putts: Object.assign({}, p.putts || {}),
+      fir: Object.assign({}, p.fir || {}),
+      gir: Object.assign({}, p.gir || {}),
+      totalsGross: (p.totalsGross != null ? Number(p.totalsGross) : null),
+      totalsPutts: (p.totalsPutts != null ? Number(p.totalsPutts) : null),
+      creativePts: Number(p.creativePts) || 0,
+      creativeLog: Array.isArray(p.creativeLog) ? p.creativeLog.slice() : []
+    });
+  });
+  state.setup.players = PLAYERS.map(() => true);
+  state.hole = 1;
+  for (let i = (state.setup.holes || 18); i >= 1; i--) {
+    if (PLAYERS.some(p => p.scores && p.scores[i] != null)) { state.hole = i; break; }
+  }
+  state.activePlayer = 0;
+  state.scNine = state.hole > 9 ? "in" : "out";
+  if (typeof refreshPlayerHandicaps === "function") refreshPlayerHandicaps();
+  if (typeof updateClubCalls === "function") updateClubCalls();
+  persistActiveRound();
+  updateHomeThru();
+  showToast("Partida cargada · puedes editar");
+  go(dest === "scorecard" ? "scorecard" : "hole");
+  return true;
+}
+
+function saveEditingRoundDraft() {
+  if (!state.editingRoundId) {
+    persistActiveRound();
+    showToast("Progreso guardado");
+    return;
+  }
+  const list = loadRounds();
+  const idx = list.findIndex(r => r.id === state.editingRoundId);
+  if (idx < 0) {
+    persistActiveRound();
+    showToast("Progreso guardado");
+    return;
+  }
+  const rec = buildRoundRecord();
+  const prev = list[idx];
+  rec.id = prev.id;
+  rec.dateISO = prev.dateISO || rec.dateISO;
+  rec.date = prev.date || rec.date;
+  list[idx] = rec;
+  saveRounds(list);
+  persistActiveRound();
+  showToast("Cambios guardados en el historial");
 }
 
 
@@ -2643,7 +2844,8 @@ function addFromRoster(id) {
     id: row.id, rp: "rp-" + row.id, name: row.name,
     short: row.short || row.name.slice(0, 3), initials: row.initials || guestInitials(row.name),
     hcp: h, ph: Math.round(h), ch: Math.round(h),
-    avatar: "", guest: true, scores: {}, putts: {}, fir: {}, gir: {}, totalsGross: null, totalsPutts: null, creativePts: 0, creativeLog: []
+    avatar: "", guest: true, ball: "", withdrawn: false,
+    scores: {}, putts: {}, fir: {}, gir: {}, totalsGross: null, totalsPutts: null, creativePts: 0, creativeLog: []
   });
   state.setup.players.push(true);
   showToast("Añadido", true);
@@ -2653,24 +2855,35 @@ function addFromRoster(id) {
 
 function addGuestPlayer() {
   const input = document.getElementById("guestNameInput");
+  const ballInput = document.getElementById("guestBallInput");
   const name = (input && input.value || "").trim();
   if (!name) { showToast("Pon un nombre", true); return; }
   if (PLAYERS.length >= 8) { showToast("Máx. 8 jugadores", true); return; }
   const h = Number(state.guestDraftHcp) || 18;
+  const ball = (ballInput && ballInput.value || "").trim().slice(0, 48);
   const id = "g" + Date.now();
   PLAYERS.push({
     id, rp: "rp-guest-" + id, name,
     short: name.slice(0, 3), initials: guestInitials(name),
     hcp: h, ph: Math.round(h), ch: Math.round(h),
-    avatar: "", guest: true, scores: {}, putts: {}, fir: {}, gir: {}, totalsGross: null, totalsPutts: null, creativePts: 0, creativeLog: []
+    avatar: "", guest: true, ball, withdrawn: false,
+    scores: {}, putts: {}, fir: {}, gir: {}, totalsGross: null, totalsPutts: null, creativePts: 0, creativeLog: []
   });
   state.setup.players.push(true);
   if (input) input.value = "";
+  if (ballInput) ballInput.value = "";
   state.guestDraftHcp = 18.0;
   upsertRosterPlayer(name, h);
   showToast("Jugador guardado", true);
   refreshPlayerHandicaps();
   renderSetup();
+}
+
+function setPlayerBall(i, raw) {
+  const p = PLAYERS[i];
+  if (!p) return;
+  p.ball = String(raw || "").trim().slice(0, 48);
+  if (typeof persistActiveRound === "function" && isRoundInProgress()) persistActiveRound();
 }
 
 function adjPlayerHcp(i, delta) {
@@ -2723,6 +2936,7 @@ function fmtHcp(h) {
 
 function setupStart() {
   state._roundSaved = null;
+  state.editingRoundId = null;
   clearActiveRound();
   try { localStorage.removeItem(ACTIVE_KEY); } catch (e) {}
   state.setupStep = 0;
@@ -2779,9 +2993,9 @@ function renderSetup() {
     html = `<p class="muted mb-8">Quién juega hoy</p>
       <p class="micro mb-16">Misma tarjeta · captura A o B · HI en pasos de 0,1</p>` +
       PLAYERS.map((p, i) => `
-        <div class="player-row">
+        <div class="player-row" style="flex-wrap:wrap;">
           <div class="avatar ${p.avatar||""}">${p.initials}</div>
-          <div class="name">${p.name}</div>
+          <div class="name">${p.name}${p.ball ? `<div class="micro" style="font-weight:500;">● ${(p.ball||"").replace(/</g,"&lt;")}</div>` : ""}</div>
           <div class="hcp-step" aria-label="Hándicap">
             <button type="button" aria-label="Bajar hándicap" onclick="adjPlayerHcp(${i}, -0.1)">−</button>
             <input class="val hcp-input" type="text" inputmode="decimal" enterkeyhint="done"
@@ -2792,6 +3006,10 @@ function renderSetup() {
             <button type="button" aria-label="Subir hándicap" onclick="adjPlayerHcp(${i}, 0.1)">+</button>
           </div>
           <button class="toggle ${state.setup.players[i]?"on":""}" aria-label="Incluir" onclick="state.setup.players[${i}]=!state.setup.players[${i}];renderSetup()"></button>
+          <input type="text" placeholder="Bola · marca · nº · color" maxlength="48"
+            value="${(p.ball||"").replace(/"/g,"&quot;")}"
+            style="flex:1 1 100%;height:36px;margin-top:6px;border-radius:8px;border:1px solid var(--separator);padding:0 10px;font:inherit;font-size:13px;"
+            onchange="setPlayerBall(${i}, this.value)" onblur="setPlayerBall(${i}, this.value)" />
         </div>`).join("") +
       `<div class="write-mode mt-16">
         <button class="option ${state.setup.writeMode==='single_device'?'selected':''}" type="button" onclick="state.setup.writeMode='single_device';renderSetup()">
@@ -2806,7 +3024,7 @@ function renderSetup() {
       <div class="saved-roster" id="savedRoster"></div>
       <div class="guest-add">
         <div class="ga-title">Añadir invitado</div>
-        <p class="micro">Sin app · solo nombre y hándicap</p>
+        <p class="micro">Sin app · nombre, hándicap y bola</p>
         <div class="ga-row">
           <input id="guestNameInput" type="text" placeholder="Nombre" maxlength="24" autocomplete="off" />
           <div class="ga-hcp" aria-label="Hándicap invitado">
@@ -2819,6 +3037,8 @@ function renderSetup() {
             <button type="button" onclick="adjGuestDraftHcp(0.1)">+</button>
           </div>
         </div>
+        <input id="guestBallInput" type="text" placeholder="Bola · ej. Titleist Pro V1 · 3 · rojo" maxlength="48" autocomplete="off"
+          style="width:100%;height:40px;margin-top:8px;border-radius:10px;border:1px solid var(--separator);padding:0 12px;font:inherit;font-size:14px;" />
         <button class="btn btn-primary mt-12" type="button" onclick="addGuestPlayer()" style="width:100%;">Añadir a la partida</button>
       </div>
       <button class="btn btn-ghost mt-16" onclick="go('lobby')">Abrir lobby · código H3RR4Y</button>`;
@@ -3308,6 +3528,13 @@ function toggleMod(id) {
       loadCreativeDraft();
     }
   }
+  if (state.screen === "ajustes") {
+    persistActiveRound();
+    if (state.editingRoundId) saveEditingRoundDraft();
+    else persistActiveRound();
+    renderAjustes();
+    return;
+  }
   renderSetup();
 }
 
@@ -3329,10 +3556,16 @@ function setupNext() {
     state.hole = 1;
     state.activePlayer = 0;
     refreshPlayerHandicaps();
-    PLAYERS.forEach(p => { p.scores = {}; p.putts = {}; p.fir = {}; p.gir = {}; p.totalsGross = null; p.totalsPutts = null; p.creativePts = 0; p.creativeLog = []; });
+    PLAYERS.forEach(p => {
+      p.scores = {}; p.putts = {}; p.fir = {}; p.gir = {};
+      p.totalsGross = null; p.totalsPutts = null;
+      p.creativePts = 0; p.creativeLog = [];
+      p.withdrawn = false;
+    });
     state.hole = 1;
     state.activePlayer = 0;
     state._roundSaved = null;
+    state.editingRoundId = null;
     persistActiveRound();
     go("hole");
   }
@@ -3665,6 +3898,9 @@ function renderHole(opts) {
       : "";
     const subLine = hasScore ? `${netLabel} · CH ${ch}` : `CH ${ch}`;
     const scoreOnChip = hasScore && scoreChips.includes(score);
+    const ballLine = (p.ball || "").trim()
+      ? `<div class="ball-chip">${(p.ball || "").replace(/</g, "&lt;")}</div>`
+      : "";
     return `
       <div class="player-card ${active} ${flash}" data-idx="${idx}" onclick="selectPlayer(${idx})">
         <div class="pc-head">
@@ -3672,6 +3908,7 @@ function renderHole(opts) {
           <div class="pc-id">
             <div class="name">${p.name}${strokeHint}</div>
             <div class="micro">${subLine}</div>
+            ${ballLine}
           </div>
         </div>
         <div class="entry-section golpes" onclick="event.stopPropagation()">
@@ -4015,6 +4252,14 @@ function updateClubCalls() {
   }
 }
 
+function setScCard(mode) {
+  state.scCard = mode === "net" ? "net" : "gross";
+  document.querySelectorAll("#scCardTabs .chip").forEach(c => {
+    c.classList.toggle("selected", c.dataset.card === state.scCard);
+  });
+  renderScorecard();
+}
+
 function renderScorecard() {
   refreshPlayerHandicaps();
   updateClubCalls();
@@ -4028,8 +4273,13 @@ function renderScorecard() {
   if (badge) badge.textContent = (course && course.official) ? "OFICIAL" : "FICTICIO";
   const maxH = state.setup.holes || 18;
   const nine = state.scNine || "out";
+  const cardMode = state.scCard || "gross";
   const startH = nine === "in" ? 10 : 1;
   const endH = nine === "in" ? maxH : Math.min(9, maxH);
+
+  document.querySelectorAll("#scCardTabs .chip").forEach(c => {
+    c.classList.toggle("selected", c.dataset.card === cardMode);
+  });
 
   const thead = document.querySelector("#scoreTable thead tr");
   if (thead) {
@@ -4042,6 +4292,7 @@ function renderScorecard() {
   let rows = "";
   let parNine = 0;
   const totalsNine = list.map(() => 0);
+  const netsNine = list.map(() => 0);
 
   for (let n = startH; n <= endH; n++) {
     const h = HOLES[n - 1];
@@ -4051,22 +4302,38 @@ function renderScorecard() {
     rows += `<tr${cur?' style="outline:1.5px solid var(--brand-brass);outline-offset:-1px;"':''}><td class="hole-label">${h.n}<span class="ch-mini">SI ${h.hcp}</span></td><td>${h.par}</td>`;
     list.forEach((p, pi) => {
       const s = p.scores[h.n];
+      const ch = Number(p.ch != null ? p.ch : p.ph) || courseHandicapFor(p);
+      const recv = strokesOnHole(ch, h.hcp);
       if (s != null) {
         totalsNine[pi] += s;
-        const diff = s - h.par;
-        let cls = "score-cell";
-        if (diff <= -2) cls += " sc-eagle";
-        else if (diff === -1) cls += " sc-birdie";
-        else if (diff === 1) cls += " sc-bogey";
-        else if (diff >= 2) cls += " sc-dbl";
-        const recv = strokesOnHole(Number(p.ch != null ? p.ch : p.ph) || courseHandicapFor(p), h.hcp);
-                 const mark = recv ? `<span class="sc-stroke">${"·".repeat(Math.min(recv,3))}</span>` : "";
-                 rows += `<td class="${cls}">${s}${mark}</td>`;
+        const net = s - recv;
+        netsNine[pi] += net;
+        if (cardMode === "net") {
+          const diff = net - h.par;
+          let mark = String(net);
+          if (diff <= -2) mark = `<span class="sc-mark circle eagle">${net}</span>`;
+          else if (diff === -1) mark = `<span class="sc-mark circle">${net}</span>`;
+          else if (diff === 1) mark = `<span class="sc-mark square">${net}</span>`;
+          else if (diff >= 2) mark = `<span class="sc-mark square dbl">${net}</span>`;
+          rows += `<td class="score-cell">${mark}</td>`;
+        } else {
+          const diff = s - h.par;
+          let cls = "score-cell";
+          if (diff <= -2) cls += " sc-eagle";
+          else if (diff === -1) cls += " sc-birdie";
+          else if (diff === 1) cls += " sc-bogey";
+          else if (diff >= 2) cls += " sc-dbl";
+          const strokeMark = recv ? `<span class="sc-stroke">${"·".repeat(Math.min(recv, 3))}</span>` : "";
+          const sf = recv > 0 ? stablefordHole(s, h.par, recv) : null;
+          const sfMark = (sf != null) ? `<span class="sc-sf">${sf} pts</span>` : "";
+          rows += `<td class="${cls}">${s}${strokeMark}${sfMark}</td>`;
+        }
       } else {
-        const recv0 = strokesOnHole(Number(p.ch != null ? p.ch : p.ph) || courseHandicapFor(p), h.hcp);
-        rows += recv0
-          ? `<td class="score-cell sc-pending"><span class="sc-stroke">${"·".repeat(Math.min(recv0,3))}</span></td>`
-          : `<td class="score-cell">·</td>`;
+        if (cardMode === "gross" && recv) {
+          rows += `<td class="score-cell sc-pending"><span class="sc-stroke">${"·".repeat(Math.min(recv, 3))}</span></td>`;
+        } else {
+          rows += `<td class="score-cell">·</td>`;
+        }
       }
     });
     rows += `</tr>`;
@@ -4074,22 +4341,57 @@ function renderScorecard() {
 
   const label = nine === "in" ? "IN" : "OUT";
   rows += `<tr class="sc-totals"><td class="hole-label">${label}</td><td>${parNine}</td>`;
-  totalsNine.forEach(t => { rows += `<td>${t || "—"}</td>`; });
+  if (cardMode === "net") {
+    netsNine.forEach(t => { rows += `<td>${t || "—"}</td>`; });
+  } else {
+    totalsNine.forEach(t => { rows += `<td>${t || "—"}</td>`; });
+  }
   rows += `</tr>`;
 
   let parAll = 0;
   const totAll = list.map(() => 0);
+  const netAll = list.map(() => 0);
   for (let i = 0; i < maxH; i++) {
     if (HOLES[i]) parAll += HOLES[i].par;
-    list.forEach((p, pi) => { if (p.scores[i+1] != null) totAll[pi] += p.scores[i+1]; });
+    list.forEach((p, pi) => {
+      const s = p.scores[i + 1];
+      if (s != null) {
+        totAll[pi] += s;
+        const ch = Number(p.ch != null ? p.ch : p.ph) || courseHandicapFor(p);
+        netAll[pi] += s - strokesOnHole(ch, HOLES[i].hcp);
+      }
+    });
   }
   list.forEach((p, pi) => {
     if (!totAll[pi] && p.totalsGross != null) totAll[pi] = Number(p.totalsGross) || 0;
   });
   rows += `<tr class="sc-totals"><td class="hole-label">TOT</td><td>${parAll}</td>`;
-  totAll.forEach(t => { rows += `<td>${t || "—"}</td>`; });
+  if (cardMode === "net") {
+    netAll.forEach(t => { rows += `<td>${t || "—"}</td>`; });
+  } else {
+    totAll.forEach(t => { rows += `<td>${t || "—"}</td>`; });
+  }
   rows += `</tr>`;
   body.innerHTML = rows;
+
+  const leg = document.getElementById("scLegend");
+  if (leg) {
+    if (cardMode === "net") {
+      leg.innerHTML = `
+        <span><i class="leg-circle" style="display:inline-block;box-shadow:inset 0 0 0 1px #1B7A3E;"></i> Eagle+</span>
+        <span><i class="leg-circle" style="display:inline-block;"></i> Birdie</span>
+        <span><i class="leg-square" style="display:inline-block;"></i> Bogey</span>
+        <span><i class="leg-square" style="display:inline-block;box-shadow:inset 0 0 0 1px #C0392B;"></i> Doble+</span>
+        <span>Golpe neto vs par</span>`;
+    } else {
+      leg.innerHTML = `
+        <span><i class="leg sc-eagle" style="display:inline-block;"></i> Eagle+</span>
+        <span><i class="leg sc-birdie" style="display:inline-block;"></i> Birdie</span>
+        <span><i class="leg" style="display:inline-block;outline:1.5px solid rgba(139,58,47,0.55);border-radius:4px;"></i> Bogey+</span>
+        <span>· = golpe de ventaja · pts Stableford en hoyos con golpe</span>`;
+    }
+  }
+
   let wa = document.getElementById("scWhatsApp");
   if (!wa) {
     wa = document.createElement("button");
@@ -4102,30 +4404,45 @@ function renderScorecard() {
     const fit = document.querySelector("#screen-scorecard .fit");
     if (fit) fit.appendChild(wa);
   }
-  const leg = document.querySelector("#screen-scorecard .sc-legend");
-  if (leg && !leg.dataset.strokeLeg) {
-    leg.dataset.strokeLeg = "1";
-    leg.innerHTML += ` <span>· = golpe de ventaja (SI ≤ CH)</span>`;
-  }
 
   const me = list[0] || PLAYERS[0];
   let migOut = 0, migIn = 0, parOut = 0, parIn = 0;
-  for (let k=1;k<=9;k++) {
-    if (HOLES[k-1]) parOut += HOLES[k-1].par;
-    if (me && me.scores[k]!=null) migOut += me.scores[k];
+  let netOut = 0, netIn = 0;
+  let parPlayedOut = 0, parPlayedIn = 0;
+  for (let k = 1; k <= 9; k++) {
+    if (HOLES[k - 1]) parOut += HOLES[k - 1].par;
+    if (me && me.scores[k] != null && HOLES[k - 1]) {
+      migOut += me.scores[k];
+      parPlayedOut += HOLES[k - 1].par;
+      const ch = Number(me.ch != null ? me.ch : me.ph) || courseHandicapFor(me);
+      netOut += me.scores[k] - strokesOnHole(ch, HOLES[k - 1].hcp);
+    }
   }
-  for (let k=10;k<=18;k++) {
-    if (HOLES[k-1]) parIn += HOLES[k-1].par;
-    if (me && me.scores[k]!=null) migIn += me.scores[k];
+  for (let k = 10; k <= 18; k++) {
+    if (HOLES[k - 1]) parIn += HOLES[k - 1].par;
+    if (me && me.scores[k] != null && HOLES[k - 1]) {
+      migIn += me.scores[k];
+      parPlayedIn += HOLES[k - 1].par;
+      const ch = Number(me.ch != null ? me.ch : me.ph) || courseHandicapFor(me);
+      netIn += me.scores[k] - strokesOnHole(ch, HOLES[k - 1].hcp);
+    }
   }
-  // Prefer manual totals for host summary when no hole marks
   let sumGross = migOut + migIn;
   if (!sumGross && me && me.totalsGross != null) sumGross = Number(me.totalsGross) || 0;
-  document.getElementById("scOut").textContent = migOut || (me && me.totalsGross != null ? "—" : "—");
-  document.getElementById("scIn").textContent = migIn || "—";
-  const gross = sumGross;
-  const d = gross - (parOut + parIn);
-  document.getElementById("scToPar").textContent = gross ? ((d>0?"+":"")+d) : "—";
+  const parPlayed = parPlayedOut + parPlayedIn;
+  if (cardMode === "net") {
+    document.getElementById("scOut").textContent = migOut ? String(netOut) : "—";
+    document.getElementById("scIn").textContent = migIn ? String(netIn) : "—";
+    const netTot = netOut + netIn;
+    const d = netTot - parPlayed;
+    document.getElementById("scToPar").textContent = parPlayed ? ((d > 0 ? "+" : "") + d) : "—";
+  } else {
+    document.getElementById("scOut").textContent = migOut || "—";
+    document.getElementById("scIn").textContent = migIn || "—";
+    const gross = sumGross;
+    const d = gross - parPlayed;
+    document.getElementById("scToPar").textContent = parPlayed ? ((d > 0 ? "+" : "") + d) : "—";
+  }
   if (typeof renderTotalsEntry === "function") renderTotalsEntry();
 }
 
@@ -4890,7 +5207,11 @@ function buildLivePodium() {
   if (has("Stableford") && sfW && sfW.thru)
     podium.push({ label: "Stableford", winner: sfW.name, detail: sfW.sf + " pts" });
   if (mods.includes("Putting King") && puttW && puttW.thru)
-    podium.push({ label: "Putting King", winner: puttW.name, detail: puttW.puttPts + " puntos" });
+    podium.push({
+      label: "Putting King",
+      winner: puttW.name,
+      detail: puttW.puttPts + " pts · " + (puttW.puttsTotal != null ? puttW.puttsTotal + " putts" : "sin putts")
+    });
   if (mods.includes("Rey del Hoyo") && reyW && reyW.thru)
     podium.push({ label: "Rey del Hoyo", winner: reyW.name, detail: reyW.holeWins + " puntos" });
   if (mods.includes("Birdie Hunt") && birdW && birdW.thru)
@@ -5310,10 +5631,16 @@ function collectFairwayBackup() {
     const players = (r.players || []).map(p => ({
       id: p.id, name: p.name, short: p.short, initials: p.initials,
       hcp: p.hcp, ch: p.ch, ph: p.ph, guest: !!p.guest,
+      ball: (p.ball || "").toString(),
+      withdrawn: !!p.withdrawn,
       scores: Object.assign({}, p.scores || {}),
       putts: Object.assign({}, p.putts || {}),
       fir: Object.assign({}, p.fir || {}),
-      gir: Object.assign({}, p.gir || {})
+      gir: Object.assign({}, p.gir || {}),
+      totalsGross: (p.totalsGross != null ? Number(p.totalsGross) : null),
+      totalsPutts: (p.totalsPutts != null ? Number(p.totalsPutts) : null),
+      creativePts: Number(p.creativePts) || 0,
+      creativeLog: Array.isArray(p.creativeLog) ? p.creativeLog.slice() : []
     }));
     return Object.assign({}, r, { players: players });
   });
@@ -5321,7 +5648,7 @@ function collectFairwayBackup() {
     version: 2,
     app: "Fairway",
     updatedAt: new Date().toISOString(),
-    includes: ["rounds", "players.scores", "players.putts", "players.fir", "players.gir", "roster", "host", "activeRound", "winners", "standings"],
+    includes: ["rounds", "players.scores", "players.putts", "players.fir", "players.gir", "players.ball", "players.withdrawn", "roster", "host", "activeRound", "winners", "standings"],
     rounds: rounds,
     activeRound: active, // ronda en curso con scores/putts/fir/gir si existe
     roster: (typeof loadRoster === "function") ? loadRoster() : [],
@@ -5733,6 +6060,244 @@ function _perfilRecordsHtml() {
       <p class="micro">Mejor Stableford: ${bestSf.me.sf} pts · ${bestSf.club}</p>`;
 }
 
+/* —— Ajustes de partida (mid-round) —— */
+function renderAjustes() {
+  const body = document.getElementById("ajustesBody");
+  if (!body) return;
+  if (!isRoundInProgress() && !state.editingRoundId) {
+    // Allow if active storage exists even without scores yet
+    let hasStored = false;
+    try { hasStored = !!localStorage.getItem(ACTIVE_KEY); } catch (e) {}
+    if (!hasStored) {
+      body.innerHTML = `
+        <div class="card"><p class="muted">No hay partida en curso.</p>
+        <p class="micro mt-8">Empieza una ronda o abre una del historial para editar jugadores y modos.</p></div>
+        <button class="btn btn-ghost mt-16" onclick="go('historial')">Mis vueltas</button>
+        <button class="btn btn-primary mt-8" onclick="setupStart()">Nueva partida</button>`;
+      return;
+    }
+  }
+  refreshPlayerHandicaps();
+  const mods = state.setup.modalities || [];
+  const official = OFFICIAL_FORMATS.map(m => {
+    const on = mods.includes(m.id);
+    return `<button type="button" class="chip ${on ? "selected" : ""}" onclick="toggleMod('${m.id}')">${m.id}</button>`;
+  }).join("");
+  const social = SOCIAL_TEMPLATES.map(m => {
+    const on = mods.includes(m.id);
+    return `<button type="button" class="chip ${on ? "selected" : ""}" onclick="toggleMod('${m.id}')">${m.id}</button>`;
+  }).join("");
+
+  const playersHtml = PLAYERS.map((p, i) => {
+    const included = !!state.setup.players[i];
+    const wd = !!p.withdrawn;
+    const ch = Number(p.ch != null ? p.ch : p.ph) || courseHandicapFor(p);
+    return `
+      <div class="aj-player ${wd ? "wd" : ""}">
+        <div class="row" style="justify-content:space-between;align-items:center;">
+          <div>
+            <strong>${(p.name || "Jugador").replace(/</g, "&lt;")}</strong>
+            ${wd ? '<span class="badge badge-demo" style="margin-left:6px;">RETIRADO</span>' : ""}
+            ${!included ? '<span class="badge badge-demo" style="margin-left:6px;">FUERA</span>' : ""}
+          </div>
+          <span class="micro">CH ${ch}</span>
+        </div>
+        <div class="aj-label">Nombre</div>
+        <div class="aj-row">
+          <input type="text" value="${(p.name || "").replace(/"/g, "&quot;")}" maxlength="24"
+            onchange="ajSetName(${i}, this.value)" onkeydown="if(event.key==='Enter'){this.blur();}" />
+        </div>
+        <div class="aj-label">Handicap Index</div>
+        <div class="aj-row">
+          <button type="button" class="btn btn-ghost" style="width:44px;height:40px;padding:0;" onclick="ajAdjHcp(${i},-0.1)">−</button>
+          <input type="number" step="0.1" min="0" max="54" value="${fmtHcp(p.hcp)}"
+            onchange="ajSetHcp(${i}, this.value)" />
+          <button type="button" class="btn btn-ghost" style="width:44px;height:40px;padding:0;" onclick="ajAdjHcp(${i},0.1)">+</button>
+        </div>
+        <div class="aj-label">Bola (marca · nº · marca/color)</div>
+        <div class="aj-row">
+          <input type="text" placeholder="Ej. Titleist Pro V1 · 3 · rojo"
+            value="${(p.ball || "").replace(/"/g, "&quot;")}" maxlength="48"
+            onchange="ajSetBall(${i}, this.value)" onkeydown="if(event.key==='Enter'){this.blur();}" />
+        </div>
+        <div class="aj-actions">
+          ${wd
+            ? `<button type="button" class="btn btn-ghost" onclick="ajReinstate(${i})">Reincorporar</button>`
+            : `<button type="button" class="btn btn-ghost" onclick="ajWithdraw(${i})">Retirar jugador</button>`}
+          ${i > 0
+            ? `<button type="button" class="btn btn-ghost" style="color:var(--semantic-over);" onclick="ajRemove(${i})">Eliminar</button>`
+            : ""}
+        </div>
+      </div>`;
+  }).join("");
+
+  body.innerHTML = `
+    <div class="aj-section">
+      <h3>Jugadores</h3>
+      <p class="micro mb-8">Cambia nombre, HI, bola o retira a alguien sin crear una partida nueva.</p>
+      ${playersHtml}
+      <div class="card" style="padding:12px;">
+        <div class="aj-label">Añadir jugador</div>
+        <div class="aj-row">
+          <input type="text" id="ajGuestName" placeholder="Nombre" maxlength="24" />
+          <input type="number" id="ajGuestHcp" step="0.1" min="0" max="54" value="18.0" style="flex:0 0 72px;" title="HI" />
+        </div>
+        <div class="aj-label">Bola (opcional)</div>
+        <div class="aj-row">
+          <input type="text" id="ajGuestBall" placeholder="Marca · nº · color" maxlength="48" />
+        </div>
+        <button type="button" class="btn btn-primary mt-8" style="width:100%;" onclick="ajAddPlayer()">Añadir a la partida</button>
+      </div>
+    </div>
+    <div class="aj-section">
+      <h3>Modos de juego</h3>
+      <p class="micro mb-8">Puedes activar modos a mitad de vuelta (p. ej. desde el hoyo 8).</p>
+      <div class="chip-row mb-8" style="flex-wrap:wrap;">${official}</div>
+      <div class="chip-row" style="flex-wrap:wrap;">${social}</div>
+    </div>
+    <div class="aj-section">
+      <h3>Partida</h3>
+      ${state.editingRoundId
+        ? `<p class="micro mb-8">Editando una vuelta del historial. Los cambios se pueden guardar sin cerrarla.</p>
+           <button type="button" class="btn btn-primary" style="width:100%;" onclick="saveEditingRoundDraft()">Guardar cambios</button>`
+        : `<p class="micro mb-8">El progreso se guarda solo si cierras la app. Cierra la ronda cuando terminéis.</p>
+           <button type="button" class="btn btn-ghost" style="width:100%;" onclick="persistActiveRound();showToast('Progreso guardado');">Guardar ahora</button>`}
+      <button type="button" class="btn btn-ghost mt-8" style="width:100%;" onclick="finishRoundEarly()">Cerrar ronda</button>
+    </div>`;
+}
+
+function ajPersist() {
+  refreshPlayerHandicaps();
+  persistActiveRound();
+  if (state.editingRoundId) {
+    // silent draft update into history without toast spam
+    try {
+      const list = loadRounds();
+      const idx = list.findIndex(r => r.id === state.editingRoundId);
+      if (idx >= 0) {
+        const rec = buildRoundRecord();
+        const prev = list[idx];
+        rec.id = prev.id;
+        rec.dateISO = prev.dateISO || rec.dateISO;
+        rec.date = prev.date || rec.date;
+        list[idx] = rec;
+        saveRounds(list);
+      }
+    } catch (e) {}
+  }
+}
+
+function ajSetName(i, raw) {
+  const p = PLAYERS[i];
+  if (!p) return;
+  const name = String(raw || "").trim().slice(0, 24);
+  if (!name) { renderAjustes(); return; }
+  p.name = name;
+  p.short = name.slice(0, 3);
+  p.initials = guestInitials(name);
+  if (i === 0 && !p.guest && typeof applyHostName === "function") applyHostName(name, false);
+  else if (typeof upsertRosterPlayer === "function") upsertRosterPlayer(name, p.hcp);
+  ajPersist();
+  renderAjustes();
+}
+
+function ajSetHcp(i, raw) {
+  const p = PLAYERS[i];
+  if (!p) return;
+  const h = clampHcp(raw);
+  p.hcp = h;
+  p.ph = Math.round(h);
+  p.ch = Math.round(h);
+  if (i === 0 && !p.guest && typeof saveHostHcp === "function") saveHostHcp();
+  else if (typeof upsertRosterPlayer === "function") upsertRosterPlayer(p.name, h);
+  ajPersist();
+  renderAjustes();
+}
+
+function ajAdjHcp(i, delta) {
+  const p = PLAYERS[i];
+  if (!p) return;
+  ajSetHcp(i, (Number(p.hcp) || 0) + delta);
+}
+
+function ajSetBall(i, raw) {
+  const p = PLAYERS[i];
+  if (!p) return;
+  p.ball = String(raw || "").trim().slice(0, 48);
+  ajPersist();
+  renderAjustes();
+}
+
+function ajWithdraw(i) {
+  const p = PLAYERS[i];
+  if (!p) return;
+  const remaining = PLAYERS.filter((x, j) => j !== i && state.setup.players[j] && !x.withdrawn);
+  if (!remaining.length) {
+    showToast("Debe quedar al menos un jugador activo", true);
+    return;
+  }
+  p.withdrawn = true;
+  if (state.activePlayer >= activePlayers().length) state.activePlayer = 0;
+  ajPersist();
+  showToast((p.name || "Jugador") + " retirado");
+  renderAjustes();
+}
+
+function ajReinstate(i) {
+  const p = PLAYERS[i];
+  if (!p) return;
+  p.withdrawn = false;
+  state.setup.players[i] = true;
+  ajPersist();
+  showToast((p.name || "Jugador") + " de vuelta");
+  renderAjustes();
+}
+
+function ajRemove(i) {
+  if (i <= 0) { showToast("No se puede eliminar al anfitrión", true); return; }
+  const p = PLAYERS[i];
+  if (!p) return;
+  const remaining = PLAYERS.filter((x, j) => j !== i && state.setup.players[j] && !x.withdrawn);
+  if (!remaining.length) {
+    showToast("Debe quedar al menos un jugador activo", true);
+    return;
+  }
+  PLAYERS.splice(i, 1);
+  state.setup.players.splice(i, 1);
+  if (state.activePlayer >= activePlayers().length) state.activePlayer = 0;
+  ajPersist();
+  showToast("Jugador eliminado");
+  renderAjustes();
+}
+
+function ajAddPlayer() {
+  const nameEl = document.getElementById("ajGuestName");
+  const hcpEl = document.getElementById("ajGuestHcp");
+  const ballEl = document.getElementById("ajGuestBall");
+  const name = (nameEl && nameEl.value || "").trim();
+  if (!name) { showToast("Pon un nombre", true); return; }
+  if (PLAYERS.length >= 8) { showToast("Máx. 8 jugadores", true); return; }
+  if (PLAYERS.some(p => (p.name || "").toLowerCase() === name.toLowerCase())) {
+    showToast("Ya está en la partida", true); return;
+  }
+  const h = clampHcp(hcpEl ? hcpEl.value : 18);
+  const ball = (ballEl && ballEl.value || "").trim().slice(0, 48);
+  const id = "g" + Date.now();
+  PLAYERS.push({
+    id, rp: "rp-guest-" + id, name,
+    short: name.slice(0, 3), initials: guestInitials(name),
+    hcp: h, ph: Math.round(h), ch: Math.round(h),
+    avatar: "", guest: true, ball, withdrawn: false,
+    scores: {}, putts: {}, fir: {}, gir: {},
+    totalsGross: null, totalsPutts: null, creativePts: 0, creativeLog: []
+  });
+  state.setup.players.push(true);
+  if (typeof upsertRosterPlayer === "function") upsertRosterPlayer(name, h);
+  ajPersist();
+  showToast("Jugador añadido");
+  renderAjustes();
+}
+
 function renderHistorial() {
   const rounds = loadRounds().filter(r => !state.deletedRounds[r.id]);
   const chips = `<div class="period-chips chip-row mb-16">
@@ -5804,7 +6369,9 @@ function renderDetalle() {
   ).join("") + `<div class="winners-actions"><button type="button" class="placa-link" onclick="shareDetalleAllPlaques()">Compartir todas las placas</button></div>` : `<p class="muted" style="padding:12px 14px;">Sin ganadores</p>`;
   const players = (d.players || []).map(p => {
     const g = Object.keys(p.scores || {}).reduce((a, k) => a + (p.scores[k] || 0), 0);
-    return `<div class="list-row static"><div class="lr-body"><div class="lr-title">${p.name}</div><div class="lr-micro">HI ${fmtHcp(p.hcp)} · CH ${p.ch != null ? p.ch : "—"} · Gross ${g || "—"}</div></div></div>`;
+    const ball = (p.ball || "").trim();
+    const wd = p.withdrawn ? " · RETIRADO" : "";
+    return `<div class="list-row static"><div class="lr-body"><div class="lr-title">${p.name}${wd}</div><div class="lr-micro">HI ${fmtHcp(p.hcp)} · CH ${p.ch != null ? p.ch : "—"} · Gross ${g || "—"}${ball ? " · ● " + ball.replace(/</g, "&lt;") : ""}</div></div></div>`;
   }).join("");
   document.getElementById("detalleBody").innerHTML = `
     <div class="card mb-16">
@@ -5827,6 +6394,8 @@ function renderDetalle() {
       ${winners}
     </div>
     <button class="btn btn-primary" onclick="openLeaderForRound('${d.id}')">Ver clasificación</button>
+    <button class="btn btn-primary" onclick="reopenRound('${d.id}','hole')">Abrir / modificar partida</button>
+    <button class="btn btn-ghost" onclick="reopenRound('${d.id}','scorecard')">Ver tarjeta editable</button>
     <button class="btn btn-ghost" onclick="shareRoundWhatsApp('${d.id}')">Compartir tarjeta</button>
     <button class="btn btn-ghost" onclick="deleteRound('${d.id}')">Borrar de este iPhone</button>
     <button class="btn btn-ghost" onclick="go('historial')">Volver</button>`;
