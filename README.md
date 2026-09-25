@@ -149,6 +149,8 @@ Sigue siendo un solo `index.html`. No lo he partido en módulos: la partida real
 
 La copia de seguridad sigue en el esquema 3, así que las de antes entran. El texto de versión dentro del JSON es 3.0.0. Si el historial o la ronda en curso se corrompen, hay una copia local anterior y no se pisa lo que no se puede leer.
 
+Google Drive, si se conecta, es el Drive de cada uno: una carpeta Fairway y un solo `fairway-data.json`. La partida se apunta siempre primero en el teléfono. Drive es la copia entre aparatos, no un servidor de Fairway. Sin red se sigue jugando y, al volver la cobertura, se manda lo pendiente. El identificador OAuth de la web va en el código (`FAIRWAY_DRIVE_CLIENT_ID`); no hay secreto de cliente ni token de refresco guardado. Una sesión silenciosa de varias semanas haría falta un backend, y esta copia no lo finge. La exportación manual del JSON sigue donde estaba.
+
 El árbitro sigue en el teléfono, sin llamar a nadie. Si falta un dato, pregunta. Si el comité tiene una regla local, esa manda.
 
 Las fórmulas de hándicap no las he tocado. Los tests están en `tests/` y se lanzan con `node tests/run.mjs`. Para jugar no hace falta npm.
