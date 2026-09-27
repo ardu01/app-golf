@@ -9,9 +9,10 @@ for (const block of html.matchAll(/<script>([\s\S]*?)<\/script>/g)) {
   new Function(block[1]);
 }
 
-assert.ok(html.includes('appVersion: "3.0.2"'));
+assert.ok(html.includes('appVersion: "3.0.3"'));
+assert.ok(!html.includes('appVersion: "3.0.2"'));
 assert.ok(!html.includes('appVersion: "3.0.0"'));
-assert.ok(sw.includes('const SHELL = "fairway-v3-302"'));
+assert.ok(sw.includes('const SHELL = "fairway-v3-303"'));
 assert.ok(html.includes("pagehide"));
 assert.ok(html.includes("visibilitychange"));
 assert.ok(html.includes('document.addEventListener("freeze"'));
@@ -274,6 +275,54 @@ const ACTIVE_BAK_KEY = "fairway.activeRound.bak.v1";
   s.localStorage.removeItem(ACTIVE_KEY);
   s.api.flushActiveRoundForLifecycle();
   assert.strictEqual(s.localStorage.getItem(ACTIVE_KEY), null);
+}
+
+const confirmClose = extractFunction(html, "confirmCloseLiveRound");
+const finishEarly = extractFunction(html, "finishRoundEarly");
+assert.strictEqual((confirmClose.match(/window\.confirm\(/g) || []).length, 2);
+assert.ok(confirmClose.includes("Se va a cerrar la ronda en curso."));
+assert.ok(confirmClose.includes("¿Seguro? No se puede deshacer fácilmente."));
+assert.ok(finishEarly.indexOf("confirmCloseLiveRound()") < finishEarly.indexOf('go("close")'));
+assert.ok(html.includes('onclick="finishRoundEarly()"'));
+assert.strictEqual((html.match(/onclick="finishRoundEarly\(\)"/g) || []).length, 2);
+
+function runFinishEarly(answers, inProgress) {
+  const calls = [];
+  const queue = answers.slice();
+  const fn = new Function("scope", [
+    "var window = scope.window;",
+    "function isRoundInProgress() { return scope.inProgress; }",
+    "function showToast(msg) { scope.calls.push(['toast', msg]); }",
+    "function go(name) { scope.calls.push(['go', name]); }",
+    confirmClose,
+    finishEarly,
+    "finishRoundEarly();"
+  ].join("\n"));
+  fn({
+    inProgress,
+    calls,
+    window: {
+      confirm(msg) {
+        calls.push(["confirm", msg]);
+        return queue.length ? queue.shift() : false;
+      }
+    }
+  });
+  return calls;
+}
+
+{
+  const idle = runFinishEarly([true, true], false);
+  assert.deepStrictEqual(idle, [["toast", "No hay ronda en curso"]]);
+  const cancelFirst = runFinishEarly([false, true], true);
+  assert.deepStrictEqual(cancelFirst.map(c => c[0]), ["confirm"]);
+  assert.ok(cancelFirst[0][1].indexOf("Se va a cerrar la ronda") === 0);
+  const cancelSecond = runFinishEarly([true, false], true);
+  assert.deepStrictEqual(cancelSecond.map(c => c[0]), ["confirm", "confirm"]);
+  assert.ok(cancelSecond[1][1].indexOf("¿Seguro?") === 0);
+  const closed = runFinishEarly([true, true], true);
+  assert.deepStrictEqual(closed.map(c => c[0]), ["confirm", "confirm", "go"]);
+  assert.strictEqual(closed[2][1], "close");
 }
 
 console.log("persist ok");
