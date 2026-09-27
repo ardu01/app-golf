@@ -5694,9 +5694,18 @@ function jumpToHole(n) {
   updateHomeThru();
 }
 
+/** Two taps before an in-progress round is closed early and moved to historial. */
+function confirmCloseLiveRound() {
+  const endRound = window.confirm("Se va a cerrar la ronda en curso. Los hoyos ya jugados pasan al historial y la partida deja de estar en curso.");
+  if (!endRound) return false;
+  const sure = window.confirm("¿Seguro? No se puede deshacer fácilmente.");
+  return !!sure;
+}
+
 /** Smoke / mid-round: ir a cierre con los hoyos ya jugados (sin rellenar 18) */
 function finishRoundEarly() {
   if (!isRoundInProgress()) { showToast("No hay ronda en curso"); return; }
+  if (!confirmCloseLiveRound()) return;
   go("close");
 }
 
@@ -7792,7 +7801,7 @@ function collectFairwayBackup() {
   return {
     version: 3,
     app: "Fairway",
-    appVersion: "3.0.2",
+    appVersion: "3.0.3",
     exportedAt: new Date().toISOString(),
     updatedAt: (typeof getDataUpdatedAt === "function" ? getDataUpdatedAt() : "") || "",
     includes: ["rounds", "players.scores", "players.putts", "players.fir", "players.gir", "players.ball", "players.withdrawn", "roster", "host", "activeRound", "winners", "standings"],
