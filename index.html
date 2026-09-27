@@ -2027,6 +2027,7 @@
                 <span class="badge badge-oficial" id="homeCourseBadge">OFICIAL</span>
               </div>
               <button class="btn btn-ghost" data-continue-hole onclick="go('hole')">Continuar · Hoyo 1</button>
+              <button class="btn btn-ghost" data-recover-backup onclick="recoverActiveRoundFromBackup()" style="display:none">Recuperar copia local</button>
               <button class="btn btn-ghost" data-round-ajustes onclick="go('ajustes')" style="display:none">Ajustes</button>
               <button class="btn btn-ghost" data-finish-round onclick="finishRoundEarly()" style="display:none">Cerrar ronda</button>
               <div class="stat-row">
@@ -2573,12 +2574,13 @@ const MODALITY_RULES = {
   }
 };
 
-function showToast(msg, paper) {
+function showToast(msg, paper, ms) {
   const t = document.getElementById("toast");
+  if (!t) return;
   t.textContent = msg;
   t.className = "toast show" + (paper ? " paper" : "");
   clearTimeout(showToast._tm);
-  showToast._tm = setTimeout(() => { t.className = "toast"; }, 2200);
+  showToast._tm = setTimeout(() => { t.className = "toast"; }, ms || 2200);
 }
 
 /* REFEREE_START */
@@ -3280,7 +3282,7 @@ function go(name) {
     state._newRoundArmed = false;
     try {
       const restored = restoreActiveRound();
-      if (!restored && hasStoredActiveRound()) {
+      if (!restored && (hasStoredActiveRound() || (typeof activeBackupNeedsRecovery === "function" && activeBackupNeedsRecovery()))) {
         console.warn("restoreActiveRound failed with storage still present");
         showToast("No se pudo recuperar la ronda anterior");
       }
@@ -3328,24 +3330,33 @@ function hasStoredActiveRound() {
   try { return !!localStorage.getItem(ACTIVE_KEY); } catch (e) { return false; }
 }
 
+function playerHasMarks(p) {
+  if (!p) return false;
+  if (p.scores && Object.keys(p.scores).length) return true;
+  if (p.putts && Object.keys(p.putts).length) return true;
+  if (p.fir && Object.keys(p.fir).length) return true;
+  if (p.gir && Object.keys(p.gir).length) return true;
+  if (p.totalsGross != null || p.totalsPutts != null) return true;
+  return false;
+}
+
 function isRoundInProgress() {
   // After cierre, _roundSaved stays set until Nueva partida — never show Continuar
   if (state._roundSaved) return false;
-  let hasStored = false;
-  try { hasStored = !!localStorage.getItem(ACTIVE_KEY); } catch (e) {}
-  if (!hasStored) return false;
-  return PLAYERS.some(p =>
-    Object.keys(p.scores || {}).length > 0 ||
-    p.totalsGross != null ||
-    p.totalsPutts != null
-  );
+  if (PLAYERS.some(playerHasMarks)) return true;
+  try {
+    if (inspectActiveKey(ACTIVE_KEY).status === "ok") return true;
+  } catch (e) {}
+  return false;
 }
 
 /** Hold a waiting app update while a live round, the trophy, or an open hole can still lose the screen. */
 function fairwayShouldHoldUpdate() {
   if (state.screen === "close") return true;
   if (state._roundSaved) return false;
+  if (state._newRoundArmed || state._activeRoundLive) return true;
   if (isRoundInProgress()) return true;
+  if (typeof activeBackupNeedsRecovery === "function" && activeBackupNeedsRecovery()) return true;
   const playing = state.screen === "hole" || state.screen === "scorecard"
     || state.screen === "leader" || state.screen === "ajustes" || state.screen === "arbitro";
   return playing && hasStoredActiveRound();
@@ -3391,6 +3402,10 @@ function updateHomeThru() {
   document.querySelectorAll("[data-continue-hole]").forEach(btn => {
     btn.textContent = "Continuar · Hoyo " + (state.hole || 1);
     btn.style.display = live ? "" : "none";
+  });
+  const recover = typeof activeBackupNeedsRecovery === "function" && activeBackupNeedsRecovery();
+  document.querySelectorAll("[data-recover-backup]").forEach(btn => {
+    btn.style.display = recover ? "" : "none";
   });
   document.querySelectorAll("[data-finish-round]").forEach(btn => {
     btn.style.display = live ? "" : "none";
@@ -3789,8 +3804,77 @@ function snapshotPlayers() {
     creativeLog: Array.isArray(p.creativeLog) ? p.creativeLog.slice() : []
   }));
 }
+function inspectActiveRaw(raw) {
+  if (!raw) return { status: "missing", data: null };
+  try {
+    const data = JSON.parse(raw);
+    if (!data || typeof data !== "object" || Array.isArray(data) || !Array.isArray(data.players) || !data.players.length) {
+      return { status: "corrupt", data: null };
+    }
+    return { status: "ok", data: data };
+  } catch (e) {
+    return { status: "corrupt", data: null };
+  }
+}
+function inspectActiveKey(key) {
+  try { return inspectActiveRaw(localStorage.getItem(key)); }
+  catch (e) { return { status: "corrupt", data: null }; }
+}
+let _activeStorageError = "";
+function noteActiveStorageError(msg) {
+  _activeStorageError = msg || "No se pudo guardar en este dispositivo";
+  let hidden = false;
+  try { hidden = typeof document !== "undefined" && document.visibilityState === "hidden"; } catch (e) {}
+  if (hidden) return;
+  if (typeof showToast === "function") showToast(_activeStorageError, false, 4200);
+}
+function flushActiveStorageError() {
+  if (!_activeStorageError) return;
+  let hidden = false;
+  try { hidden = typeof document !== "undefined" && document.visibilityState === "hidden"; } catch (e) {}
+  if (hidden) return;
+  const msg = _activeStorageError;
+  _activeStorageError = "";
+  if (typeof showToast === "function") showToast(msg, false, 4200);
+}
+function storageSetItem(key, value, failMsg) {
+  try {
+    localStorage.setItem(key, value);
+    if (localStorage.getItem(key) !== value) {
+      noteActiveStorageError(failMsg || "No se pudo guardar en este dispositivo");
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.warn("storageSetItem", key, e);
+    noteActiveStorageError(failMsg || "No se pudo guardar en este dispositivo");
+    return false;
+  }
+}
+function activeBackupNeedsRecovery() {
+  if (state._roundSaved) return false;
+  if (inspectActiveKey(ACTIVE_KEY).status === "ok") return false;
+  return inspectActiveKey(ACTIVE_BAK_KEY).status === "ok";
+}
+function roundWouldBeReplaced() {
+  if (state._roundSaved) return false;
+  if (inspectActiveKey(ACTIVE_KEY).status === "ok") return true;
+  if (inspectActiveKey(ACTIVE_BAK_KEY).status === "ok") return true;
+  return PLAYERS.some(playerHasMarks);
+}
+function localActiveRoundIsProtected() {
+  if (!state) return false;
+  if (state._newRoundArmed || state._activeRoundLive) return true;
+  const screen = state.screen;
+  if (screen === "hole" || screen === "scorecard" || screen === "leader" || screen === "ajustes" || screen === "arbitro" || screen === "close" || screen === "setup") return true;
+  const primary = inspectActiveKey(ACTIVE_KEY);
+  if (primary.status === "corrupt") return true;
+  if (primary.status === "missing" && inspectActiveKey(ACTIVE_BAK_KEY).status === "ok") return true;
+  if (PLAYERS.some(playerHasMarks)) return true;
+  return false;
+}
 function persistActiveRound() {
-  if (state._newRoundArmed) return;
+  if (state._newRoundArmed || state._roundSaved) return false;
   try {
     const course = typeof getSelectedCourse === "function" ? getSelectedCourse() : null;
     const payload = {
@@ -3807,7 +3891,8 @@ function persistActiveRound() {
       players: snapshotPlayers(),
       setupPlayers: (state.setup && state.setup.players) ? state.setup.players.slice() : [true]
     };
-    const prev = localStorage.getItem(ACTIVE_KEY);
+    let prev = null;
+    try { prev = localStorage.getItem(ACTIVE_KEY); } catch (e) { prev = null; }
     const next = JSON.stringify(payload);
     let changed = !prev || prev !== next;
     try {
@@ -3819,24 +3904,30 @@ function persistActiveRound() {
         changed = JSON.stringify(a) !== JSON.stringify(b);
       }
     } catch (e) { changed = true; }
-    if (prev && prev !== next) {
-      try { localStorage.setItem(ACTIVE_BAK_KEY, prev); } catch (e) {}
+    // Never replace a good backup with a corrupt primary.
+    if (prev && prev !== next && inspectActiveRaw(prev).status === "ok") {
+      storageSetItem(ACTIVE_BAK_KEY, prev, "No se pudo guardar la copia de seguridad");
     }
-    localStorage.setItem(ACTIVE_KEY, next);
+    if (!storageSetItem(ACTIVE_KEY, next, "No se pudo guardar la ronda en curso")) return false;
+    _activeStorageError = "";
+    state._activeRoundLive = true;
     if (changed) {
       touchDataUpdated();
       if (typeof queueDriveSync === "function") queueDriveSync();
     }
+    return true;
   } catch (e) {
     console.warn("persistActiveRound", e);
-    if (typeof showToast === "function") showToast("No se pudo guardar la ronda en curso");
+    noteActiveStorageError("No se pudo guardar la ronda en curso");
+    return false;
   }
 }
 function clearActiveRound() {
   let had = false;
-  try { had = !!localStorage.getItem(ACTIVE_KEY); } catch (e) {}
+  try { had = !!localStorage.getItem(ACTIVE_KEY) || !!localStorage.getItem(ACTIVE_BAK_KEY); } catch (e) {}
   try { localStorage.removeItem(ACTIVE_KEY); } catch (e) {}
   try { localStorage.removeItem(ACTIVE_BAK_KEY); } catch (e) {}
+  state._activeRoundLive = false;
   if (had) {
     touchDataUpdated();
     if (typeof queueDriveSync === "function") queueDriveSync();
@@ -3845,6 +3936,7 @@ function clearActiveRound() {
 
 /** After closing a round: wipe storage + scores so Home never shows Continuar */
 function endActiveRoundMemory() {
+  state._activeRoundLive = false;
   clearActiveRound();
   // Double-clear in case ACTIVE_KEY was written under an alias
   try { localStorage.removeItem("fairway.activeRound.v1"); } catch (e) {}
@@ -3866,6 +3958,9 @@ function endActiveRoundMemory() {
       btn.style.display = "none";
       btn.textContent = "Continuar · Hoyo 1";
     });
+    document.querySelectorAll("[data-recover-backup]").forEach(btn => {
+      btn.style.display = "none";
+    });
     document.querySelectorAll("[data-finish-round]").forEach(btn => {
       btn.style.display = "none";
     });
@@ -3880,69 +3975,114 @@ function endActiveRoundMemory() {
   } catch (e) {}
   if (typeof updateHomeThru === "function") updateHomeThru();
 }
+function applyActivePayload(data) {
+  if (!data || !data.players || !data.players.length) return false;
+  if (data.setup) state.setup = data.setup;
+  if (data.setupPlayers) state.setup.players = data.setupPlayers;
+  state.hole = data.hole || 1;
+  state.activePlayer = data.activePlayer || 0;
+  state.dataTier = data.dataTier || "score";
+  state.scNine = data.scNine || "out";
+  state.scCard = data.scCard === "net" ? "net" : "gross";
+  state.editingRoundId = data.editingRoundId || null;
+  PLAYERS.length = 0;
+  data.players.forEach(p => {
+    PLAYERS.push({
+      id: p.id, rp: "rp-" + p.id, name: p.name,
+      short: p.short || (p.name || "?").slice(0, 3),
+      initials: p.initials || (p.name || "?").slice(0, 2).toUpperCase(),
+      hcp: p.hcp, ch: p.ch, ph: p.ph, guest: !!p.guest,
+      ball: (p.ball || "").toString(),
+      withdrawn: !!p.withdrawn,
+      avatar: "", scores: p.scores || {}, putts: p.putts || {},
+      fir: p.fir || {}, gir: p.gir || {},
+      totalsGross: (p.totalsGross != null ? Number(p.totalsGross) : null),
+      totalsPutts: (p.totalsPutts != null ? Number(p.totalsPutts) : null),
+      creativePts: Number(p.creativePts) || 0,
+      creativeLog: Array.isArray(p.creativeLog) ? p.creativeLog.slice() : []
+    });
+  });
+  if (state.setup && state.setup.courseId && typeof COURSES !== "undefined") {
+    const course = COURSES.find(c => c.id === state.setup.courseId);
+    if (course) {
+      CLUB = course.name;
+      const teeNames = (course.tees || []).map(x => x.name);
+      let tee = state.setup.tee;
+      if (!tee || !teeNames.includes(tee)) {
+        tee = teeNames.includes("Amarillas") ? "Amarillas" : (teeNames[0] || tee);
+      }
+      state.setup.tee = tee;
+      FX.tee = tee;
+      HOLES = (typeof holesForTee === "function")
+        ? holesForTee(course, tee)
+        : course.holes.map(h => ({
+            n: h.n, par: h.par, hcp: h.hcp,
+            m: (h.mByTee && h.mByTee[tee] != null) ? h.mByTee[tee] : (h.m || 0)
+          }));
+    }
+  }
+  state._activeRoundLive = true;
+  if (typeof refreshPlayerHandicaps === "function") refreshPlayerHandicaps();
+  if (typeof updateClubCalls === "function") updateClubCalls();
+  return true;
+}
 function restoreActiveRound() {
   try {
-    const raw = localStorage.getItem(ACTIVE_KEY);
-    if (!raw) return false;
-    let data = null;
-    try { data = JSON.parse(raw); } catch (e) { data = null; }
-    if (!data || !data.players || !data.players.length) {
-      let bak = null;
-      try { bak = JSON.parse(localStorage.getItem(ACTIVE_BAK_KEY) || "null"); } catch (e) { bak = null; }
-      if (!bak || !bak.players || !bak.players.length) return false;
-      data = bak;
-      try { localStorage.setItem(ACTIVE_KEY, JSON.stringify(bak)); } catch (e) {}
-      if (typeof showToast === "function") showToast("Ronda recuperada de la copia local");
+    const primary = inspectActiveKey(ACTIVE_KEY);
+    let data = primary.status === "ok" ? primary.data : null;
+    let fromBak = false;
+    if (!data) {
+      const bak = inspectActiveKey(ACTIVE_BAK_KEY);
+      if (bak.status !== "ok") return false;
+      data = bak.data;
+      fromBak = true;
     }
-    if (data.setup) state.setup = data.setup;
-    if (data.setupPlayers) state.setup.players = data.setupPlayers;
-    state.hole = data.hole || 1;
-    state.activePlayer = data.activePlayer || 0;
-    state.dataTier = data.dataTier || "score";
-    state.scNine = data.scNine || "out";
-    state.scCard = data.scCard === "net" ? "net" : "gross";
-    state.editingRoundId = data.editingRoundId || null;
-    // Rebuild PLAYERS from snapshot
-    PLAYERS.length = 0;
-    data.players.forEach(p => {
-      PLAYERS.push({
-        id: p.id, rp: "rp-" + p.id, name: p.name,
-        short: p.short || (p.name || "?").slice(0, 3),
-        initials: p.initials || (p.name || "?").slice(0, 2).toUpperCase(),
-        hcp: p.hcp, ch: p.ch, ph: p.ph, guest: !!p.guest,
-        ball: (p.ball || "").toString(),
-        withdrawn: !!p.withdrawn,
-        avatar: "", scores: p.scores || {}, putts: p.putts || {},
-        fir: p.fir || {}, gir: p.gir || {},
-        totalsGross: (p.totalsGross != null ? Number(p.totalsGross) : null),
-        totalsPutts: (p.totalsPutts != null ? Number(p.totalsPutts) : null),
-        creativePts: Number(p.creativePts) || 0,
-        creativeLog: Array.isArray(p.creativeLog) ? p.creativeLog.slice() : []
-      });
-    });
-    if (state.setup.courseId) {
-      const course = COURSES.find(c => c.id === state.setup.courseId);
-      if (course) {
-        CLUB = course.name;
-        const teeNames = (course.tees || []).map(x => x.name);
-        let tee = state.setup.tee;
-        if (!tee || !teeNames.includes(tee)) {
-          tee = teeNames.includes("Amarillas") ? "Amarillas" : (teeNames[0] || tee);
-        }
-        state.setup.tee = tee;
-        FX.tee = tee;
-        HOLES = (typeof holesForTee === "function")
-          ? holesForTee(course, tee)
-          : course.holes.map(h => ({
-              n: h.n, par: h.par, hcp: h.hcp,
-              m: (h.mByTee && h.mByTee[tee] != null) ? h.mByTee[tee] : (h.m || 0)
-            }));
-      }
+    if (!applyActivePayload(data)) return false;
+    if (fromBak) {
+      const wrote = storageSetItem(ACTIVE_KEY, JSON.stringify(data), "No se pudo guardar la ronda recuperada");
+      if (wrote && typeof showToast === "function") showToast("Ronda recuperada de la copia local");
     }
-    if (typeof refreshPlayerHandicaps === "function") refreshPlayerHandicaps();
-    if (typeof updateClubCalls === "function") updateClubCalls();
     return true;
-  } catch (e) { return false; }
+  } catch (e) {
+    console.warn("restoreActiveRound", e);
+    return false;
+  }
+}
+function recoverActiveRoundFromBackup() {
+  const bak = inspectActiveKey(ACTIVE_BAK_KEY);
+  if (bak.status !== "ok") {
+    if (typeof showToast === "function") showToast("No hay copia local de la ronda");
+    return false;
+  }
+  state._roundSaved = null;
+  state._newRoundArmed = false;
+  if (!applyActivePayload(bak.data)) {
+    if (typeof showToast === "function") showToast("No se pudo recuperar la ronda");
+    return false;
+  }
+  const wrote = storageSetItem(ACTIVE_KEY, JSON.stringify(bak.data), "No se pudo guardar la ronda recuperada");
+  if (wrote && typeof showToast === "function") showToast("Ronda recuperada de la copia local");
+  if (typeof updateHomeThru === "function") updateHomeThru();
+  return true;
+}
+function flushActiveRoundForLifecycle() {
+  try {
+    if (!state || state._newRoundArmed || state._roundSaved || !state._activeRoundLive) return;
+    persistActiveRound();
+  } catch (e) {
+    console.warn("flushActiveRoundForLifecycle", e);
+  }
+}
+function bindActiveRoundLifecycle() {
+  if (bindActiveRoundLifecycle.done) return;
+  bindActiveRoundLifecycle.done = true;
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "hidden") flushActiveRoundForLifecycle();
+    else flushActiveStorageError();
+  });
+  window.addEventListener("pagehide", flushActiveRoundForLifecycle, true);
+  window.addEventListener("beforeunload", flushActiveRoundForLifecycle);
+  document.addEventListener("freeze", flushActiveRoundForLifecycle);
 }
 function buildRoundRecord() {
   const { rows, mods } = liveStandings();
@@ -4125,15 +4265,13 @@ function reopenRound(id, dest) {
 
 function saveEditingRoundDraft() {
   if (!state.editingRoundId) {
-    persistActiveRound();
-    showToast("Progreso guardado");
+    if (persistActiveRound()) showToast("Progreso guardado");
     return;
   }
   const list = loadRounds();
   const idx = list.findIndex(r => r.id === state.editingRoundId);
   if (idx < 0) {
-    persistActiveRound();
-    showToast("Progreso guardado");
+    if (persistActiveRound()) showToast("Progreso guardado");
     return;
   }
   const rec = buildRoundRecord();
@@ -4143,8 +4281,7 @@ function saveEditingRoundDraft() {
   rec.date = prev.date || rec.date;
   list[idx] = rec;
   saveRounds(list);
-  persistActiveRound();
-  showToast("Cambios guardados en el historial");
+  if (persistActiveRound()) showToast("Cambios guardados en el historial");
 }
 
 
@@ -4269,6 +4406,7 @@ function fmtHcp(h) {
 }
 
 function setupStart() {
+  try { persistActiveRound(); } catch (e) {}
   state._roundSaved = null;
   state.editingRoundId = null;
   state._newRoundArmed = true;
@@ -4896,10 +5034,9 @@ function setupNext() {
     state.setupStep++;
     renderSetup();
   } else {
-    if (hasStoredActiveRound()) {
-      const ok = window.confirm("Hay una ronda guardada en este móvil. Si empiezas otra, se sustituye y dejas de poder continuar la anterior. ¿Empezar la nueva ronda?");
+    if (roundWouldBeReplaced()) {
+      const ok = window.confirm("Hay una ronda guardada en este móvil. La anterior no se borra hasta que esta nueva empiece de verdad. Si continúas, se sustituye. ¿Empezar la nueva ronda?");
       if (!ok) return;
-      clearActiveRound();
     }
     state.hole = 1;
     state.activePlayer = 0;
@@ -4915,7 +5052,19 @@ function setupNext() {
     state._roundSaved = null;
     state.editingRoundId = null;
     state._newRoundArmed = false;
-    persistActiveRound();
+    const saved = persistActiveRound();
+    if (!saved) {
+      const back = restoreActiveRound();
+      state._newRoundArmed = true;
+      state._activeRoundLive = !!back;
+      if (typeof showToast === "function") {
+        showToast(back
+          ? "No se pudo guardar la ronda nueva. La anterior sigue en el teléfono."
+          : "No se pudo guardar la ronda en este dispositivo");
+      }
+      renderSetup();
+      return;
+    }
     go("hole");
   }
 }
@@ -7616,6 +7765,12 @@ function driveListedIds(data) {
 function collectFairwayBackup() {
   let active = null;
   try { active = JSON.parse(localStorage.getItem(ACTIVE_KEY) || "null"); } catch (e) { active = null; }
+  if (!active || !active.players || !active.players.length) {
+    try {
+      const bak = JSON.parse(localStorage.getItem(ACTIVE_BAK_KEY) || "null");
+      if (bak && bak.players && bak.players.length) active = bak;
+    } catch (e) {}
+  }
   const rounds = loadRounds().map(r => {
     // Normalize: guarantee putts/fir/gir objects on each player
     const players = (r.players || []).map(p => ({
@@ -7637,7 +7792,7 @@ function collectFairwayBackup() {
   return {
     version: 3,
     app: "Fairway",
-    appVersion: "3.0.0",
+    appVersion: "3.0.2",
     exportedAt: new Date().toISOString(),
     updatedAt: (typeof getDataUpdatedAt === "function" ? getDataUpdatedAt() : "") || "",
     includes: ["rounds", "players.scores", "players.putts", "players.fir", "players.gir", "players.ball", "players.withdrawn", "roster", "host", "activeRound", "winners", "standings"],
@@ -7864,7 +8019,7 @@ function mergeFairwayBackup(remote) {
   }
   let localActive = null;
   try { localActive = JSON.parse(localStorage.getItem(ACTIVE_KEY) || "null"); } catch (e) { localActive = null; }
-  const keepLocalActive = driveActiveRoundDirty(localActive) || drivePlayScreen();
+  const keepLocalActive = driveActiveRoundDirty(localActive) || drivePlayScreen() || (typeof localActiveRoundIsProtected === "function" && localActiveRoundIsProtected());
   const merged = driveMergeRounds(loadRounds(), remote.rounds || []).slice(0, 200);
   saveRounds(merged);
   if (Array.isArray(remote.roster) && typeof saveRoster === "function") {
@@ -8194,14 +8349,21 @@ function driveApplyResolved(remote, remoteUpdatedAt, opts) {
         }
       } catch (e) { console.warn("drive host", e); }
     }
-    if (o.writeActive && o.active && !drivePlayScreen()) {
-      try { localStorage.setItem(ACTIVE_KEY, JSON.stringify(o.active)); } catch (e) { console.warn("drive active", e); }
+    if (o.writeActive && o.active && !drivePlayScreen() && !(typeof localActiveRoundIsProtected === "function" && localActiveRoundIsProtected())) {
+      try {
+        localStorage.setItem(ACTIVE_KEY, JSON.stringify(o.active));
+      } catch (e) {
+        console.warn("drive active", e);
+        if (typeof showToast === "function") showToast("No se pudo guardar la ronda en curso");
+      }
+    } else if (o.writeActive && o.active && !drivePlayScreen() && typeof localActiveRoundIsProtected === "function" && localActiveRoundIsProtected()) {
+      console.warn("drive active skipped: local round protected");
     }
     touchDataUpdated(remoteUpdatedAt || getDataUpdatedAt() || new Date().toISOString(), true);
   } finally {
     _driveApplying = false;
   }
-  if (o.writeActive && o.active && !drivePlayScreen() && typeof restoreActiveRound === "function" && !(typeof isRoundInProgress === "function" && isRoundInProgress())) {
+  if (o.writeActive && o.active && !drivePlayScreen() && typeof restoreActiveRound === "function" && !(typeof isRoundInProgress === "function" && isRoundInProgress()) && !(typeof localActiveRoundIsProtected === "function" && localActiveRoundIsProtected())) {
     try { restoreActiveRound(); } catch (e) {}
   }
 }
@@ -8805,8 +8967,8 @@ function renderAjustes() {
       ${state.editingRoundId
         ? `<p class="micro mb-8">Editando una vuelta del historial. Los cambios se pueden guardar sin cerrarla.</p>
            <button type="button" class="btn btn-primary" style="width:100%;" onclick="saveEditingRoundDraft()">Guardar cambios</button>`
-        : `<p class="micro mb-8">El progreso se guarda solo si cierras la app. Cierra la ronda cuando terminéis.</p>
-           <button type="button" class="btn btn-ghost" style="width:100%;" onclick="persistActiveRound();showToast('Progreso guardado');">Guardar ahora</button>`}
+        : `<p class="micro mb-8">El progreso se guarda solo en este teléfono. Cierra la ronda cuando terminéis.</p>
+           <button type="button" class="btn btn-ghost" style="width:100%;" onclick="if(persistActiveRound())showToast('Progreso guardado')">Guardar ahora</button>`}
       <button type="button" class="btn btn-ghost mt-8" style="width:100%;" onclick="finishRoundEarly()">Cerrar ronda</button>
     </div>`;
 }
@@ -9292,6 +9454,7 @@ loadHostHcp();
   }
   // Historial already reads loadRounds() from localStorage — nothing else needed
   try { updateClubCalls(); } catch (e) {}
+  try { if (typeof bindActiveRoundLifecycle === "function") bindActiveRoundLifecycle(); } catch (e) {}
   try { if (typeof driveBoot === "function") driveBoot(); } catch (e) {}
 })();
 </script>
@@ -9307,7 +9470,12 @@ if ("serviceWorker" in navigator) {
     }
     navigator.serviceWorker.addEventListener("controllerchange", function () {
       if (!hadController) { hadController = true; return; }
+      try { if (typeof flushActiveRoundForLifecycle === "function") flushActiveRoundForLifecycle(); } catch (e) {}
       if (refreshing || holdUpdate()) return;
+      var stamp = 0;
+      try { stamp = Number(sessionStorage.getItem("fairway.swReload") || 0); } catch (e) {}
+      if (stamp && Date.now() - stamp < 10000) return;
+      try { sessionStorage.setItem("fairway.swReload", String(Date.now())); } catch (e) {}
       refreshing = true;
       try { location.reload(); } catch (e) {}
     });
@@ -9318,6 +9486,7 @@ if ("serviceWorker" in navigator) {
         try { worker.postMessage("SKIP_WAITING"); } catch (e) {}
       }
       window.fairwayFlushAppUpdate = function () {
+        try { if (typeof flushActiveRoundForLifecycle === "function") flushActiveRoundForLifecycle(); } catch (e) {}
         if (holdUpdate()) return;
         activateWaiting(reg.waiting || null);
       };
