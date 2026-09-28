@@ -1734,10 +1734,10 @@
   #screen-hole .player-card {
     flex: 0 0 calc(100% - 28px);
     width: calc(100% - 28px);
-    height: auto !important;
-    min-height: 0 !important;
-    max-height: none !important;
-    overflow: visible !important;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
     display: block;
     padding: 12px 14px 14px;
     opacity: 0.4;
@@ -2567,7 +2567,7 @@
     transform: translate(-50%, -50%);
   }
   #screen-hole .hole-access-chip[hidden] { display: none !important; }
-  /* 4.0.4 — sin flex:1 y min-height:0 el margin auto del carrusel no empuja. */
+  /* 4.0.8 — el carrusel flex:1 llena el hueco bajo las fichas de acceso. */
   #screen-hole #holePlayPane.active {
     display: flex;
     flex-direction: column;
@@ -2584,38 +2584,43 @@
     overflow-x: hidden;
     overflow-y: auto;
   }
-  /* 4.0.4 — ficha al contenido, centrada entre FIR y el pie. Sin height:100%. */
+  /* 4.0.8 — la ficha llena el hueco entre las fichas de acceso y el pie.
+     Sin margin auto. El aire queda fuera del bloque Golpes/Putts. */
   #screen-hole .carousel {
-    margin-top: auto;
-    margin-bottom: auto;
-    flex: 0 0 auto;
+    flex: 1 1 auto;
     min-height: 0;
+    margin: 0;
     height: auto;
     display: flex;
     flex-direction: column;
   }
   #screen-hole .carousel-track {
-    flex: 0 0 auto;
+    flex: 1 1 auto;
     min-height: 0;
-    height: auto;
-    align-items: flex-start;
-    padding: 4px 8px 8px;
+    height: 100%;
+    align-items: stretch;
+    padding: 4px 10px 8px;
     gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
   }
-  #screen-hole .player-card {
+  /* ~10px de asomo por lado: calc(100% - 20px). overflow auto, no hidden: en el SE se puede desplazar. */
+  #screen-hole .carousel-track .player-card {
+    flex: 0 0 calc(100% - 20px);
+    width: calc(100% - 20px);
+    height: 100%;
+    min-height: 100%;
+    max-height: 100%;
+    align-self: stretch;
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
-    align-self: flex-start;
-    flex: 0 0 calc(100% - 16px);
-    width: calc(100% - 16px);
-    margin-left: auto;
-    margin-right: auto;
-    height: auto;
-    min-height: 0;
-    max-height: none;
-    overflow: hidden;
-    padding: 14px 16px 16px;
+    justify-content: center;
+    justify-content: safe center;
+    gap: 10px;
+    margin: 0;
+    padding: 16px;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
     background: rgba(255,255,255,0.82);
     border: 0.5px solid rgba(60,60,67,0.18);
     border-radius: 16px;
@@ -2623,11 +2628,21 @@
     backdrop-filter: saturate(160%) blur(18px);
     -webkit-backdrop-filter: saturate(160%) blur(18px);
   }
+  /* Un jugador: ancho completo, sin asomo. */
+  #screen-hole .carousel-track.solo {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  #screen-hole .carousel-track.solo .player-card {
+    width: 100%;
+    flex-basis: 100%;
+    flex: 0 0 100%;
+  }
   #screen-hole .player-card.active {
     border: 0.5px solid rgba(60,60,67,0.22);
     box-shadow: 0 1px 0 rgba(255,255,255,0.85) inset, 0 8px 24px rgba(0,0,0,0.05);
   }
-  #screen-hole .player-card .pc-head { order: 0; margin-bottom: 8px; }
+  #screen-hole .player-card .pc-head { order: 0; margin-bottom: 0; }
   #screen-hole .player-card .pc-head .name {
     font-size: 17px;
     font-weight: 600;
@@ -2640,11 +2655,11 @@
     padding: 0;
     border: 0;
   }
-  /* ~10px entre Golpes y Putts. Eje centrado. Sin margin auto ni borde. */
+  /* 10px entre Golpes y Putts lo pone el gap de la ficha. Sin margin auto. */
   #screen-hole .entry-section.putts {
     order: 2;
     width: 100%;
-    margin: 10px 0 0;
+    margin: 0;
     padding: 0;
     border: 0;
   }
@@ -2812,6 +2827,7 @@
   }
   #screen-hole .social-pills { order: -1; }
   #screen-hole .player-dots {
+    flex: 0 0 auto;
     padding: 8px 0 0;
     margin: 0;
     gap: 8px;
@@ -2901,7 +2917,7 @@
         <div class="fit">
           <div class="home-hero">
             <div class="home-top">
-              <span class="app-version" aria-label="Versión">4.0.7</span>
+              <span class="app-version" aria-label="Versión">4.0.8</span>
               <button type="button" class="topnav-action" onclick="go('perfil')" aria-label="Perfil">Perfil</button>
             </div>
             <div class="greeting">Buenos días</div>
@@ -6328,6 +6344,7 @@ function renderHole(opts) {
   const dots = document.getElementById("playerDots");
   const list = activePlayers();
   if (state.activePlayer >= list.length) state.activePlayer = 0;
+  if (track) track.classList.toggle("solo", list.length === 1);
 
   const allScored = list.length > 0 && list.every(p => p.scores[state.hole] != null);
   const nextBtn = document.getElementById("holeNextBtn");
@@ -8674,7 +8691,7 @@ function collectFairwayBackup() {
   return {
     version: 3,
     app: "Fairway",
-    appVersion: "4.0.7",
+    appVersion: "4.0.8",
     exportedAt: new Date().toISOString(),
     updatedAt: (typeof getDataUpdatedAt === "function" ? getDataUpdatedAt() : "") || "",
     includes: ["rounds", "players.scores", "players.putts", "players.fir", "players.gir", "players.ball", "players.withdrawn", "roster", "host", "activeRound", "winners", "standings"],
@@ -9688,7 +9705,7 @@ function renderPerfil() {
     <div class="profile-hero">
       <div class="avatar-lg">${escapeHtml(initials)}</div>
       <p class="muted" style="margin-top:8px;">Tu perfil en este dispositivo</p>
-      <p class="micro">Fairway 4.0.7</p>
+      <p class="micro">Fairway 4.0.8</p>
     </div>
     <div class="card mb-16">
       <div class="eyebrow">Nombre</div>
