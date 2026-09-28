@@ -80,6 +80,19 @@
     --safe-bot: max(8px, env(safe-area-inset-bottom, 0px));
     --tab-h: 49px;
     --pad-x: 16px;
+    /* Fairway 4.0 Glass claro — Home + tab bar only. Do not retint --tint. */
+    --glass-bg: rgba(255, 255, 255, 0.72);
+    --glass-blur: 28px;
+    --glass-ink: #000000;
+    --glass-ink-secondary: rgba(60, 60, 67, 0.60);
+    --glass-separator: rgba(0, 0, 0, 0.12);
+    --glass-accent: #007AFF;
+    --glass-accent-pressed: #0062CC;
+    --glass-accent-dim: rgba(0, 122, 255, 0.12);
+    --glass-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    --glass-r-chip: 12px;
+    --glass-r-card: 16px;
+    --glass-r-sheet: 20px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body {
@@ -2000,6 +2013,266 @@
   .creative-save-row input {
     flex: 1; padding: 10px 12px; border-radius: 10px;
     border: 0.5px solid rgba(60,60,67,0.22); font: inherit; font-size: 15px;
+  }
+
+  /* —— 4.0.0-alpha Glass claro: Home + main tab bar —— */
+  #screen-home {
+    isolation: isolate;
+    z-index: 0;
+    background: #F2F2F7;
+    color: var(--glass-ink);
+    --tint: var(--glass-accent);
+    --tint-pressed: var(--glass-accent-pressed);
+    --focus: var(--glass-accent);
+    --ink: var(--glass-ink);
+    --ink-secondary: var(--glass-ink-secondary);
+    --text: var(--glass-ink);
+    --text-2: var(--glass-ink-secondary);
+    --separator: var(--glass-separator);
+    --brand-fairway: var(--glass-accent);
+    --brand-brass: var(--glass-accent);
+    --brand-brass-pressed: var(--glass-accent-pressed);
+    --brand-brass-dim: var(--glass-accent-dim);
+  }
+  #screen-home::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(120% 42% at 8% -8%, rgba(0, 122, 255, 0.10), transparent 58%),
+      radial-gradient(90% 36% at 100% 18%, rgba(255, 255, 255, 0.95), transparent 62%),
+      radial-gradient(80% 40% at 70% 108%, rgba(0, 122, 255, 0.06), transparent 60%),
+      #F2F2F7;
+  }
+  #screen-home .fit {
+    position: relative;
+    z-index: 1;
+    padding: 6px 16px 22px;
+    gap: 12px;
+  }
+  #screen-home .home-top {
+    min-height: 32px;
+    margin-bottom: 6px;
+  }
+  #screen-home .topnav-action {
+    height: 32px;
+    padding: 0 12px;
+    border-radius: var(--glass-r-chip);
+    border: 0.5px solid rgba(255, 255, 255, 0.7);
+    background: var(--glass-bg);
+    color: var(--glass-accent);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.24px;
+    box-shadow: var(--glass-shadow);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+  }
+  #screen-home .home-hero .greeting {
+    font-family: var(--font-display);
+    font-size: 34px;
+    font-weight: 700;
+    letter-spacing: 0.37px;
+    line-height: 1.12;
+    color: var(--glass-ink);
+    margin: 2px 0 4px;
+  }
+  #screen-home .greeting-sub {
+    margin: 0 0 18px;
+    font-size: 17px;
+    font-weight: 400;
+    letter-spacing: -0.4px;
+    line-height: 1.3;
+    color: var(--glass-ink-secondary);
+  }
+  #screen-home .greeting-sub.as-link {
+    color: var(--glass-accent);
+    font-weight: 600;
+    font-size: 15px;
+  }
+  #screen-home .home-hero .btn-primary,
+  #screen-home .btn-primary {
+    height: 50px;
+    margin-bottom: 14px;
+    border-radius: var(--glass-r-chip);
+    background: var(--glass-accent);
+    color: #FFFFFF;
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.4px;
+    box-shadow: none;
+  }
+  #screen-home .btn-primary:active {
+    background: var(--glass-accent-pressed);
+  }
+  #screen-home .card,
+  #screen-home .round-card {
+    background: var(--glass-bg);
+    border: 0.5px solid rgba(255, 255, 255, 0.66);
+    border-radius: var(--glass-r-card);
+    box-shadow: var(--glass-shadow);
+    -webkit-backdrop-filter: saturate(180%) blur(var(--glass-blur));
+    backdrop-filter: saturate(180%) blur(var(--glass-blur));
+  }
+  #screen-home .round-card {
+    padding: 16px;
+    margin: 0;
+  }
+  #screen-home .round-card .eyebrow {
+    margin-bottom: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: -0.08px;
+    text-transform: uppercase;
+    color: var(--glass-ink-secondary);
+  }
+  #screen-home .round-card h2 {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.4px;
+    line-height: 1.2;
+    color: var(--glass-ink);
+  }
+  #screen-home .round-card .micro,
+  #screen-home .round-card .meta {
+    color: var(--glass-ink-secondary);
+  }
+  #screen-home .round-card .meta {
+    margin: 8px 0 4px;
+  }
+  #screen-home .badge-oficial,
+  #screen-home .badge-demo {
+    height: 22px;
+    padding: 0 8px;
+    border: none;
+    border-radius: var(--glass-r-chip);
+    background: var(--glass-accent-dim);
+    color: var(--glass-accent);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+  #screen-home .round-card .btn-ghost {
+    height: 44px;
+    margin-top: 10px;
+    border-radius: var(--glass-r-chip);
+    background: var(--glass-accent-dim);
+    color: var(--glass-accent);
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.4px;
+  }
+  #screen-home .round-card .btn-ghost:active {
+    background: rgba(0, 122, 255, 0.18);
+  }
+  #screen-home .round-card [data-finish-round] {
+    background: rgba(255, 59, 48, 0.10);
+    color: #FF3B30;
+  }
+  #screen-home .round-card .stat-row {
+    gap: 8px;
+    margin-top: 12px;
+  }
+  #screen-home .round-card .stat-pill {
+    padding: 10px 6px;
+    border-radius: var(--glass-r-chip);
+    background: rgba(120, 120, 128, 0.10);
+    box-shadow: none;
+  }
+  #screen-home .round-card .stat-pill .v {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.4px;
+    color: var(--glass-ink);
+  }
+  #screen-home .round-card .stat-pill .l {
+    margin-top: 2px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--glass-ink-secondary);
+  }
+  #screen-home .section-label {
+    margin: 6px 4px 0;
+  }
+  #screen-home .section-label h2 {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: -0.08px;
+    text-transform: uppercase;
+    color: var(--glass-ink-secondary);
+  }
+  #screen-home .quick-grid {
+    gap: 10px;
+    padding-bottom: 4px;
+  }
+  #screen-home .quick-tile {
+    min-height: 92px;
+    padding: 14px 14px 12px;
+    border: 0.5px solid rgba(255, 255, 255, 0.66);
+    border-radius: var(--glass-r-card);
+    background: var(--glass-bg);
+    color: var(--glass-ink);
+    box-shadow: var(--glass-shadow);
+    -webkit-backdrop-filter: saturate(180%) blur(24px);
+    backdrop-filter: saturate(180%) blur(24px);
+  }
+  #screen-home .quick-tile .ico {
+    width: 32px;
+    height: 32px;
+    margin-bottom: 10px;
+    border-radius: var(--glass-r-chip);
+    background: var(--glass-accent-dim);
+    color: var(--glass-accent);
+    font-size: 16px;
+    opacity: 1;
+  }
+  #screen-home .quick-tile .ico.ico-user {
+    font-size: 0;
+  }
+  #screen-home .quick-tile .t {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.24px;
+    color: var(--glass-ink);
+  }
+  #screen-home .quick-tile .d {
+    margin-top: 2px;
+    font-size: 12px;
+    color: var(--glass-ink-secondary);
+  }
+  .screen > .tabbar {
+    --tint: var(--glass-accent);
+    --ink-secondary: var(--glass-ink-secondary);
+    --separator: var(--glass-separator);
+    background: var(--glass-bg);
+    border-top: 0.5px solid var(--glass-separator);
+    box-shadow: none;
+    -webkit-backdrop-filter: saturate(180%) blur(32px);
+    backdrop-filter: saturate(180%) blur(32px);
+  }
+  .screen > .tabbar .tab {
+    color: var(--glass-ink-secondary);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.06px;
+  }
+  .screen > .tabbar .tab .ico {
+    opacity: 1;
+    color: inherit;
+    font-size: 17px;
+  }
+  .screen > .tabbar .tab.active {
+    color: var(--glass-accent);
+    font-weight: 600;
+  }
+  .screen > .tabbar .tab.active .ico {
+    opacity: 1;
+    color: var(--glass-accent);
   }
 </style>
 </head>
@@ -7801,7 +8074,7 @@ function collectFairwayBackup() {
   return {
     version: 3,
     app: "Fairway",
-    appVersion: "3.0.3",
+    appVersion: "4.0.0-alpha",
     exportedAt: new Date().toISOString(),
     updatedAt: (typeof getDataUpdatedAt === "function" ? getDataUpdatedAt() : "") || "",
     includes: ["rounds", "players.scores", "players.putts", "players.fir", "players.gir", "players.ball", "players.withdrawn", "roster", "host", "activeRound", "winners", "standings"],
