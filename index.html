@@ -2509,79 +2509,59 @@
     font-weight: 500;
   }
   #screen-hole .club-calls a { color: rgba(60,60,67,0.45); }
-  #screen-hole .hole-more { position: relative; }
-  #screen-hole .hole-more > summary {
-    list-style: none;
-    cursor: pointer;
-    height: 28px;
-    min-width: 36px;
-    padding: 0 8px;
+  /* 4.0.5 — Árbitro, Mapa, Caddie y Restaurante visibles bajo el progreso. */
+  #screen-hole .hole-access {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    padding: 0 16px 10px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-shrink: 0;
+  }
+  #screen-hole .hole-access:empty { display: none; }
+  #screen-hole .hole-access-chip {
+    height: 32px;
+    min-height: 32px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 0.5px solid rgba(60,60,67,0.18);
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: saturate(160%) blur(18px);
+    -webkit-backdrop-filter: saturate(160%) blur(18px);
+    color: #000;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: -0.08px;
+    white-space: nowrap;
+    flex: 0 0 auto;
+    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: 8px;
-    color: rgba(60,60,67,0.72);
-    font-size: 16px;
-    font-weight: 700;
-    letter-spacing: 1px;
+    margin: 0;
+    box-shadow: none;
+    text-decoration: none;
+    font-family: inherit;
     line-height: 1;
+    cursor: pointer;
     -webkit-tap-highlight-color: transparent;
   }
-  #screen-hole .hole-more > summary::-webkit-details-marker { display: none; }
-  #screen-hole .hole-more > summary::marker { content: ""; }
-  #screen-hole .hole-more[open] > summary { background: rgba(0,0,0,0.06); }
-  #screen-hole .hole-more-menu {
-    position: absolute;
-    right: 0;
-    top: calc(100% + 6px);
-    z-index: 30;
-    min-width: 196px;
-    padding: 6px;
-    border-radius: 12px;
-    background: rgba(255,255,255,0.96);
-    border: 0.5px solid rgba(60,60,67,0.18);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-  }
-  #screen-hole .hole-more-menu .topnav-action,
-  #screen-hole .hole-more-menu .hole-foto-link,
-  #screen-hole .hole-more-menu .club-calls a {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    width: 100%;
-    height: 44px;
-    min-height: 44px;
-    margin: 0;
-    padding: 0 12px;
-    border: 0;
-    border-radius: 8px;
-    background: transparent;
-    box-shadow: none;
-    color: #000000;
-    font-size: 16px;
-    font-weight: 500;
-    text-align: left;
-    text-decoration: none;
-  }
-  #screen-hole .hole-more-menu .hole-foto-link[hidden] { display: none !important; }
-  #screen-hole .hole-more-menu .topnav-action:active,
-  #screen-hole .hole-more-menu .hole-foto-link:active,
-  #screen-hole .hole-more-menu .club-calls a:active {
+  #screen-hole .hole-access-chip:active {
     background: rgba(0,0,0,0.06);
-    color: #000000;
+    color: #000;
   }
-  #screen-hole .hole-more-menu .club-calls {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    margin: 0;
-    padding: 0;
-    justify-content: flex-start;
+  /* Hit area 44×44 centered on the 32px chip */
+  #screen-hole .hole-access-chip::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
   }
-  #screen-hole .hole-more-menu .club-calls a { color: #000000; }
+  #screen-hole .hole-access-chip[hidden] { display: none !important; }
   /* 4.0.4 — sin flex:1 y min-height:0 el margin auto del carrusel no empuja. */
   #screen-hole #holePlayPane.active {
     display: flex;
@@ -2916,7 +2896,7 @@
         <div class="fit">
           <div class="home-hero">
             <div class="home-top">
-              <span class="app-version" aria-label="Versión">4.0.4</span>
+              <span class="app-version" aria-label="Versión">4.0.5</span>
               <button type="button" class="topnav-action" onclick="go('perfil')" aria-label="Perfil">Perfil</button>
             </div>
             <div class="greeting">Buenos días</div>
@@ -3007,19 +2987,14 @@
               Hoyos <span class="chev">▾</span>
             </button>
             <span class="micro" style="display:none;" id="holeJumpHint"></span>
-            <details class="hole-more" id="holeMore">
-              <summary class="hole-more-btn" aria-label="Más acciones">···</summary>
-              <div class="hole-more-menu">
-                <button type="button" class="topnav-action" onclick="closeHoleMore(); openReferee()">Árbitro</button>
-                <button type="button" class="hole-foto-link" id="holeFotoLink" hidden onclick="closeHoleMore(); setHoleTab('foto')">Mapa</button>
-                <div class="club-calls" id="holeClubCalls" hidden>
-                  <a id="holeCallCaddie" href="tel:+34918905111" onclick="closeHoleMore()"><span class="call-mark" aria-hidden="true"></span>Caddie master</a>
-                  <a id="holeCallRest" href="tel:+34918905630" onclick="closeHoleMore()"><span class="call-mark" aria-hidden="true"></span>Restaurante</a>
-                </div>
-              </div>
-            </details>
           </div>
           <div class="progress-holes" id="holeProgress" aria-hidden="true"></div>
+        </div>
+        <div class="hole-access" id="holeAccess" aria-label="Accesos del hoyo">
+          <button type="button" class="hole-access-chip" onclick="openReferee()">Árbitro</button>
+          <button type="button" class="hole-access-chip hole-foto-link" id="holeFotoLink" hidden onclick="setHoleTab('foto')">Mapa</button>
+          <a class="hole-access-chip" id="holeCallCaddie" href="tel:+34918905111" hidden>Caddie</a>
+          <a class="hole-access-chip" id="holeCallRest" href="tel:+34918905630" hidden>Restaurante</a>
         </div>
         <div id="holePlayPane" class="hole-tab-pane active" role="tabpanel">
           <div class="hole-play-main">
@@ -6190,11 +6165,6 @@ function normalizeCoursePhotoFile(courseId, file) {
   return cfg.dir + "/" + name.replace(/^\/+/, "");
 }
 
-function closeHoleMore() {
-  const d = document.getElementById("holeMore");
-  if (d) d.open = false;
-}
-
 function setHoleTab(tab) {
   state.holeTab = tab === "foto" ? "foto" : "play";
   const isFoto = state.holeTab === "foto";
@@ -6752,11 +6722,19 @@ function updateClubCalls() {
   const box = document.getElementById("scClubCalls");
   const caddie = document.getElementById("scCallCaddie");
   const rest = document.getElementById("scCallRest");
-  const hBox = document.getElementById("holeClubCalls");
   const hC = document.getElementById("holeCallCaddie");
   const hR = document.getElementById("holeCallRest");
   if (box) box.hidden = !show;
-  if (hBox) hBox.hidden = !show;
+  const caddieTel = show && contacts.caddie && contacts.caddie.tel;
+  const restTel = show && contacts.restaurant && contacts.restaurant.tel;
+  if (hC) {
+    hC.hidden = !caddieTel;
+    if (caddieTel) hC.href = "tel:" + contacts.caddie.tel;
+  }
+  if (hR) {
+    hR.hidden = !restTel;
+    if (restTel) hR.href = "tel:" + contacts.restaurant.tel;
+  }
   if (!show || !contacts) return;
   if (caddie) {
     caddie.href = "tel:" + contacts.caddie.tel;
@@ -6765,14 +6743,6 @@ function updateClubCalls() {
   if (rest) {
     rest.href = "tel:" + contacts.restaurant.tel;
     rest.innerHTML = '<span class="call-mark" aria-hidden="true"></span>Restaurante';
-  }
-  if (hC) {
-    hC.href = "tel:" + contacts.caddie.tel;
-    hC.innerHTML = '<span class="call-mark" aria-hidden="true"></span>' + (contacts.caddie.label || "Caddie master");
-  }
-  if (hR) {
-    hR.href = "tel:" + contacts.restaurant.tel;
-    hR.innerHTML = '<span class="call-mark" aria-hidden="true"></span>' + (contacts.restaurant.label || "Restaurante");
   }
 }
 
@@ -8703,7 +8673,7 @@ function collectFairwayBackup() {
   return {
     version: 3,
     app: "Fairway",
-    appVersion: "4.0.4",
+    appVersion: "4.0.5",
     exportedAt: new Date().toISOString(),
     updatedAt: (typeof getDataUpdatedAt === "function" ? getDataUpdatedAt() : "") || "",
     includes: ["rounds", "players.scores", "players.putts", "players.fir", "players.gir", "players.ball", "players.withdrawn", "roster", "host", "activeRound", "winners", "standings"],
@@ -9717,7 +9687,7 @@ function renderPerfil() {
     <div class="profile-hero">
       <div class="avatar-lg">${escapeHtml(initials)}</div>
       <p class="muted" style="margin-top:8px;">Tu perfil en este dispositivo</p>
-      <p class="micro">Fairway 4.0.4</p>
+      <p class="micro">Fairway 4.0.5</p>
     </div>
     <div class="card mb-16">
       <div class="eyebrow">Nombre</div>
@@ -10295,8 +10265,6 @@ function renderStats() {
 document.addEventListener("click", function (ev) {
   const t = ev.target;
   if (!t || !t.closest) return;
-  const more = document.getElementById("holeMore");
-  if (more && more.open && !more.contains(t)) more.open = false;
   const act = t.closest("[data-round-action]");
   if (act) {
     const id = act.getAttribute("data-round-id") || state.detalleId;

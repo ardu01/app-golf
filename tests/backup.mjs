@@ -87,7 +87,7 @@ assert.ok(!html.includes("onclick=\"openDetalle('${r.id}')\""));
 assert.ok(!html.includes("onclick=\"reopenRound('${d.id}'"));
 assert.ok(html.includes("data-open-detalle"));
 assert.ok(html.includes("data-round-action"));
-assert.ok(html.includes('appVersion: "4.0.4"'));
+assert.ok(html.includes('appVersion: "4.0.5"'));
 assert.ok(!html.includes('appVersion: "4.0.0-alpha"'));
 assert.ok(html.includes("fairwayShouldHoldUpdate"));
 assert.ok(html.includes("fairway.rounds.bak.v1"));
