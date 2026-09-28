@@ -1774,12 +1774,12 @@
   }
   #screen-hole .stepper-row .step-btn {
     width: 44px; height: 44px; border: 0; border-radius: 12px;
-    background: rgba(120,120,128,0.12); color: #000;
+    background: rgba(120,120,128,0.12); color: #000000;
     font-size: 24px; font-weight: 400; font-family: inherit;
     line-height: 44px; text-align: center;
     -webkit-tap-highlight-color: transparent;
   }
-  #screen-hole .stepper-row .step-btn:active { background: #1C1C1E; color: #fff; }
+  #screen-hole .stepper-row .step-btn:active { background: #3A3A3C; color: #fff; }
   #screen-hole .stepper-row .step-val {
     min-width: 48px; text-align: center;
     font-size: 34px; font-weight: 650; font-variant-numeric: tabular-nums;
@@ -1796,7 +1796,10 @@
     font-family: inherit; font-size: 16px; font-weight: 600;
     font-variant-numeric: tabular-nums; line-height: 40px; text-align: center;
   }
-  #screen-hole .chip-row-entry .qs.on { background: #1C1C1E; color: #fff; }
+  #screen-hole .chip-row-entry .qs.on {
+    background: rgba(0,0,0,0.08); color: #000000;
+    box-shadow: inset 0 0 0 1px #000000;
+  }
 
   #screen-hole .chip-row-entry .qs {
     flex: 1 1 calc(14% - 6px); min-width: 36px; height: 40px;
@@ -1810,7 +1813,8 @@
     -webkit-tap-highlight-color: transparent;
   }
   #screen-hole .chip-row-entry .qs.on {
-    background: #1C1C1E; color: #fff;
+    background: rgba(0,0,0,0.08); color: #000000;
+    box-shadow: inset 0 0 0 1px #000000;
   }
   #screen-hole .score-pad,
   #screen-hole .score-pad.slim,
@@ -2393,6 +2397,26 @@
     opacity: 1;
     color: var(--glass-accent);
   }
+  #screen-home > .tabbar,
+  #screen-scorecard > .tabbar,
+  #screen-leader > .tabbar {
+    --tint: #000000;
+    background: rgba(255,255,255,0.72);
+    border-top: 0.5px solid rgba(0,0,0,0.12);
+  }
+  #screen-home > .tabbar .tab,
+  #screen-scorecard > .tabbar .tab,
+  #screen-leader > .tabbar .tab {
+    color: rgba(60,60,67,0.60);
+  }
+  #screen-home > .tabbar .tab.active,
+  #screen-scorecard > .tabbar .tab.active,
+  #screen-leader > .tabbar .tab.active,
+  #screen-home > .tabbar .tab.active .ico,
+  #screen-scorecard > .tabbar .tab.active .ico,
+  #screen-leader > .tabbar .tab.active .ico {
+    color: #000000;
+  }
 
   /* Hole screen — hierarchy + thumb zone (right hand). Skin only. */
   #screen-hole {
@@ -2596,8 +2620,9 @@
     color: rgba(60,60,67,0.62);
   }
   #screen-hole .entry-section.golpes .chip-row-entry .qs.on {
-    background: rgba(60,60,67,0.14);
-    color: #1C1C1E;
+    background: rgba(0,0,0,0.08);
+    color: #000000;
+    box-shadow: inset 0 0 0 1px #000000;
   }
   #screen-hole .entry-section.putts .stepper-row {
     justify-content: flex-start;
@@ -2632,8 +2657,9 @@
   }
   #screen-hole .entry-section.putts .chip-row-entry .qs.on,
   #screen-hole .entry-section.putts .step-btn:active {
-    background: rgba(60,60,67,0.16);
-    color: #1C1C1E;
+    background: rgba(0,0,0,0.08);
+    color: #000000;
+    box-shadow: inset 0 0 0 1px #000000;
   }
   #screen-hole .stats-collapse {
     order: -1;
