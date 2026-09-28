@@ -165,7 +165,7 @@ La 4.0.5 deja el marcador igual y saca Árbitro, Mapa, Caddie y Restaurante del 
 
 La 4.0.6 deja el marcador igual y separa esa fila del progreso (12px). Hoyos pasa a ser la primera ficha y abre el salto de hoyos; Árbitro, Mapa, Caddie y Restaurante siguen en el mismo orden, y solo si hay destino. El esquema de la copia sigue en 3.
 
-La 4.0.7 deja el marcador igual y sube el tope del historial a 1000 partidas. Guardar una ronda, validar la copia y restaurar desde Drive o un JSON usan el mismo límite. El esquema de la copia sigue en 3. Las fórmulas no cambian. Para que el teléfono coja el service worker nuevo hace falta borrar los datos del sitio o reinstalar la PWA.
+La 4.0.7 deja el marcador igual y sube el tope del historial a 99999 partidas. Guardar una ronda, validar la copia y restaurar desde Drive o un JSON usan el mismo límite. El esquema de la copia sigue en 3. Las fórmulas no cambian. Para que el teléfono coja el service worker nuevo hace falta borrar los datos del sitio o reinstalar la PWA.
 
 Google Drive, si se conecta, es el Drive de cada uno: una carpeta Fairway y un solo `fairway-data.json`. La partida se apunta siempre primero en el teléfono. Drive es la copia entre aparatos, no un servidor de Fairway. Sin red se sigue jugando y, al volver la cobertura, se manda lo pendiente. El identificador OAuth de la web va en el código (`FAIRWAY_DRIVE_CLIENT_ID`); no hay secreto de cliente ni token de refresco guardado. Una sesión silenciosa de varias semanas haría falta un backend, y esta copia no lo finge. La exportación manual del JSON sigue donde estaba.
 
