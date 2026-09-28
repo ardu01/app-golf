@@ -1,7 +1,7 @@
 {
-  "name": "Fairway V3",
+  "name": "Fairway",
   "short_name": "Fairway",
-  "description": "Marcador de golf personal · offline",
+  "description": "Marcador de golf personal · 4.0.1",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
