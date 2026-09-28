@@ -33,41 +33,41 @@
     --ink-inverse: #000000;
     --ink-secondary: rgba(60,60,67,0.60);
     --ink-secondary-inverse: rgba(60,60,67,0.60);
-    --brand-fairway: #1C1C1E;
-    --brand-brass: #1C1C1E;
-    --brand-brass-pressed: #000000;
-    --brand-brass-dim: rgba(60,60,67,0.08);
-    --semantic-under: #1C1C1E;
+    --brand-fairway: #000000;
+    --brand-brass: #000000;
+    --brand-brass-pressed: #3A3A3C;
+    --brand-brass-dim: rgba(0,0,0,0.06);
+    --semantic-under: #34C759;
     --semantic-over: #FF3B30;
-    --score-birdie: #B42318;
-    --score-eagle: #8E1B14;
-    --score-bogey: #2F5AA6;
-    --score-double: #1E3F7A;
+    --score-birdie: #34C759;
+    --score-eagle: #34C759;
+    --score-bogey: #FF3B30;
+    --score-double: #FF3B30;
     --border-paper: rgba(60,60,67,0.16);
     --border-fairway: rgba(60,60,67,0.16);
-    --focus: #1C1C1E;
+    --focus: #000000;
     --danger: #FF3B30;
-    --ok: #1C1C1E;
+    --ok: #000000;
     --green-950: #F2F2F7;
     --green-900: #F2F2F7;
     --green-800: #FFFFFF;
-    --green-700: #1C1C1E;
+    --green-700: #000000;
     --green-600: #3A3A3C;
-    --green-500: #1C1C1E;
+    --green-500: #000000;
     --cream: #000000;
     --cream-dim: #E5E5EA;
     --cream-muted: rgba(60,60,67,0.60);
-    --gold: #1C1C1E;
+    --gold: #000000;
     --gold-soft: #3A3A3C;
-    --gold-dim: rgba(60,60,67,0.08);
-    --surface: rgba(255,255,255,0.78);
+    --gold-dim: rgba(0,0,0,0.06);
+    --surface: #FFFFFF;
     --surface-2: #F2F2F7;
     --border: rgba(60,60,67,0.16);
     --text: #000000;
     --text-2: rgba(60,60,67,0.60);
-    --tint: #1C1C1E;
-    --tint-pressed: #000000;
-    --separator: rgba(60,60,67,0.18);
+    --tint: #000000;
+    --tint-pressed: #3A3A3C;
+    --separator: rgba(0,0,0,0.12);
     --fill: rgba(120,120,128,0.12);
     --r-sm: 8px;
     --r-md: 10px;
@@ -84,15 +84,15 @@
     --safe-bot: max(8px, env(safe-area-inset-bottom, 0px));
     --tab-h: 49px;
     --pad-x: 16px;
-    /* Fairway 4.0.1 — home glass layout, accent in ink. */
+    /* Fairway 4.0.1 — monocromo. Accent negro, sin azul ni verde de marca. */
     --glass-bg: rgba(255, 255, 255, 0.72);
     --glass-blur: 28px;
     --glass-ink: #000000;
     --glass-ink-secondary: rgba(60, 60, 67, 0.60);
     --glass-separator: rgba(0, 0, 0, 0.12);
-    --glass-accent: #1C1C1E;
-    --glass-accent-pressed: #000000;
-    --glass-accent-dim: rgba(60, 60, 67, 0.10);
+    --glass-accent: #000000;
+    --glass-accent-pressed: #3A3A3C;
+    --glass-accent-dim: rgba(0, 0, 0, 0.08);
     --glass-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
     --glass-r-chip: 12px;
     --glass-r-card: 16px;
@@ -346,11 +346,11 @@
     background: var(--bg-paper-elevated); border-color: transparent;
     box-shadow: none; color: var(--ink); border-radius: 12px;
   }
-  .theme-paper .history-score { background: rgba(60,60,67,0.08); color: var(--tint); }
+  .theme-paper .history-score { background: rgba(0,0,0,0.06); color: #000000; }
   .theme-paper .option { background: var(--bg-paper-elevated); }
   .theme-paper .option.selected { background: var(--brand-brass-dim); }
   .theme-paper .chip { background: var(--bg-paper-elevated); border-color: var(--separator); color: var(--ink); }
-  .theme-paper .chip.selected { border-color: var(--tint); background: var(--brand-brass-dim); color: var(--tint-pressed); }
+  .theme-paper .chip.selected { border: 1px solid #000000; background: rgba(0,0,0,0.06); color: #000000; }
   .theme-paper .player-row { background: var(--bg-paper-elevated); }
   .theme-paper .player-block { background: var(--bg-paper-elevated); }
   .theme-paper .step-dot { background: rgba(60,60,67,0.18); }
@@ -358,9 +358,15 @@
   .theme-paper .step-dot.done { background: var(--tint); }
   .theme-paper .badge-demo { background: var(--fill); color: var(--ink-secondary); border-color: transparent; }
   .theme-paper .badge-tier { background: var(--brand-brass-dim); color: var(--tint-pressed); border-color: transparent; }
-  .theme-paper .badge-offline { background: rgba(255,59,48,0.12); color: var(--semantic-over); border-color: transparent; }
-  .theme-paper .close-stat { background: var(--bg-paper-elevated); border-color: transparent; box-shadow: none; }
-  .theme-paper .close-stat .v { color: var(--tint); }
+  .theme-paper .badge-offline { background: rgba(0,0,0,0.06); color: #000000; border-color: transparent; }
+  .theme-paper .close-stat {
+    background: rgba(255,255,255,0.72);
+    border: 0.5px solid rgba(0,0,0,0.12);
+    box-shadow: none;
+    -webkit-backdrop-filter: saturate(160%) blur(18px);
+    backdrop-filter: saturate(160%) blur(18px);
+  }
+  .theme-paper .close-stat .v { color: #000000; }
   .theme-paper .card-elevated { background: var(--bg-paper-elevated); box-shadow: none; }
 
   /* theme-fairway → light Apple (no clubhouse dark) */
@@ -557,8 +563,8 @@
     font-size: 11px; font-weight: 600; padding: 0 8px;
     border-radius: var(--r-pill); letter-spacing: 0.04em; line-height: 1;
   }
-  .badge-offline { background: rgba(255,59,48,0.12); color: #FF3B30; border: none; }
-  .badge-offline::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--semantic-over); }
+  .badge-offline { background: rgba(0,0,0,0.06); color: #000000; border: none; }
+  .badge-offline::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: #000000; }
   .badge-online { background: rgba(60,60,67,0.10); color: #1C1C1E; border: none; }
   .badge-online::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--ok); }
   .badge-tier { background: var(--brand-brass-dim); color: var(--tint-pressed); border: none; }
@@ -612,9 +618,9 @@
   .history-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
   .history-item:last-child { border-bottom: none; }
   .history-score {
-    width: 44px; height: 44px; border-radius: var(--r-md); background: var(--surface-2);
+    width: 44px; height: 44px; border-radius: var(--r-md); background: rgba(0,0,0,0.06);
     display: grid; place-items: center; font-weight: 700; font-size: 15px;
-    font-variant-numeric: tabular-nums; color: var(--brand-brass);
+    font-variant-numeric: tabular-nums; color: #000000;
   }
   .history-item .info { flex: 1; min-width: 0; }
   .history-item .info .name { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -994,7 +1000,7 @@
   .hole-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 4px; }
   .progress-holes { display: flex; gap: 3px; margin-top: 6px; }
   .progress-holes span { flex: 1; height: 3px; border-radius: 2px; background: rgba(60,60,67,0.12); }
-  .progress-holes span.done { background: var(--semantic-under); }
+  .progress-holes span.done { background: #000000; }
   .progress-holes span.now { background: var(--tint); }
 
   .carousel { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 0; }
@@ -1032,7 +1038,7 @@
   .player-card .pc-head .avatar { position: relative; width: 36px; height: 36px; font-size: 12px; }
   .player-card .pc-head .avatar .done-check {
     position: absolute; right: -3px; bottom: -3px; width: 16px; height: 16px;
-    border-radius: 50%; background: var(--semantic-under); color: #fff;
+    border-radius: 50%; background: #000000; color: #fff;
     font-size: 10px; font-weight: 700; display: grid; place-items: center;
     border: 1.5px solid var(--bg-elevated);
   }
@@ -1078,7 +1084,7 @@
   .player-dot.on { border-color: var(--brand-brass); color: var(--brand-brass); box-shadow: 0 0 0 1.5px var(--brand-brass); }
   .player-dot .dot-check {
     position: absolute; right: -2px; bottom: -2px; width: 12px; height: 12px;
-    border-radius: 50%; background: var(--semantic-under); color: #fff;
+    border-radius: 50%; background: #000000; color: #fff;
     font-size: 8px; display: grid; place-items: center; border: 1px solid var(--bg-fairway);
   }
 
@@ -1097,10 +1103,7 @@
     font-variant-numeric: tabular-nums; line-height: 1; color: var(--ink-inverse);
   }
   .score-value .vs-par { font-size: 13px; font-weight: 600; margin-top: 2px; letter-spacing: 0.2px; }
-  .vs-par.birdie { color: var(--score-birdie); }
-  .vs-par.par { color: var(--ink-secondary); }
-  .vs-par.bogey { color: var(--score-bogey); }
-  .vs-par.eagle { color: var(--score-eagle); }
+  .vs-par.birdie, .vs-par.eagle, .vs-par.bogey, .vs-par.par { color: var(--ink-secondary); }
 
   .quick-scores { display: flex; justify-content: center; gap: 6px; margin-top: 6px; }
   .qs {
@@ -1251,9 +1254,9 @@
   }
   .progress-holes span.todo { background: rgba(60,60,67,0.12); }
   .progress-holes span.partial { background: #8E8E93; }
-  .progress-holes span.done { background: #1C1C1E; }
+  .progress-holes span.done { background: #000000; }
   .progress-holes span.now {
-    background: #1C1C1E;
+    background: #000000;
     box-shadow: 0 0 0 1.5px rgba(60,60,67,0.35);
   }
 
@@ -1283,10 +1286,10 @@
     color: var(--ink-secondary); width: 36px;
   }
   table.scorecard .score-cell { font-weight: 600; font-size: 15px; min-width: 32px; color: var(--ink); }
-  .sc-birdie { background: rgba(180,35,24,0.12); border-radius: 6px; color: var(--score-birdie); }
-  .sc-eagle { background: rgba(142,27,20,0.16); border-radius: 6px; color: var(--score-eagle); }
-  .sc-bogey { outline: 1.5px solid rgba(47,90,166,0.65); border-radius: 4px; color: var(--score-bogey); }
-  .sc-dbl { outline: 1.5px solid rgba(30,63,122,0.75); box-shadow: inset 0 0 0 2px rgba(47,90,166,0.22); border-radius: 4px; color: var(--score-double); }
+  .sc-birdie { background: rgba(52,199,89,0.16); border-radius: 6px; color: var(--semantic-under); }
+  .sc-eagle { background: rgba(52,199,89,0.22); border-radius: 6px; color: var(--semantic-under); }
+  .sc-bogey { outline: 1.5px solid var(--semantic-over); border-radius: 4px; color: var(--semantic-over); }
+  .sc-dbl { outline: 1.5px solid var(--semantic-over); box-shadow: inset 0 0 0 2px rgba(255,59,48,0.28); border-radius: 4px; color: var(--semantic-over); }
   /* Marcas profesionales (tarjeta neta): círculo = bajo par · cuadrado = sobre par */
   .sc-mark {
     display: inline-flex; align-items: center; justify-content: center;
@@ -2077,9 +2080,9 @@
   .tab.active,
   .theme-paper .tab.active,
   .theme-fairway .tab.active,
-  .tab.active .ico { color: #1C1C1E; }
-  .quick-tile .ico { color: #1C1C1E; background: rgba(120,120,128,0.12); }
-  .title-mark { color: #1C1C1E; }
+  .tab.active .ico { color: #000000; }
+  .quick-tile .ico { color: #000000; background: rgba(120,120,128,0.12); }
+  .title-mark { color: #000000; }
   .player-card.active {
     border: 0.5px solid #1C1C1E;
     box-shadow: 0 0 0 1.5px #1C1C1E, 0 10px 28px rgba(0,0,0,0.06);
@@ -2090,39 +2093,38 @@
     -webkit-backdrop-filter: saturate(160%) blur(18px);
   }
   .chip.selected,
-  .theme-paper .chip.selected,
-  #screen-hole .chip-row-entry .qs.on {
-    border-color: #1C1C1E;
-    background: #1C1C1E;
-    color: #fff;
+  .theme-paper .chip.selected {
+    border: 1px solid #000000;
+    background: rgba(0,0,0,0.06);
+    color: #000000;
   }
   #screen-hole .stepper-row .step-btn:active,
-  .score-btn:active { background: #1C1C1E; color: #fff; }
-  .btn-primary { background: #1C1C1E; color: #fff; }
-  .btn-primary:active { background: #000; }
+  .score-btn:active { background: #000000; color: #fff; }
+  .btn-primary { background: #000000; color: #fff; }
+  .btn-primary:active { background: #3A3A3C; }
   .btn-icon,
   .theme-paper .btn-icon,
   .theme-fairway .btn-icon,
   .topnav-action {
     background: rgba(255,255,255,0.72);
-    color: #1C1C1E;
-    border: 0.5px solid rgba(60,60,67,0.14);
+    color: #000000;
+    border: 0.5px solid rgba(0,0,0,0.12);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
   }
   .lb-row.me {
     background: rgba(60,60,67,0.06);
-    border-left: 2px solid #1C1C1E;
+    border-left: 2px solid #000000;
   }
   .lb-row.me .lb-pos,
   .winner-row .detail,
   .winner-row .placa-btn,
   .winners-actions .placa-link,
   .close-stat .v,
-  .theme-paper .close-stat .v { color: #1C1C1E; }
+  .theme-paper .close-stat .v { color: #000000; }
   .winner-row .medal {
-    background: rgba(60,60,67,0.08);
-    color: #1C1C1E;
+    background: rgba(0,0,0,0.06);
+    color: #000000;
   }
   .winners-block .winners-head { background: rgba(247,247,250,0.94); }
   .avatar, .avatar-lg { color: #fff; }
@@ -2286,8 +2288,8 @@
     background: rgba(60, 60, 67, 0.16);
   }
   #screen-home .round-card [data-finish-round] {
-    background: rgba(255, 59, 48, 0.10);
-    color: #FF3B30;
+    background: transparent;
+    color: #000000;
   }
   #screen-home .round-card .stat-row {
     gap: 8px;
@@ -2398,7 +2400,8 @@
     color: #000;
   }
   #screen-hole .topnav { min-height: 40px; padding-bottom: 0; }
-  #screen-hole .topnav .title { display: none; }
+  #screen-hole .topnav .title { color: #000000; font-weight: 600; }
+  #screen-hole .title-mark { display: none; }
   #screen-hole .topnav .topnav-action,
   #screen-hole .btn-icon {
     background: transparent;
@@ -2413,16 +2416,38 @@
     margin: 0;
     text-align: center;
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
-    font-size: 17px;
-    font-weight: 600;
-    letter-spacing: -0.41px;
-    line-height: 1.2;
-    color: #000;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: -0.08px;
+    line-height: 1.25;
+    color: rgba(60,60,67,0.60);
   }
   #screen-hole .hole-kicker .n { font-variant-numeric: tabular-nums; }
-  #screen-hole .hole-chips,
-  #screen-hole .progress-holes,
-  #screen-hole #holeYards { display: none !important; }
+  #screen-hole .hole-meters {
+    display: block;
+    margin-top: 1px;
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(60,60,67,0.60);
+  }
+  #screen-hole .hole-chips {
+    display: flex;
+    justify-content: center;
+    margin-top: 6px;
+  }
+  #screen-hole .hole-chips .badge,
+  #screen-hole #holeClubBadge {
+    background: rgba(255,255,255,0.72);
+    border: 0.5px solid rgba(0,0,0,0.12);
+    color: #000000;
+    box-shadow: none;
+    -webkit-backdrop-filter: saturate(160%) blur(18px);
+    backdrop-filter: saturate(160%) blur(18px);
+  }
+  #screen-hole .progress-holes { margin-top: 8px; }
+  #screen-hole .progress-holes span { background: rgba(60,60,67,0.18); }
+  #screen-hole .progress-holes span.done,
+  #screen-hole .progress-holes span.now { background: #000000; box-shadow: none; }
   #screen-hole .hole-tools {
     justify-content: flex-end;
     gap: 4px;
@@ -2538,7 +2563,7 @@
     border-radius: 22px;
     border: 0.5px solid rgba(60,60,67,0.2);
     background: rgba(255,255,255,0.92);
-    color: #1C1C1E;
+    color: #000000;
     font-size: 40px;
     line-height: 74px;
   }
@@ -2547,15 +2572,15 @@
     height: 92px;
     justify-self: end;
     border-radius: 26px;
-    border: 0.5px solid #1C1C1E;
-    background: #1C1C1E;
+    border: 0.5px solid #000000;
+    background: #000000;
     color: #fff;
     font-size: 48px;
     line-height: 90px;
   }
   #screen-hole .entry-section.golpes .step-btn:active,
   #screen-hole .entry-section.golpes .stepper-row .step-btn:last-of-type:active {
-    background: #000;
+    background: #3A3A3C;
     color: #fff;
   }
   #screen-hole .entry-section.golpes .chip-row-entry { justify-content: center; }
@@ -2624,18 +2649,20 @@
     box-shadow: none;
   }
   #screen-hole .hole-nav .btn {
-    height: 40px;
-    font-size: 15px;
+    height: 48px;
+    font-size: 17px;
     font-weight: 600;
     background: transparent;
-    color: #1C1C1E;
+    color: rgba(60,60,67,0.72);
     box-shadow: none;
+    border: 0;
   }
   #screen-hole .hole-nav .btn-primary {
-    background: rgba(255,255,255,0.78);
-    border: 0.5px solid rgba(60,60,67,0.18);
-    color: #1C1C1E;
+    background: #000000;
+    border: 0;
+    color: #FFFFFF;
   }
+  #screen-hole .hole-nav .btn-primary:active { background: #3A3A3C; }
   #screen-hole .hole-foto-empty {
     color: rgba(60,60,67,0.55);
     background: rgba(255,255,255,0.72);
@@ -2646,6 +2673,32 @@
   #screen-hole .stroke-badge.give {
     background: rgba(120,120,128,0.12);
     color: rgba(60,60,67,0.75);
+  }
+
+  /* Setup — selected = borde negro fino, sin relleno sólido. */
+  #screen-setup .option.selected {
+    background: rgba(0,0,0,0.06);
+    box-shadow: inset 0 0 0 1px #000000;
+    color: #000000;
+  }
+  #screen-setup .chip.selected {
+    border: 1px solid #000000;
+    background: rgba(0,0,0,0.06);
+    color: #000000;
+  }
+  #screen-setup .step-dot.on,
+  #screen-setup .step-dot.done { background: #000000; }
+  #screen-setup .player-block,
+  #screen-setup .player-list {
+    background: rgba(255,255,255,0.72);
+    border: 0.5px solid rgba(0,0,0,0.12);
+  }
+  #screen-setup .setup-footer {
+    position: sticky;
+    bottom: 0;
+    background: rgba(242,242,247,0.92);
+    -webkit-backdrop-filter: blur(18px);
+    backdrop-filter: blur(18px);
   }
 </style>
 </head>
@@ -2729,18 +2782,18 @@
       </section>
 
       <!-- HOLE -->
-      <section id="screen-hole" class="screen theme-fairway">
+      <section id="screen-hole" class="screen theme-paper">
         <div class="topnav">
           <button class="btn-icon" onclick="go('home')" aria-label="Inicio">‹</button>
-          <div class="title"><span class="title-mark" aria-hidden="true">○</span> Marcador</div>
+          <div class="title">Marcador</div>
           <button type="button" class="topnav-action" onclick="openRules()" aria-label="Reglas de los modos">Reglas</button>
           <button type="button" class="topnav-action" onclick="go('ajustes')" aria-label="Ajustes de la partida">Ajustes</button>
         </div>
         <div class="hole-header">
           <p class="hole-kicker">
             <span class="n" id="holeNum">1</span><span aria-hidden="true"> · </span>Par <span id="holePar">5</span><span aria-hidden="true"> · </span><span id="holeHcpLine">SI 4</span>
+            <span class="hole-meters" id="holeYards">476 m</span>
           </p>
-          <span id="holeYards" hidden>476 m</span>
           <div class="hole-chips">
             <span class="badge" id="holeClubBadge">Centro Nacional de Golf</span>
             <span class="badge badge-tier" id="tierBadge" hidden></span>
@@ -2855,7 +2908,7 @@
             <div class="sc-legend" id="scLegend" style="margin-top:6px;">
               <span><i class="leg sc-eagle" style="display:inline-block;"></i> Eagle+</span>
               <span><i class="leg sc-birdie" style="display:inline-block;"></i> Birdie</span>
-              <span><i class="leg" style="display:inline-block;outline:1.5px solid rgba(47,90,166,0.65);border-radius:4px;"></i> Bogey+</span>
+              <span><i class="leg" style="display:inline-block;outline:1.5px solid #FF3B30;border-radius:4px;"></i> Bogey+</span>
             </div>
           </div>
           <div class="stat-row" style="margin-top:0;">
@@ -6648,16 +6701,16 @@ function renderScorecard() {
   if (leg) {
     if (cardMode === "net") {
       leg.innerHTML = `
-        <span><i class="leg-circle" style="display:inline-block;box-shadow:inset 0 0 0 1px #8E1B14;"></i> Eagle+</span>
+        <span><i class="leg-circle" style="display:inline-block;box-shadow:inset 0 0 0 1px #34C759;"></i> Eagle+</span>
         <span><i class="leg-circle" style="display:inline-block;"></i> Birdie</span>
         <span><i class="leg-square" style="display:inline-block;"></i> Bogey</span>
-        <span><i class="leg-square" style="display:inline-block;box-shadow:inset 0 0 0 1px #1E3F7A;"></i> Doble+</span>
+        <span><i class="leg-square" style="display:inline-block;box-shadow:inset 0 0 0 1px #FF3B30;"></i> Doble+</span>
         <span>Golpe neto vs par</span>`;
     } else {
       leg.innerHTML = `
         <span><i class="leg sc-eagle" style="display:inline-block;"></i> Eagle+</span>
         <span><i class="leg sc-birdie" style="display:inline-block;"></i> Birdie</span>
-        <span><i class="leg" style="display:inline-block;outline:1.5px solid rgba(47,90,166,0.65);border-radius:4px;"></i> Bogey+</span>
+        <span><i class="leg" style="display:inline-block;outline:1.5px solid #FF3B30;border-radius:4px;"></i> Bogey+</span>
         <span>· = golpe de ventaja · pts Stableford en hoyos con golpe</span>`;
     }
   }
@@ -8166,8 +8219,8 @@ function renderClose() {
           <button type="button" class="placa-link" onclick="shareAllWinnerPlaques()">Compartir todas las placas</button>
         </div>` : `<div class="winner-row"><div class="name" style="grid-column:1/-1;padding:8px 0;">Aún no hay resultados</div></div>`}
     </div>
-    <button class="btn btn-primary" onclick="shareScorecardWhatsApp()">Compartir tarjeta</button>
-    <button class="btn btn-ghost" onclick="shareFairwayBackup()">Guardar copia de seguridad</button>
+    <button class="btn btn-primary" onclick="shareFairwayBackup()">Guardar copia de seguridad</button>
+    <button class="btn btn-ghost" onclick="shareScorecardWhatsApp()">Compartir tarjeta</button>
     <button class="btn btn-ghost" onclick="go('historial')">Ver historial</button>
     <button class="btn btn-ghost" onclick="go('home')">Volver al inicio</button>
   `;
@@ -9569,7 +9622,7 @@ function renderAjustes() {
             ? `<button type="button" class="btn btn-ghost" onclick="ajReinstate(${i})">Reincorporar</button>`
             : `<button type="button" class="btn btn-ghost" onclick="ajWithdraw(${i})">Retirar jugador</button>`}
           ${i > 0
-            ? `<button type="button" class="btn btn-ghost" style="color:var(--semantic-over);" onclick="ajRemove(${i})">Eliminar</button>`
+            ? `<button type="button" class="btn btn-ghost" style="color:var(--danger);" onclick="ajRemove(${i})">Eliminar</button>`
             : ""}
         </div>
       </div>`;
