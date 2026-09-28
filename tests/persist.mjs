@@ -10,10 +10,12 @@ for (const block of html.matchAll(/<script>([\s\S]*?)<\/script>/g)) {
 }
 
 assert.ok(html.includes('appVersion: "4.0.1"'));
+assert.ok(!html.includes('appVersion: "4.0.0-alpha"'));
 assert.ok(!html.includes('appVersion: "3.0.3"'));
 assert.ok(!html.includes('appVersion: "3.0.2"'));
 assert.ok(!html.includes('appVersion: "3.0.0"'));
 assert.ok(sw.includes('const SHELL = "fairway-v4-401"'));
+assert.ok(!sw.includes("fairway-v4-400a"));
 assert.ok(html.includes("pagehide"));
 assert.ok(html.includes("visibilitychange"));
 assert.ok(html.includes('document.addEventListener("freeze"'));

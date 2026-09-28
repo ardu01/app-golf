@@ -153,7 +153,7 @@ La 3.0.2 escribe la ronda al esconder la pestaña y al suspender Safari. Si la c
 
 La 3.0.3 pide dos confirmaciones antes de cerrar una ronda a medias (Inicio y Ajustes). Cancelar cualquiera de las dos deja la partida como estaba. Terminar el último hoyo sigue yendo al cierre sin ese doble aviso.
 
-La 4.0.1 es solo piel: monocromo glass claro en Inicio, hoyo, tarjeta, cierre y preparación. El esquema de la copia sigue en 3. Las fórmulas, las claves de guardado y los mapas no cambian.
+La 4.0.1 es solo piel: monocromo glass claro en Inicio, hoyo, tarjeta, cierre y preparación. El cristal del inicio de la 4.0.0-alpha se queda, sin azul. El esquema de la copia sigue en 3. Las fórmulas, las claves de guardado y los mapas no cambian.
 
 Google Drive, si se conecta, es el Drive de cada uno: una carpeta Fairway y un solo `fairway-data.json`. La partida se apunta siempre primero en el teléfono. Drive es la copia entre aparatos, no un servidor de Fairway. Sin red se sigue jugando y, al volver la cobertura, se manda lo pendiente. El identificador OAuth de la web va en el código (`FAIRWAY_DRIVE_CLIENT_ID`); no hay secreto de cliente ni token de refresco guardado. Una sesión silenciosa de varias semanas haría falta un backend, y esta copia no lo finge. La exportación manual del JSON sigue donde estaba.
 
@@ -170,3 +170,5 @@ python3 -m http.server 8766
 ```
 
 `http://localhost:8766`. Desde el navegador del móvil se puede añadir a la pantalla de inicio.
+
+GitHub Pages publica el repo tal cual: hay un `.nojekyll` en la raíz para que no pase por Jekyll.
