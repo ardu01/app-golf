@@ -170,3 +170,5 @@ python3 -m http.server 8766
 ```
 
 `http://localhost:8766`. Desde el navegador del móvil se puede añadir a la pantalla de inicio.
+
+GitHub Pages publica el repo tal cual: hay un `.nojekyll` en la raíz para que no pase por Jekyll.
