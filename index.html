@@ -24,7 +24,7 @@
   }
 
   :root {
-    /* Apple HIG — systemGray6 / labels / systemGreen */
+    /* Fairway 4.0.1 — monocromo glass claro. Fondo agrupado iOS, sin color de marca. */
     --bg-fairway: #F2F2F7;
     --bg-paper: #F2F2F7;
     --bg-elevated: #FFFFFF;
@@ -33,37 +33,41 @@
     --ink-inverse: #000000;
     --ink-secondary: rgba(60,60,67,0.60);
     --ink-secondary-inverse: rgba(60,60,67,0.60);
-    --brand-fairway: #34C759;
-    --brand-brass: #34C759;
-    --brand-brass-pressed: #248A3D;
-    --brand-brass-dim: rgba(52,199,89,0.16);
-    --semantic-under: #34C759;
+    --brand-fairway: #1C1C1E;
+    --brand-brass: #1C1C1E;
+    --brand-brass-pressed: #000000;
+    --brand-brass-dim: rgba(60,60,67,0.08);
+    --semantic-under: #1C1C1E;
     --semantic-over: #FF3B30;
-    --border-paper: rgba(60,60,67,0.29);
-    --border-fairway: rgba(60,60,67,0.29);
-    --focus: #34C759;
+    --score-birdie: #B42318;
+    --score-eagle: #8E1B14;
+    --score-bogey: #2F5AA6;
+    --score-double: #1E3F7A;
+    --border-paper: rgba(60,60,67,0.16);
+    --border-fairway: rgba(60,60,67,0.16);
+    --focus: #1C1C1E;
     --danger: #FF3B30;
-    --ok: #34C759;
+    --ok: #1C1C1E;
     --green-950: #F2F2F7;
     --green-900: #F2F2F7;
     --green-800: #FFFFFF;
-    --green-700: #34C759;
-    --green-600: #30D158;
-    --green-500: #34C759;
+    --green-700: #1C1C1E;
+    --green-600: #3A3A3C;
+    --green-500: #1C1C1E;
     --cream: #000000;
     --cream-dim: #E5E5EA;
     --cream-muted: rgba(60,60,67,0.60);
-    --gold: #34C759;
-    --gold-soft: #248A3D;
-    --gold-dim: rgba(52,199,89,0.16);
-    --surface: #FFFFFF;
+    --gold: #1C1C1E;
+    --gold-soft: #3A3A3C;
+    --gold-dim: rgba(60,60,67,0.08);
+    --surface: rgba(255,255,255,0.78);
     --surface-2: #F2F2F7;
-    --border: rgba(60,60,67,0.29);
+    --border: rgba(60,60,67,0.16);
     --text: #000000;
     --text-2: rgba(60,60,67,0.60);
-    --tint: #34C759;
-    --tint-pressed: #248A3D;
-    --separator: rgba(60,60,67,0.29);
+    --tint: #1C1C1E;
+    --tint-pressed: #000000;
+    --separator: rgba(60,60,67,0.18);
     --fill: rgba(120,120,128,0.12);
     --r-sm: 8px;
     --r-md: 10px;
@@ -72,23 +76,23 @@
     --r-cta: 12px;
     --radius: var(--r-lg);
     --radius-sm: var(--r-md);
-    --shadow-paper: 0 1px 3px rgba(0,0,0,0.06);
-    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", system-ui, sans-serif;
-    --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
+    --shadow-paper: 0 1px 0 rgba(255,255,255,0.85) inset, 0 1px 2px rgba(0,0,0,0.04), 0 10px 28px rgba(0,0,0,0.05);
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
     --mono: "SF Mono", ui-monospace, Menlo, monospace;
     --safe-top: max(12px, env(safe-area-inset-top, 0px));
     --safe-bot: max(8px, env(safe-area-inset-bottom, 0px));
     --tab-h: 49px;
     --pad-x: 16px;
-    /* Fairway 4.0 Glass claro — Home + tab bar only. Do not retint --tint. */
+    /* Fairway 4.0.1 — home glass layout, accent in ink. */
     --glass-bg: rgba(255, 255, 255, 0.72);
     --glass-blur: 28px;
     --glass-ink: #000000;
     --glass-ink-secondary: rgba(60, 60, 67, 0.60);
     --glass-separator: rgba(0, 0, 0, 0.12);
-    --glass-accent: #007AFF;
-    --glass-accent-pressed: #0062CC;
-    --glass-accent-dim: rgba(0, 122, 255, 0.12);
+    --glass-accent: #1C1C1E;
+    --glass-accent-pressed: #000000;
+    --glass-accent-dim: rgba(60, 60, 67, 0.10);
     --glass-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
     --glass-r-chip: 12px;
     --glass-r-card: 16px;
@@ -187,8 +191,12 @@
     flex-shrink: 0;
   }
   #screen-home .home-top {
-    display: flex; align-items: center; justify-content: flex-end;
+    display: flex; align-items: center; justify-content: space-between;
     min-height: 36px; margin-bottom: 2px;
+  }
+  .app-version {
+    font-size: 12px; font-weight: 600; letter-spacing: 0.02em;
+    color: rgba(60,60,67,0.55);
   }
   #screen-home .greeting-sub {
     display: block; width: 100%;
@@ -338,7 +346,7 @@
     background: var(--bg-paper-elevated); border-color: transparent;
     box-shadow: none; color: var(--ink); border-radius: 12px;
   }
-  .theme-paper .history-score { background: rgba(52,199,89,0.12); color: var(--tint); }
+  .theme-paper .history-score { background: rgba(60,60,67,0.08); color: var(--tint); }
   .theme-paper .option { background: var(--bg-paper-elevated); }
   .theme-paper .option.selected { background: var(--brand-brass-dim); }
   .theme-paper .chip { background: var(--bg-paper-elevated); border-color: var(--separator); color: var(--ink); }
@@ -435,19 +443,19 @@
     width: 22px; height: 20px; display: inline-flex;
     align-items: center; justify-content: center;
   }
-  .tab.active .ico { opacity: 1; color: var(--tint, #34C759); }
+  .tab.active .ico { opacity: 1; color: var(--tint, #1C1C1E); }
   .title-mark {
     display: inline-flex; align-items: center; justify-content: center;
     width: 22px; height: 22px; margin-right: 4px;
-    font-size: 14px; color: var(--tint, #34C759);
+    font-size: 14px; color: var(--tint, #1C1C1E);
     vertical-align: -2px; opacity: 0.95;
   }
   .quick-tile .ico {
     font-size: 22px; margin-bottom: 6px; line-height: 1;
-    color: var(--tint, #34C759); opacity: 0.9;
+    color: var(--tint, #1C1C1E); opacity: 0.9;
     width: 28px; height: 28px; display: inline-flex;
     align-items: center; justify-content: center;
-    border-radius: 8px; background: rgba(52,199,89,0.12);
+    border-radius: 8px; background: rgba(60,60,67,0.08);
   }
   .quick-tile .ico.ico-user {
     font-size: 0;
@@ -551,7 +559,7 @@
   }
   .badge-offline { background: rgba(255,59,48,0.12); color: #FF3B30; border: none; }
   .badge-offline::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--semantic-over); }
-  .badge-online { background: rgba(52,199,89,0.16); color: #248A3D; border: none; }
+  .badge-online { background: rgba(60,60,67,0.10); color: #1C1C1E; border: none; }
   .badge-online::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--ok); }
   .badge-tier { background: var(--brand-brass-dim); color: var(--tint-pressed); border: none; }
 
@@ -571,8 +579,9 @@
     border: none; font-size: 11px; letter-spacing: -0.08px; padding: 2px 8px;
   }
   .hole-chips .badge {
-    background: rgba(255,255,255,0.16); color: rgba(255,255,255,0.92);
-    border: none; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    background: rgba(255,255,255,0.72); color: var(--ink);
+    border: 0.5px solid rgba(60,60,67,0.14);
+    max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
 
 
@@ -653,7 +662,7 @@
   .ref-bubble p { margin: 0 0 8px; font-size: 15px; line-height: 1.35; letter-spacing: -0.2px; }
   .ref-bubble p:last-child { margin-bottom: 0; }
   .ref-bubble.user {
-    align-self: flex-end; background: var(--tint, #34C759); color: #fff;
+    align-self: flex-end; background: var(--tint, #1C1C1E); color: #fff;
     border-bottom-right-radius: 6px;
   }
   .ref-bubble.ref {
@@ -688,11 +697,11 @@
   }
   .ref-compose button {
     height: 44px; padding: 0 14px; border: none; border-radius: 12px;
-    background: var(--tint, #34C759); color: #fff; font: inherit; font-size: 15px; font-weight: 700;
+    background: var(--tint, #1C1C1E); color: #fff; font: inherit; font-size: 15px; font-weight: 700;
   }
   .badge-oficial {
-    background: rgba(27,94,59,0.1); color: var(--brand-fairway);
-    border: 1px solid rgba(27,94,59,0.3); font-size: 10px; letter-spacing: 0.06em;
+    background: rgba(60,60,67,0.08); color: var(--brand-fairway);
+    border: 1px solid rgba(60,60,67,0.22); font-size: 10px; letter-spacing: 0.06em;
   }
   .badge-social {
     background: rgba(26,26,24,0.05); color: var(--ink-secondary);
@@ -720,7 +729,7 @@
     flex-shrink: 0; display: grid; place-items: center;
   }
   .option.selected .radio { border-color: var(--brand-brass); background: var(--brand-brass); }
-  .option.selected .radio::after { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--ink); }
+  .option.selected .radio::after { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #fff; }
   .option .body { flex: 1; min-width: 0; }
   .option .body .t { font-size: 15px; font-weight: 600; display: block; }
   .option .body .d { font-size: 12px; color: var(--text-2); margin-top: 2px; display: block; }
@@ -840,12 +849,12 @@
   .player-row:last-of-type { border-radius: 0 0 var(--r-md) var(--r-md); margin-bottom: 8px; }
   .avatar {
     width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center;
-    font-weight: 700; font-size: 12px; background: var(--brand-fairway); color: var(--ink-inverse);
-    border: 1.5px solid rgba(52,199,89,0.35); flex-shrink: 0;
+    font-weight: 700; font-size: 12px; background: var(--brand-fairway); color: #fff;
+    border: 1.5px solid rgba(60,60,67,0.28); flex-shrink: 0;
   }
-  .avatar.a2 { background: #3d4a6b; }
-  .avatar.a3 { background: #6b4a3d; }
-  .avatar.a4 { background: #4a5c3d; }
+  .avatar.a2 { background: #3A3A3C; color: #fff; }
+  .avatar.a3 { background: #636366; color: #fff; }
+  .avatar.a4 { background: #8E8E93; color: #fff; }
   .player-row .name { flex: 1; font-weight: 600; font-size: 15px; }
   .player-row .hcp { font-size: 12px; color: var(--text-2); font-variant-numeric: tabular-nums; }
   .player-row .hcp-step,
@@ -901,21 +910,21 @@
     min-width: 28px; height: 22px; padding: 0 6px; margin-left: 6px;
     border-radius: 6px; font-size: 12px; font-weight: 650;
     font-variant-numeric: tabular-nums;
-    background: rgba(52,199,89,0.16); color: #1B7A32;
+    background: rgba(60,60,67,0.10); color: #1C1C1E;
   }
   .stroke-badge.zero {
     background: transparent; color: rgba(60,60,67,0.35); font-weight: 500;
     border: .5px solid rgba(60,60,67,0.18);
   }
-  .stroke-badge.two { background: rgba(52,199,89,0.22); }
-  .stroke-badge.give { background: rgba(255,149,0,0.18); color: #B85C00; }
-  .sc-stroke.give { color: #B85C00; }
+  .stroke-badge.two { background: rgba(60,60,67,0.14); }
+  .stroke-badge.give { background: rgba(60,60,67,0.08); color: rgba(60,60,67,0.72); }
+  .sc-stroke.give { color: rgba(60,60,67,0.55); }
   .net-chip {
     display: inline-block; margin-top: 2px; font-size: 11px; font-weight: 600;
     color: rgba(60,60,67,0.55);
   }
   .sc-stroke {
-    font-size: 9px; color: #1B7A32; font-weight: 700; display: block; line-height: 1;
+    font-size: 9px; color: #1C1C1E; font-weight: 700; display: block; line-height: 1;
   }
   #screen-scorecard .card-table, #screen-scorecard .table-scroll, #scoreTable {
     max-width: 100%;
@@ -950,7 +959,7 @@
   }
   .hole-foto-back {
     border: 0; background: transparent; padding: 6px 0;
-    font: inherit; font-size: 15px; font-weight: 500; color: #34C759;
+    font: inherit; font-size: 15px; font-weight: 500; color: #1C1C1E;
     cursor: pointer;
   }
   .hole-foto-card {
@@ -1016,7 +1025,7 @@
   .player-card.active { border-color: var(--tint); box-shadow: 0 0 0 2px var(--tint); opacity: 1; }
   .player-card.flash { animation: cardFlash 0.45s ease; }
   @keyframes cardFlash {
-    0% { box-shadow: 0 0 0 2px var(--brand-brass); background: rgba(52,199,89,0.08); }
+    0% { box-shadow: 0 0 0 2px var(--brand-brass); background: rgba(60,60,67,0.06); }
     100% { box-shadow: 0 0 0 1.5px var(--brand-brass); background: var(--bg-elevated); }
   }
   .player-card .pc-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
@@ -1088,10 +1097,10 @@
     font-variant-numeric: tabular-nums; line-height: 1; color: var(--ink-inverse);
   }
   .score-value .vs-par { font-size: 13px; font-weight: 600; margin-top: 2px; letter-spacing: 0.2px; }
-  .vs-par.birdie { color: #34C759; }
+  .vs-par.birdie { color: var(--score-birdie); }
   .vs-par.par { color: var(--ink-secondary); }
-  .vs-par.bogey { color: #FF3B30; }
-  .vs-par.eagle { color: #248A3D; }
+  .vs-par.bogey { color: var(--score-bogey); }
+  .vs-par.eagle { color: var(--score-eagle); }
 
   .quick-scores { display: flex; justify-content: center; gap: 6px; margin-top: 6px; }
   .qs {
@@ -1178,10 +1187,10 @@
   .hole-grid-legend i {
     width: 10px; height: 10px; border-radius: 3px; display: inline-block;
   }
-  .hole-grid-legend .lg-done { background: #34C759; }
-  .hole-grid-legend .lg-partial { background: #FF9F0A; }
+  .hole-grid-legend .lg-done { background: #1C1C1E; }
+  .hole-grid-legend .lg-partial { background: #8E8E93; }
   .hole-grid-legend .lg-todo { background: rgba(120,120,128,0.22); border: 0.5px solid rgba(60,60,67,0.25); }
-  .hole-grid-legend .lg-now { background: #34C759; outline: 2px solid rgba(52,199,89,0.35); outline-offset: 1px; }
+  .hole-grid-legend .lg-now { background: #1C1C1E; outline: 2px solid rgba(60,60,67,0.28); outline-offset: 1px; }
   .hole-grid button {
     aspect-ratio: 1; border-radius: 12px; border: 1.5px solid rgba(60,60,67,0.18);
     background: rgba(120,120,128,0.08); color: rgba(60,60,67,0.45);
@@ -1195,7 +1204,7 @@
   .hole-grid button .hn { font-size: 17px; line-height: 1; font-weight: 700; }
   .hole-grid button .hp { font-size: 9px; font-weight: 500; color: inherit; opacity: 0.7; text-transform: uppercase; }
   .hole-grid button .tick {
-    font-size: 11px; font-weight: 700; line-height: 1; color: #248A3D; margin-top: 1px;
+    font-size: 11px; font-weight: 700; line-height: 1; color: #1C1C1E; margin-top: 1px;
   }
   /* Pendiente */
   .hole-grid button.todo {
@@ -1206,25 +1215,25 @@
   }
   /* Parcial (algún jugador marcado) */
   .hole-grid button.partial {
-    background: rgba(255,159,10,0.14);
-    border-color: rgba(255,159,10,0.55);
+    background: rgba(60,60,67,0.10);
+    border-color: rgba(60,60,67,0.40);
     border-style: solid;
-    color: #C93400;
+    color: #3A3A3C;
   }
-  .hole-grid button.partial .tick { color: #C93400; }
+  .hole-grid button.partial .tick { color: #3A3A3C; }
   /* Completado */
   .hole-grid button.done {
-    background: rgba(52,199,89,0.18);
-    border-color: #34C759;
+    background: rgba(60,60,67,0.10);
+    border-color: #1C1C1E;
     border-style: solid;
-    color: #1B7A32;
+    color: #1C1C1E;
   }
-  .hole-grid button.done .hn { color: #1B7A32; }
-  .hole-grid button.done .tick { color: #1B7A32; }
+  .hole-grid button.done .hn { color: #1C1C1E; }
+  .hole-grid button.done .tick { color: #1C1C1E; }
   /* Actual — anillo fuerte */
   .hole-grid button.now {
-    box-shadow: 0 0 0 3px rgba(52,199,89,0.35);
-    border-color: #34C759;
+    box-shadow: 0 0 0 3px rgba(60,60,67,0.28);
+    border-color: #1C1C1E;
     color: #000;
   }
   .hole-grid button.now.todo {
@@ -1233,7 +1242,7 @@
     color: #000;
   }
   .hole-grid button.now.done {
-    background: rgba(52,199,89,0.28);
+    background: rgba(60,60,67,0.16);
   }
   /* Progress bar under hole header — clearer */
   .progress-holes span {
@@ -1241,11 +1250,11 @@
     background: rgba(60,60,67,0.12);
   }
   .progress-holes span.todo { background: rgba(60,60,67,0.12); }
-  .progress-holes span.partial { background: #FF9F0A; }
-  .progress-holes span.done { background: #34C759; }
+  .progress-holes span.partial { background: #8E8E93; }
+  .progress-holes span.done { background: #1C1C1E; }
   .progress-holes span.now {
-    background: #34C759;
-    box-shadow: 0 0 0 1.5px rgba(52,199,89,0.45);
+    background: #1C1C1E;
+    box-shadow: 0 0 0 1.5px rgba(60,60,67,0.35);
   }
 
   .hole-nav { display: flex; gap: 8px; padding: 6px var(--pad-x) 0; flex-shrink: 0; }
@@ -1274,10 +1283,10 @@
     color: var(--ink-secondary); width: 36px;
   }
   table.scorecard .score-cell { font-weight: 600; font-size: 15px; min-width: 32px; color: var(--ink); }
-  .sc-birdie { background: rgba(46,125,79,0.18); border-radius: 6px; color: var(--semantic-under); }
-  .sc-eagle { background: rgba(52,199,89,0.28); border-radius: 6px; color: #248A3D; }
-  .sc-bogey { outline: 1.5px solid rgba(255,59,48,0.55); border-radius: 4px; }
-  .sc-dbl { outline: 1.5px solid rgba(255,59,48,0.55); box-shadow: inset 0 0 0 2px rgba(255,59,48,0.25); border-radius: 4px; }
+  .sc-birdie { background: rgba(180,35,24,0.12); border-radius: 6px; color: var(--score-birdie); }
+  .sc-eagle { background: rgba(142,27,20,0.16); border-radius: 6px; color: var(--score-eagle); }
+  .sc-bogey { outline: 1.5px solid rgba(47,90,166,0.65); border-radius: 4px; color: var(--score-bogey); }
+  .sc-dbl { outline: 1.5px solid rgba(30,63,122,0.75); box-shadow: inset 0 0 0 2px rgba(47,90,166,0.22); border-radius: 4px; color: var(--score-double); }
   /* Marcas profesionales (tarjeta neta): círculo = bajo par · cuadrado = sobre par */
   .sc-mark {
     display: inline-flex; align-items: center; justify-content: center;
@@ -1285,19 +1294,21 @@
     font-variant-numeric: tabular-nums; line-height: 1; margin: 0 auto;
   }
   .sc-mark.circle {
-    border: 1.75px solid #1B7A3E; border-radius: 50%; color: #1B7A3E;
+    border: 1.75px solid var(--score-birdie); border-radius: 50%; color: var(--score-birdie);
   }
   .sc-mark.circle.eagle {
-    box-shadow: inset 0 0 0 1.5px #1B7A3E;
+    border-color: var(--score-eagle); color: var(--score-eagle);
+    box-shadow: inset 0 0 0 1.5px var(--score-eagle);
   }
   .sc-mark.square {
-    border: 1.75px solid #C0392B; border-radius: 3px; color: #C0392B;
+    border: 1.75px solid var(--score-bogey); border-radius: 3px; color: var(--score-bogey);
   }
   .sc-mark.square.dbl {
-    box-shadow: inset 0 0 0 1.5px #C0392B;
+    border-color: var(--score-double); color: var(--score-double);
+    box-shadow: inset 0 0 0 1.5px var(--score-double);
   }
   .sc-sf {
-    display: block; font-size: 9px; font-weight: 600; color: var(--brand-brass);
+    display: block; font-size: 9px; font-weight: 600; color: var(--ink-secondary);
     line-height: 1; margin-top: 1px;
   }
   .sc-card-tabs { display: flex; gap: 8px; padding: 0; flex-shrink: 0; margin-bottom: 4px; }
@@ -1307,8 +1318,8 @@
   .sc-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; font-size: 11px; color: var(--ink-secondary); }
   .sc-legend span { display: inline-flex; align-items: center; gap: 5px; }
   .leg { width: 14px; height: 14px; border-radius: 4px; }
-  .leg-circle { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid #1B7A3E; box-sizing: border-box; }
-  .leg-square { width: 12px; height: 12px; border-radius: 2px; border: 1.5px solid #C0392B; box-sizing: border-box; }
+  .leg-circle { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--score-birdie); box-sizing: border-box; }
+  .leg-square { width: 12px; height: 12px; border-radius: 2px; border: 1.5px solid var(--score-bogey); box-sizing: border-box; }
 
   .aj-section { margin-bottom: 20px; }
   .aj-section h3 {
@@ -1346,7 +1357,7 @@
   .ball-chip::before { content: "●"; font-size: 8px; color: var(--brand-brass); }
   .topnav-action {
     flex-shrink: 0; height: 34px; padding: 0 12px; border-radius: 10px;
-    border: none; background: rgba(52,199,89,0.16); color: var(--tint);
+    border: none; background: rgba(60,60,67,0.10); color: var(--tint);
     font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer;
     white-space: nowrap;
   }
@@ -1412,7 +1423,7 @@
   .winner-row .medal {
     width: 28px; height: 28px; border-radius: 50%;
     display: grid; place-items: center;
-    background: rgba(52,199,89,0.18); color: var(--brand-brass);
+    background: rgba(60,60,67,0.10); color: var(--brand-brass);
     font-size: 12px; font-weight: 700;
   }
   .winner-row .mod {
@@ -1442,7 +1453,7 @@
     font: inherit;
     font-size: 12px;
     font-weight: 600;
-    color: var(--tint, #34C759);
+    color: var(--tint, #1C1C1E);
     letter-spacing: -0.01em;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
@@ -1456,7 +1467,7 @@
   .winners-actions .placa-link {
     border: none; background: none; padding: 0;
     font: inherit; font-size: 13px; font-weight: 600;
-    color: var(--tint, #34C759); cursor: pointer;
+    color: var(--tint, #1C1C1E); cursor: pointer;
   }
 
 
@@ -1603,8 +1614,8 @@
   .avatar-lg {
     width: 72px; height: 72px; border-radius: 50%; margin: 0 auto 12px;
     display: grid; place-items: center; font-size: 22px; font-weight: 700;
-    background: var(--brand-fairway); color: var(--ink-inverse);
-    border: 2px solid rgba(52,199,89,0.45);
+    background: var(--brand-fairway); color: #fff;
+    border: 2px solid rgba(60,60,67,0.35);
   }
   .records-row { display: flex; flex-direction: column; gap: 0; }
   .record-item {
@@ -1665,7 +1676,7 @@
   .saved-roster .sr-row .name { flex: 1; font-weight: 600; font-size: 15px; }
   .saved-roster .sr-row .hcp { font-variant-numeric: tabular-nums; color: rgba(60,60,67,.6); font-size: 13px; }
   .saved-roster .sr-row button {
-    font-size: 13px; font-weight: 600; color: #34C759; padding: 6px 10px;
+    font-size: 13px; font-weight: 600; color: #1C1C1E; padding: 6px 10px;
   }
   .saved-roster .sr-row button.danger { color: #FF3B30; }
 
@@ -1676,7 +1687,7 @@
     padding: 4px 0;
   }
   .hcp-step .hcp-input:focus, .ga-hcp .hcp-input:focus {
-    outline: none; background: rgba(52,199,89,.12);
+    outline: none; background: rgba(60,60,67,0.08);
   }
 
   .list-card { background: #fff; border-radius: 12px; overflow: hidden; border: .5px solid rgba(60,60,67,.12); }
@@ -1765,7 +1776,7 @@
     line-height: 44px; text-align: center;
     -webkit-tap-highlight-color: transparent;
   }
-  #screen-hole .stepper-row .step-btn:active { background: #34C759; color: #fff; }
+  #screen-hole .stepper-row .step-btn:active { background: #1C1C1E; color: #fff; }
   #screen-hole .stepper-row .step-val {
     min-width: 48px; text-align: center;
     font-size: 34px; font-weight: 650; font-variant-numeric: tabular-nums;
@@ -1782,7 +1793,7 @@
     font-family: inherit; font-size: 16px; font-weight: 600;
     font-variant-numeric: tabular-nums; line-height: 40px; text-align: center;
   }
-  #screen-hole .chip-row-entry .qs.on { background: #34C759; color: #fff; }
+  #screen-hole .chip-row-entry .qs.on { background: #1C1C1E; color: #fff; }
 
   #screen-hole .chip-row-entry .qs {
     flex: 1 1 calc(14% - 6px); min-width: 36px; height: 40px;
@@ -1796,7 +1807,7 @@
     -webkit-tap-highlight-color: transparent;
   }
   #screen-hole .chip-row-entry .qs.on {
-    background: #34C759; color: #fff;
+    background: #1C1C1E; color: #fff;
   }
   #screen-hole .score-pad,
   #screen-hole .score-pad.slim,
@@ -1872,8 +1883,8 @@
     -webkit-tap-highlight-color: transparent;
   }
   .club-calls a:active {
-    color: #34C759;
-    background: rgba(52,199,89,0.08);
+    color: #1C1C1E;
+    background: rgba(60,60,67,0.06);
   }
   .club-calls .call-mark {
     width: 14px; height: 14px; border-radius: 50%;
@@ -1915,7 +1926,7 @@
   }
   #screen-scorecard .club-calls a:active,
   #screen-hole .club-calls a:active {
-    color: #34C759;
+    color: #1C1C1E;
     background: transparent;
     border: 0;
   }
@@ -1930,7 +1941,7 @@
   .drive-card .drive-status {
     font-size: 13px; color: rgba(60,60,67,0.55); margin: 8px 0 12px; line-height: 1.35;
   }
-  .drive-card .drive-status.ok { color: #1B7A32; }
+  .drive-card .drive-status.ok { color: #1C1C1E; }
   .drive-card .drive-status.warn { color: #C93400; }
   .drive-card input.drive-input {
     width: 100%; box-sizing: border-box;
@@ -1969,7 +1980,7 @@
   .creative-pad .cp-actions { display: flex; flex-wrap: wrap; gap: 6px; }
   .creative-pad .cp-actions button {
     border: 0; border-radius: 10px; padding: 8px 10px;
-    background: rgba(52,199,89,0.14); color: #1B7A32;
+    background: rgba(60,60,67,0.08); color: #1C1C1E;
     font: inherit; font-size: 13px; font-weight: 600;
   }
   .creative-pad .cp-actions button.neg {
@@ -2007,7 +2018,7 @@
     font-weight: 600; color: rgba(60,60,67,0.65); cursor: pointer;
   }
   .creative-chip-add button.on {
-    border-style: solid; border-color: #34C759; background: rgba(52,199,89,0.14); color: #1B7A32;
+    border-style: solid; border-color: #1C1C1E; background: rgba(60,60,67,0.08); color: #1C1C1E;
   }
   .creative-save-row { display: flex; gap: 8px; margin-top: 10px; }
   .creative-save-row input {
@@ -2015,7 +2026,117 @@
     border: 0.5px solid rgba(60,60,67,0.22); font: inherit; font-size: 15px;
   }
 
-  /* —— 4.0.0-alpha Glass claro: Home + main tab bar —— */
+  /* 4.0.1 monocromo glass — frosted cards, hairline, soft shadow */
+  .card,
+  .theme-paper .card,
+  .round-card,
+  .quick-tile,
+  .theme-paper .quick-tile,
+  .player-card,
+  .winners-block,
+  .winners-block .winners-head,
+  .close-stat,
+  .theme-paper .close-stat,
+  .rule-card,
+  .player-list,
+  .player-block,
+  .option-list,
+  .list-card,
+  .lb-list-wrap,
+  .totals-entry,
+  #screen-scorecard .totals-entry,
+  .stats-collapse,
+  .aj-player,
+  .setup-disclosure,
+  .saved-roster .sr-row,
+  .sheet,
+  .hole-sheet,
+  .guest-add,
+  .write-mode,
+  .creative-pad,
+  .theme-paper .card-elevated,
+  .card-elevated,
+  #screen-scorecard .sc-score-card {
+    background: rgba(255,255,255,0.72);
+    border: 0.5px solid rgba(60,60,67,0.12);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.85) inset, 0 1px 2px rgba(0,0,0,0.04), 0 10px 28px rgba(0,0,0,0.05);
+    backdrop-filter: saturate(160%) blur(18px);
+    -webkit-backdrop-filter: saturate(160%) blur(18px);
+  }
+  .tabbar,
+  .theme-paper .tabbar,
+  .theme-fairway .tabbar {
+    background: rgba(255,255,255,0.72);
+    border-top: 0.5px solid rgba(60,60,67,0.12);
+    backdrop-filter: saturate(180%) blur(22px);
+    -webkit-backdrop-filter: saturate(180%) blur(22px);
+  }
+  .tab,
+  .theme-paper .tab,
+  .theme-fairway .tab { color: rgba(60,60,67,0.55); }
+  .tab.active,
+  .theme-paper .tab.active,
+  .theme-fairway .tab.active,
+  .tab.active .ico { color: #1C1C1E; }
+  .quick-tile .ico { color: #1C1C1E; background: rgba(120,120,128,0.12); }
+  .title-mark { color: #1C1C1E; }
+  .player-card.active {
+    border: 0.5px solid #1C1C1E;
+    box-shadow: 0 0 0 1.5px #1C1C1E, 0 10px 28px rgba(0,0,0,0.06);
+  }
+  #screen-hole .hole-nav {
+    background: rgba(255,255,255,0.78);
+    backdrop-filter: saturate(160%) blur(18px);
+    -webkit-backdrop-filter: saturate(160%) blur(18px);
+  }
+  .chip.selected,
+  .theme-paper .chip.selected,
+  #screen-hole .chip-row-entry .qs.on {
+    border-color: #1C1C1E;
+    background: #1C1C1E;
+    color: #fff;
+  }
+  #screen-hole .stepper-row .step-btn:active,
+  .score-btn:active { background: #1C1C1E; color: #fff; }
+  .btn-primary { background: #1C1C1E; color: #fff; }
+  .btn-primary:active { background: #000; }
+  .btn-icon,
+  .theme-paper .btn-icon,
+  .theme-fairway .btn-icon,
+  .topnav-action {
+    background: rgba(255,255,255,0.72);
+    color: #1C1C1E;
+    border: 0.5px solid rgba(60,60,67,0.14);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .lb-row.me {
+    background: rgba(60,60,67,0.06);
+    border-left: 2px solid #1C1C1E;
+  }
+  .lb-row.me .lb-pos,
+  .winner-row .detail,
+  .winner-row .placa-btn,
+  .winners-actions .placa-link,
+  .close-stat .v,
+  .theme-paper .close-stat .v { color: #1C1C1E; }
+  .winner-row .medal {
+    background: rgba(60,60,67,0.08);
+    color: #1C1C1E;
+  }
+  .winners-block .winners-head { background: rgba(247,247,250,0.94); }
+  .avatar, .avatar-lg { color: #fff; }
+  .empty-state, .card .muted { color: rgba(60,60,67,0.72); }
+  table.scorecard td.sc-birdie,
+  table.scorecard .score-cell.sc-birdie { color: var(--score-birdie); }
+  table.scorecard td.sc-eagle,
+  table.scorecard .score-cell.sc-eagle { color: var(--score-eagle); }
+  table.scorecard td.sc-bogey,
+  table.scorecard .score-cell.sc-bogey { color: var(--score-bogey); }
+  table.scorecard td.sc-dbl,
+  table.scorecard .score-cell.sc-dbl { color: var(--score-double); }
+
+  /* —— 4.0.1 Home + tab bar: glass layout, monocromo —— */
   #screen-home {
     isolation: isolate;
     z-index: 0;
@@ -2040,11 +2161,7 @@
     inset: 0;
     z-index: -1;
     pointer-events: none;
-    background:
-      radial-gradient(120% 42% at 8% -8%, rgba(0, 122, 255, 0.10), transparent 58%),
-      radial-gradient(90% 36% at 100% 18%, rgba(255, 255, 255, 0.95), transparent 62%),
-      radial-gradient(80% 40% at 70% 108%, rgba(0, 122, 255, 0.06), transparent 60%),
-      #F2F2F7;
+    background: #F2F2F7;
   }
   #screen-home .fit {
     position: relative;
@@ -2166,7 +2283,7 @@
     letter-spacing: -0.4px;
   }
   #screen-home .round-card .btn-ghost:active {
-    background: rgba(0, 122, 255, 0.18);
+    background: rgba(60, 60, 67, 0.16);
   }
   #screen-home .round-card [data-finish-round] {
     background: rgba(255, 59, 48, 0.10);
@@ -2286,6 +2403,7 @@
         <div class="fit">
           <div class="home-hero">
             <div class="home-top">
+              <span class="app-version" aria-label="Versión">4.0.1</span>
               <button type="button" class="topnav-action" onclick="go('perfil')" aria-label="Perfil">Perfil</button>
             </div>
             <div class="greeting">Buenos días</div>
@@ -2487,7 +2605,7 @@
             <div class="sc-legend" id="scLegend" style="margin-top:6px;">
               <span><i class="leg sc-eagle" style="display:inline-block;"></i> Eagle+</span>
               <span><i class="leg sc-birdie" style="display:inline-block;"></i> Birdie</span>
-              <span><i class="leg" style="display:inline-block;outline:1.5px solid rgba(139,58,47,0.55);border-radius:4px;"></i> Bogey+</span>
+              <span><i class="leg" style="display:inline-block;outline:1.5px solid rgba(47,90,166,0.65);border-radius:4px;"></i> Bogey+</span>
             </div>
           </div>
           <div class="stat-row" style="margin-top:0;">
@@ -6285,16 +6403,16 @@ function renderScorecard() {
   if (leg) {
     if (cardMode === "net") {
       leg.innerHTML = `
-        <span><i class="leg-circle" style="display:inline-block;box-shadow:inset 0 0 0 1px #1B7A3E;"></i> Eagle+</span>
+        <span><i class="leg-circle" style="display:inline-block;box-shadow:inset 0 0 0 1px #8E1B14;"></i> Eagle+</span>
         <span><i class="leg-circle" style="display:inline-block;"></i> Birdie</span>
         <span><i class="leg-square" style="display:inline-block;"></i> Bogey</span>
-        <span><i class="leg-square" style="display:inline-block;box-shadow:inset 0 0 0 1px #C0392B;"></i> Doble+</span>
+        <span><i class="leg-square" style="display:inline-block;box-shadow:inset 0 0 0 1px #1E3F7A;"></i> Doble+</span>
         <span>Golpe neto vs par</span>`;
     } else {
       leg.innerHTML = `
         <span><i class="leg sc-eagle" style="display:inline-block;"></i> Eagle+</span>
         <span><i class="leg sc-birdie" style="display:inline-block;"></i> Birdie</span>
-        <span><i class="leg" style="display:inline-block;outline:1.5px solid rgba(139,58,47,0.55);border-radius:4px;"></i> Bogey+</span>
+        <span><i class="leg" style="display:inline-block;outline:1.5px solid rgba(47,90,166,0.65);border-radius:4px;"></i> Bogey+</span>
         <span>· = golpe de ventaja · pts Stableford en hoyos con golpe</span>`;
     }
   }
@@ -7195,37 +7313,37 @@ function drawClassicScorecard(payload) {
     return s - strokesRecv(p, h.hcp);
   }
 
-  ctx.fillStyle = "#F7F1E4";
+  ctx.fillStyle = "#F2F2F7";
   ctx.fillRect(0, 0, W, H);
 
   const cardX = margin, cardY = margin, cardW = W - margin * 2, cardH = H - margin * 2;
-  ctx.fillStyle = "#F3EBDA";
+  ctx.fillStyle = "#FFFFFF";
   ctx.fillRect(cardX, cardY, cardW, cardH);
 
-  ctx.strokeStyle = "#1B3329";
+  ctx.strokeStyle = "#1C1C1E";
   ctx.lineWidth = 2.5;
   ctx.strokeRect(cardX + 6, cardY + 6, cardW - 12, cardH - 12);
   ctx.lineWidth = 0.75;
   ctx.strokeRect(cardX + 11, cardY + 11, cardW - 22, cardH - 22);
 
   const hx = cardX + 16, hy = cardY + 16, hw = cardW - 32;
-  ctx.fillStyle = "#1B3329";
+  ctx.fillStyle = "#1C1C1E";
   ctx.fillRect(hx, hy, hw, 58);
-  ctx.strokeStyle = "#C4A574";
+  ctx.strokeStyle = "#AEAEB2";
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.moveTo(hx + 16, hy + 58);
   ctx.lineTo(hx + hw - 16, hy + 58);
   ctx.stroke();
 
-  ctx.fillStyle = "#F7F1E4";
+  ctx.fillStyle = "#F2F2F7";
   ctx.textAlign = "center";
   ctx.font = "600 20px " + serif;
   ctx.fillText(payload.club || "Fairway", W / 2, hy + 24);
   ctx.font = "400 11px " + serif;
   ctx.fillText("T A R J E T A   ·   G R O S S   /   N E T", W / 2, hy + 44);
 
-  ctx.fillStyle = "#3D4F45";
+  ctx.fillStyle = "#3A3A3C";
   ctx.font = "400 12px " + serif;
   ctx.textAlign = "left";
   const metaL = ((payload.tee || "") + (payload.tee ? "  ·  " : "") + "Par " + payload.par).trim();
@@ -7238,9 +7356,9 @@ function drawClassicScorecard(payload) {
 
   function drawSectionHeader(title) {
     let x = originX;
-    ctx.fillStyle = "#1B3329";
+    ctx.fillStyle = "#1C1C1E";
     ctx.fillRect(originX, y, tableW, rowH);
-    ctx.fillStyle = "#F7F1E4";
+    ctx.fillStyle = "#F2F2F7";
     ctx.font = "600 12px " + serif;
     ctx.textAlign = "center";
     const labels = [title, "Par"].concat(players.map(p => p.short));
@@ -7257,7 +7375,7 @@ function drawClassicScorecard(payload) {
       ctx.fillStyle = opts.bg;
       ctx.fillRect(x, yi, w, rowH);
     }
-    ctx.strokeStyle = "#B7A88A";
+    ctx.strokeStyle = "#D1D1D6";
     ctx.lineWidth = 0.6;
     ctx.strokeRect(x + 0.3, yi + 0.3, w - 0.6, rowH - 0.6);
     ctx.fillStyle = opts.color || "#1A1A1A";
@@ -7267,7 +7385,7 @@ function drawClassicScorecard(payload) {
     ctx.fillText(t, x + w / 2, yi + rowH / 2 + 0.5);
     // stroke received dots (handicap)
     if (opts.dots && opts.dots > 0) {
-      ctx.fillStyle = "#C4A574";
+      ctx.fillStyle = "#AEAEB2";
       for (let d = 0; d < Math.min(opts.dots, 3); d++) {
         ctx.beginPath();
         ctx.arc(x + w - 7 - d * 6, yi + 7, 2.2, 0, Math.PI * 2);
@@ -7285,7 +7403,7 @@ function drawClassicScorecard(payload) {
     for (let i = start; i < end; i++) {
       const h = holes[i];
       let x = originX;
-      const zebra = (i - start) % 2 === 1 ? "#Faf6ec" : "#F3EBDA";
+      const zebra = (i - start) % 2 === 1 ? "#F2F2F7" : "#FFFFFF";
       cell(h.n, x, y, colW[0], { bold: true, serif: true, bg: zebra }); x += colW[0];
       cell(h.par, x, y, colW[1], { serif: true, bg: zebra }); x += colW[1];
       parSum += h.par;
@@ -7303,10 +7421,10 @@ function drawClassicScorecard(payload) {
       y += rowH;
     }
     let x = originX;
-    cell(subLabel, x, y, colW[0], { bold: true, serif: true, bg: "#E8DFC8" }); x += colW[0];
-    cell(parSum, x, y, colW[1], { bold: true, serif: true, bg: "#E8DFC8" }); x += colW[1];
+    cell(subLabel, x, y, colW[0], { bold: true, serif: true, bg: "#E5E5EA" }); x += colW[0];
+    cell(parSum, x, y, colW[1], { bold: true, serif: true, bg: "#E5E5EA" }); x += colW[1];
     players.forEach((_, pi) => {
-      cell(counted[pi] ? totalsG[pi] : "—", x, y, colW[2 + pi], { bold: true, bg: "#E8DFC8", size: 14 });
+      cell(counted[pi] ? totalsG[pi] : "—", x, y, colW[2 + pi], { bold: true, bg: "#E5E5EA", size: 14 });
       x += colW[2 + pi];
     });
     y += rowH;
@@ -7319,9 +7437,9 @@ function drawClassicScorecard(payload) {
 
   // TOT gross
   let x = originX;
-  ctx.fillStyle = "#1B3329";
+  ctx.fillStyle = "#1C1C1E";
   ctx.fillRect(originX, y, tableW, rowH);
-  ctx.fillStyle = "#F7F1E4";
+  ctx.fillStyle = "#F2F2F7";
   ctx.font = "600 13px " + serif;
   ctx.textAlign = "center";
   const totPar = out.parSum + inn.parSum;
@@ -7339,9 +7457,9 @@ function drawClassicScorecard(payload) {
 
   // NET row (resultado neto)
   x = originX;
-  ctx.fillStyle = "#2F5D46";
+  ctx.fillStyle = "#636366";
   ctx.fillRect(originX, y, tableW, rowH);
-  ctx.fillStyle = "#F7F1E4";
+  ctx.fillStyle = "#F2F2F7";
   ctx.font = "600 13px " + serif;
   ctx.textAlign = "center";
   const labsN = ["NET", ""].concat(
@@ -7356,7 +7474,7 @@ function drawClassicScorecard(payload) {
   });
   y += rowH + 16;
 
-  ctx.fillStyle = "#3D4F45";
+  ctx.fillStyle = "#3A3A3C";
   ctx.font = "400 11px " + serif;
   ctx.textAlign = "left";
   const chLine = players.map(p => {
@@ -7365,11 +7483,11 @@ function drawClassicScorecard(payload) {
   }).join("      ");
   ctx.fillText(chLine, cardX + 18, Math.min(y, cardY + cardH - 28));
   ctx.font = "400 10px " + serif;
-  ctx.fillStyle = "#6B7A70";
+  ctx.fillStyle = "#8E8E93";
   ctx.fillText("Puntos dorados = golpes de hándicap · NET = gross − CH", cardX + 18, Math.min(y + 14, cardY + cardH - 14));
   ctx.textAlign = "right";
   ctx.font = "italic 11px " + serif;
-  ctx.fillStyle = "#3D4F45";
+  ctx.fillStyle = "#3A3A3C";
   ctx.fillText("Fairway", cardX + cardW - 18, Math.min(y, cardY + cardH - 28));
 
   return canvas;
@@ -7455,20 +7573,20 @@ function drawWinnerPlaque(payload) {
   ctx.scale(scale, scale);
   ctx.textBaseline = "middle";
 
-  ctx.fillStyle = "#F7F1E4";
+  ctx.fillStyle = "#F2F2F7";
   ctx.fillRect(0, 0, W, H);
 
   const cx = margin, cy = margin, cw = W - margin * 2, ch = H - margin * 2;
-  ctx.fillStyle = "#F3EBDA";
+  ctx.fillStyle = "#FFFFFF";
   ctx.fillRect(cx, cy, cw, ch);
 
-  ctx.strokeStyle = "#1B3329";
+  ctx.strokeStyle = "#1C1C1E";
   ctx.lineWidth = 2.25;
   ctx.strokeRect(cx + 6, cy + 6, cw - 12, ch - 12);
   ctx.lineWidth = 0.75;
   ctx.strokeRect(cx + 11, cy + 11, cw - 22, ch - 22);
 
-  ctx.strokeStyle = "#C4A574";
+  ctx.strokeStyle = "#AEAEB2";
   ctx.lineWidth = 1;
   ctx.strokeRect(cx + 17, cy + 17, cw - 34, ch - 34);
 
@@ -7485,9 +7603,9 @@ function drawWinnerPlaque(payload) {
   const midX = W / 2;
 
   // Compact header band
-  ctx.fillStyle = "#1B3329";
+  ctx.fillStyle = "#1C1C1E";
   ctx.fillRect(cx + 24, cy + 24, cw - 48, 52);
-  ctx.fillStyle = "#F7F1E4";
+  ctx.fillStyle = "#F2F2F7";
   ctx.textAlign = "center";
   ctx.font = "600 13px " + serif;
   const club = String(payload.club || "Fairway").toUpperCase();
@@ -7496,10 +7614,10 @@ function drawWinnerPlaque(payload) {
   ctx.fillText("P L A C A   D E   G A N A D O R", midX, cy + 60);
 
   // Modality + name tightly stacked
-  ctx.fillStyle = "#3D4F45";
+  ctx.fillStyle = "#3A3A3C";
   ctx.font = "600 11px " + serif;
   ctx.fillText("Modalidad", midX, cy + 100);
-  ctx.fillStyle = "#1B3329";
+  ctx.fillStyle = "#1C1C1E";
   ctx.font = "600 22px " + serif;
   ctx.fillText(String(payload.modality || payload.label || ""), midX, cy + 126);
 
@@ -7519,13 +7637,13 @@ function drawWinnerPlaque(payload) {
   const badgeW = Math.min(cw - 80, Math.max(160, ctx.measureText(detail).width + 36));
   const badgeX = midX - badgeW / 2;
   const badgeY = cy + 210;
-  ctx.fillStyle = "#1B3329";
+  ctx.fillStyle = "#1C1C1E";
   ctx.fillRect(badgeX, badgeY, badgeW, 34);
-  ctx.fillStyle = "#F7F1E4";
+  ctx.fillStyle = "#F2F2F7";
   ctx.fillText(detail, midX, badgeY + 17);
 
   // Gold hairline
-  ctx.strokeStyle = "#C4A574";
+  ctx.strokeStyle = "#AEAEB2";
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.moveTo(midX - 70, cy + 268);
@@ -7533,11 +7651,11 @@ function drawWinnerPlaque(payload) {
   ctx.stroke();
   ctx.beginPath();
   ctx.arc(midX, cy + 268, 2.5, 0, Math.PI * 2);
-  ctx.fillStyle = "#C4A574";
+  ctx.fillStyle = "#AEAEB2";
   ctx.fill();
 
   // Footer
-  ctx.fillStyle = "#3D4F45";
+  ctx.fillStyle = "#3A3A3C";
   ctx.font = "400 11px " + serif;
   const metaBits = [payload.date || "", payload.tee || "", payload.par != null && payload.par !== "" ? ("Par " + payload.par) : ""]
     .filter(Boolean).join("  ·  ");
@@ -7613,9 +7731,9 @@ function drawWinnerPlaquesSheet(list, meta) {
   const ctx = canvas.getContext("2d");
   ctx.scale(scale, scale);
   ctx.textBaseline = "middle";
-  ctx.fillStyle = "#F7F1E4";
+  ctx.fillStyle = "#F2F2F7";
   ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = "#1B3329";
+  ctx.fillStyle = "#1C1C1E";
   ctx.textAlign = "center";
   ctx.font = "600 13px " + serif;
   ctx.fillText((meta.club || "Fairway") + " · Ganadores", W / 2, margin + 6);
@@ -7624,7 +7742,7 @@ function drawWinnerPlaquesSheet(list, meta) {
     const y = margin + 22 + i * (cardH + gap);
     const x = margin;
     const cw = W - margin * 2;
-    ctx.fillStyle = "#F3EBDA";
+    ctx.fillStyle = "#FFFFFF";
     ctx.fillRect(x, y, cw, cardH);
     if (plaqueIsHerreria(meta)) {
       ctx.save();
@@ -7635,18 +7753,18 @@ function drawWinnerPlaquesSheet(list, meta) {
       drawEscorialSilhouette(ctx, x + 14, y + 18, cw - 28, cardH - 28);
       ctx.restore();
     }
-    ctx.strokeStyle = "#1B3329";
+    ctx.strokeStyle = "#1C1C1E";
     ctx.lineWidth = 1.75;
     ctx.strokeRect(x + 5, y + 5, cw - 10, cardH - 10);
-    ctx.strokeStyle = "#C4A574";
+    ctx.strokeStyle = "#AEAEB2";
     ctx.lineWidth = 0.75;
     ctx.strokeRect(x + 10, y + 10, cw - 20, cardH - 20);
-    ctx.fillStyle = "#1B3329";
+    ctx.fillStyle = "#1C1C1E";
     ctx.font = "600 12px " + serif;
     ctx.fillText(String(row.label || ""), W / 2, y + 36);
     ctx.font = "600 22px " + serif;
     ctx.fillText(String(row.winner || ""), W / 2, y + 72);
-    ctx.fillStyle = "#3D4F45";
+    ctx.fillStyle = "#3A3A3C";
     ctx.font = "400 13px " + serif;
     ctx.fillText(String(row.detail || ""), W / 2, y + 104);
     ctx.font = "italic 11px " + serif;
@@ -8074,7 +8192,7 @@ function collectFairwayBackup() {
   return {
     version: 3,
     app: "Fairway",
-    appVersion: "4.0.0-alpha",
+    appVersion: "4.0.1",
     exportedAt: new Date().toISOString(),
     updatedAt: (typeof getDataUpdatedAt === "function" ? getDataUpdatedAt() : "") || "",
     includes: ["rounds", "players.scores", "players.putts", "players.fir", "players.gir", "players.ball", "players.withdrawn", "roster", "host", "activeRound", "winners", "standings"],
@@ -9088,6 +9206,7 @@ function renderPerfil() {
     <div class="profile-hero">
       <div class="avatar-lg">${escapeHtml(initials)}</div>
       <p class="muted" style="margin-top:8px;">Tu perfil en este dispositivo</p>
+      <p class="micro">Fairway 4.0.1</p>
     </div>
     <div class="card mb-16">
       <div class="eyebrow">Nombre</div>
