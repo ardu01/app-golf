@@ -2451,7 +2451,7 @@
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
-  #screen-hole .hole-header { padding: 0 16px 2px; }
+  #screen-hole .hole-header { padding: 0 16px 0; }
   #screen-hole .hole-kicker {
     margin: 0;
     text-align: center;
@@ -2484,7 +2484,12 @@
     -webkit-backdrop-filter: saturate(160%) blur(18px);
     backdrop-filter: saturate(160%) blur(18px);
   }
-  #screen-hole .progress-holes { margin-top: 8px; }
+  /* 4.0.6 — 4px sobre la línea, sin padding inferior: el aire hacia las fichas lo pone .hole-access. */
+  #screen-hole .progress-holes {
+    margin: 0;
+    padding: 4px 16px 0;
+    flex-shrink: 0;
+  }
   #screen-hole .progress-holes span { background: rgba(60,60,67,0.18); }
   #screen-hole .progress-holes span.done,
   #screen-hole .progress-holes span.now { background: #000000; box-shadow: none; }
@@ -2509,12 +2514,12 @@
     font-weight: 500;
   }
   #screen-hole .club-calls a { color: rgba(60,60,67,0.45); }
-  /* 4.0.5 — Árbitro, Mapa, Caddie y Restaurante visibles bajo el progreso. */
+  /* 4.0.6 — 12px de aire bajo el progreso; 10px hacia FIR/ficha. */
   #screen-hole .hole-access {
     display: flex;
     flex-wrap: nowrap;
     gap: 8px;
-    padding: 0 16px 10px;
+    padding: 12px 16px 10px;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     flex-shrink: 0;
@@ -2896,7 +2901,7 @@
         <div class="fit">
           <div class="home-hero">
             <div class="home-top">
-              <span class="app-version" aria-label="Versión">4.0.5</span>
+              <span class="app-version" aria-label="Versión">4.0.6</span>
               <button type="button" class="topnav-action" onclick="go('perfil')" aria-label="Perfil">Perfil</button>
             </div>
             <div class="greeting">Buenos días</div>
@@ -2982,15 +2987,10 @@
             <span class="badge" id="holeClubBadge">Centro Nacional de Golf</span>
             <span class="badge badge-tier" id="tierBadge" hidden></span>
           </div>
-          <div class="hole-tools">
-            <button type="button" class="hole-jump-btn" id="holeJumpBtn" onclick="openHoleSheet()">
-              Hoyos <span class="chev">▾</span>
-            </button>
-            <span class="micro" style="display:none;" id="holeJumpHint"></span>
-          </div>
-          <div class="progress-holes" id="holeProgress" aria-hidden="true"></div>
         </div>
+        <div class="progress-holes" id="holeProgress" aria-hidden="true"></div>
         <div class="hole-access" id="holeAccess" aria-label="Accesos del hoyo">
+          <button type="button" class="hole-access-chip" id="holeJumpBtn" onclick="openHoleSheet()">Hoyos</button>
           <button type="button" class="hole-access-chip" onclick="openReferee()">Árbitro</button>
           <button type="button" class="hole-access-chip hole-foto-link" id="holeFotoLink" hidden onclick="setHoleTab('foto')">Mapa</button>
           <a class="hole-access-chip" id="holeCallCaddie" href="tel:+34918905111" hidden>Caddie</a>
@@ -8673,7 +8673,7 @@ function collectFairwayBackup() {
   return {
     version: 3,
     app: "Fairway",
-    appVersion: "4.0.5",
+    appVersion: "4.0.6",
     exportedAt: new Date().toISOString(),
     updatedAt: (typeof getDataUpdatedAt === "function" ? getDataUpdatedAt() : "") || "",
     includes: ["rounds", "players.scores", "players.putts", "players.fir", "players.gir", "players.ball", "players.withdrawn", "roster", "host", "activeRound", "winners", "standings"],
@@ -9687,7 +9687,7 @@ function renderPerfil() {
     <div class="profile-hero">
       <div class="avatar-lg">${escapeHtml(initials)}</div>
       <p class="muted" style="margin-top:8px;">Tu perfil en este dispositivo</p>
-      <p class="micro">Fairway 4.0.5</p>
+      <p class="micro">Fairway 4.0.6</p>
     </div>
     <div class="card mb-16">
       <div class="eyebrow">Nombre</div>
