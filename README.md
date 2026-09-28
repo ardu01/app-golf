@@ -147,13 +147,15 @@ Sigue siendo un solo `index.html`. No lo he partido en módulos: la partida real
 
 `strokesRecv` aparece dos veces, una dentro de la clasificación de una vuelta guardada y otra al dibujar la tarjeta. No es la misma función repetida en el mismo sitio. Las dos llaman a `strokesOnHole`.
 
-La copia de seguridad sigue en el esquema 3, así que las de antes entran. El texto de versión dentro del JSON es 4.0.1. Si el historial o la ronda en curso se corrompen, hay una copia local anterior y no se pisa lo que no se puede leer.
+La copia de seguridad sigue en el esquema 3, así que las de antes entran. El texto de versión dentro del JSON es 4.0.2. Si el historial o la ronda en curso se corrompen, hay una copia local anterior y no se pisa lo que no se puede leer.
 
 La 3.0.2 escribe la ronda al esconder la pestaña y al suspender Safari. Si la copia principal falta o no se puede leer, Inicio ofrece Recuperar copia local. Nueva partida no borra la ronda guardada hasta que la nueva empieza de verdad.
 
 La 3.0.3 pide dos confirmaciones antes de cerrar una ronda a medias (Inicio y Ajustes). Cancelar cualquiera de las dos deja la partida como estaba. Terminar el último hoyo sigue yendo al cierre sin ese doble aviso.
 
 La 4.0.1 es solo piel: monocromo glass claro en Inicio, hoyo, tarjeta, cierre y preparación. El cristal del inicio de la 4.0.0-alpha se queda, sin azul. El esquema de la copia sigue en 3. Las fórmulas, las claves de guardado y los mapas no cambian.
+
+La 4.0.2 deja el mismo monocromo y corrige la densidad del marcador: −, el número y + de Golpes vuelven a la misma altura, los chips de Putts y Golpes comparten tamaño, y Árbitro, Mapa, Caddie y Restaurante pasan a un menú ···. En Inicio, cerrar la ronda se lee como acción de terminar y sigue pidiendo las dos confirmaciones.
 
 Google Drive, si se conecta, es el Drive de cada uno: una carpeta Fairway y un solo `fairway-data.json`. La partida se apunta siempre primero en el teléfono. Drive es la copia entre aparatos, no un servidor de Fairway. Sin red se sigue jugando y, al volver la cobertura, se manda lo pendiente. El identificador OAuth de la web va en el código (`FAIRWAY_DRIVE_CLIENT_ID`); no hay secreto de cliente ni token de refresco guardado. Una sesión silenciosa de varias semanas haría falta un backend, y esta copia no lo finge. La exportación manual del JSON sigue donde estaba.
 

@@ -2293,6 +2293,23 @@
   }
   #screen-home .round-card [data-finish-round] {
     background: transparent;
+    color: rgba(60,60,67,0.82);
+    font-size: 15px;
+    font-weight: 500;
+    border: 0.5px solid rgba(60,60,67,0.28);
+  }
+  #screen-home .round-card [data-finish-round]:active {
+    background: rgba(60,60,67,0.08);
+    color: #000000;
+  }
+  .theme-paper .btn-end-round {
+    background: transparent;
+    color: rgba(60,60,67,0.82);
+    font-weight: 500;
+    border: 0.5px solid rgba(60,60,67,0.28);
+  }
+  .theme-paper .btn-end-round:active {
+    background: rgba(60,60,67,0.08);
     color: #000000;
   }
   #screen-home .round-card .stat-row {
@@ -2473,9 +2490,10 @@
   #screen-hole .progress-holes span.done,
   #screen-hole .progress-holes span.now { background: #000000; box-shadow: none; }
   #screen-hole .hole-tools {
-    justify-content: flex-end;
+    justify-content: space-between;
     gap: 4px;
     padding: 2px 0 0;
+    position: relative;
   }
   #screen-hole .hole-tools .topnav-action,
   #screen-hole .hole-jump-btn,
@@ -2492,6 +2510,79 @@
     font-weight: 500;
   }
   #screen-hole .club-calls a { color: rgba(60,60,67,0.45); }
+  #screen-hole .hole-more { position: relative; }
+  #screen-hole .hole-more > summary {
+    list-style: none;
+    cursor: pointer;
+    height: 28px;
+    min-width: 36px;
+    padding: 0 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    color: rgba(60,60,67,0.72);
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    line-height: 1;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #screen-hole .hole-more > summary::-webkit-details-marker { display: none; }
+  #screen-hole .hole-more > summary::marker { content: ""; }
+  #screen-hole .hole-more[open] > summary { background: rgba(0,0,0,0.06); }
+  #screen-hole .hole-more-menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 6px);
+    z-index: 30;
+    min-width: 196px;
+    padding: 6px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.96);
+    border: 0.5px solid rgba(60,60,67,0.18);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  #screen-hole .hole-more-menu .topnav-action,
+  #screen-hole .hole-more-menu .hole-foto-link,
+  #screen-hole .hole-more-menu .club-calls a {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    height: 44px;
+    min-height: 44px;
+    margin: 0;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    box-shadow: none;
+    color: #000000;
+    font-size: 16px;
+    font-weight: 500;
+    text-align: left;
+    text-decoration: none;
+  }
+  #screen-hole .hole-more-menu .hole-foto-link[hidden] { display: none !important; }
+  #screen-hole .hole-more-menu .topnav-action:active,
+  #screen-hole .hole-more-menu .hole-foto-link:active,
+  #screen-hole .hole-more-menu .club-calls a:active {
+    background: rgba(0,0,0,0.06);
+    color: #000000;
+  }
+  #screen-hole .hole-more-menu .club-calls {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    justify-content: flex-start;
+  }
+  #screen-hole .hole-more-menu .club-calls a { color: #000000; }
   #screen-hole .hole-play-main {
     display: flex;
     flex-direction: column;
@@ -2544,7 +2635,7 @@
   }
   #screen-hole .entry-section.golpes {
     order: 2;
-    margin: auto 0 0;
+    margin: 18px 0 0;
     padding-top: 4px;
   }
   #screen-hole .entry-section.putts .entry-label,
@@ -2558,49 +2649,50 @@
     color: rgba(60,60,67,0.45);
     margin-bottom: 2px;
   }
+  /* 4.0.2 — −, valor y + a la misma altura. El + sigue en negro, sin el bloque de 92px. */
   #screen-hole .entry-section.golpes .stepper-row {
-    display: grid;
-    grid-template-columns: 76px minmax(0, 1fr) 92px;
-    align-items: end;
-    justify-content: stretch;
-    gap: 6px;
-    margin: 0 0 8px;
-    min-height: 108px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin: 0 0 10px;
+    min-height: 0;
   }
   #screen-hole .entry-section.golpes .step-val {
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
-    font-size: 84px;
+    font-size: 48px;
     font-weight: 600;
-    letter-spacing: -2.5px;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -1px;
     text-align: center;
     color: #000;
-    line-height: 0.9;
+    line-height: 1;
+    min-width: 48px;
   }
   #screen-hole .entry-section.golpes .step-val.empty {
     color: rgba(60,60,67,0.32);
     font-weight: 500;
-    font-size: 72px;
+    font-size: 40px;
   }
-  #screen-hole .entry-section.golpes .step-btn {
-    width: 76px;
-    height: 76px;
-    border-radius: 22px;
-    border: 0.5px solid rgba(60,60,67,0.2);
+  #screen-hole .entry-section.golpes .step-btn,
+  #screen-hole .entry-section.golpes .stepper-row .step-btn:last-of-type {
+    width: 48px;
+    height: 48px;
+    justify-self: auto;
+    border-radius: 14px;
+    border: 0.5px solid rgba(60,60,67,0.22);
     background: rgba(255,255,255,0.92);
     color: #000000;
-    font-size: 40px;
-    line-height: 74px;
+    font-size: 26px;
+    font-weight: 400;
+    line-height: 1;
+    display: grid;
+    place-items: center;
   }
   #screen-hole .entry-section.golpes .stepper-row .step-btn:last-of-type {
-    width: 92px;
-    height: 92px;
-    justify-self: end;
-    border-radius: 26px;
-    border: 0.5px solid #000000;
+    border-color: #000000;
     background: #000000;
     color: #fff;
-    font-size: 48px;
-    line-height: 90px;
   }
   #screen-hole .entry-section.golpes .step-btn:active,
   #screen-hole .entry-section.golpes .stepper-row .step-btn:last-of-type:active {
@@ -2611,13 +2703,14 @@
   #screen-hole .entry-section.golpes .chip-row-entry .qs {
     flex: 0 1 56px;
     min-width: 44px;
-    height: 32px;
-    line-height: 32px;
-    font-size: 14px;
-    font-weight: 500;
-    border-radius: 8px;
+    height: 38px;
+    line-height: 38px;
+    font-size: 15px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    border-radius: 10px;
     background: rgba(120,120,128,0.10);
-    color: rgba(60,60,67,0.62);
+    color: rgba(60,60,67,0.72);
   }
   #screen-hole .entry-section.golpes .chip-row-entry .qs.on {
     background: rgba(0,0,0,0.08);
@@ -2630,30 +2723,35 @@
     margin: 0 0 6px;
   }
   #screen-hole .entry-section.putts .step-btn {
-    width: 36px;
-    height: 36px;
-    line-height: 36px;
-    font-size: 20px;
-    border-radius: 10px;
+    width: 40px;
+    height: 40px;
+    line-height: 1;
+    font-size: 22px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
     background: rgba(120,120,128,0.10);
     color: rgba(60,60,67,0.75);
   }
   #screen-hole .entry-section.putts .step-val {
-    min-width: 28px;
-    font-size: 22px;
+    min-width: 32px;
+    font-size: 28px;
     font-weight: 600;
-    color: rgba(60,60,67,0.8);
+    font-variant-numeric: tabular-nums;
+    color: rgba(60,60,67,0.88);
   }
   #screen-hole .entry-section.putts .step-val.empty { color: rgba(60,60,67,0.32); }
   #screen-hole .entry-section.putts .chip-row-entry .qs {
     flex: 0 1 44px;
     min-width: 36px;
-    height: 28px;
-    line-height: 28px;
-    font-size: 13px;
-    font-weight: 500;
+    height: 36px;
+    line-height: 36px;
+    font-size: 14px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    border-radius: 10px;
     background: rgba(120,120,128,0.08);
-    color: rgba(60,60,67,0.6);
+    color: rgba(60,60,67,0.62);
   }
   #screen-hole .entry-section.putts .chip-row-entry .qs.on,
   #screen-hole .entry-section.putts .step-btn:active {
@@ -2738,7 +2836,7 @@
         <div class="fit">
           <div class="home-hero">
             <div class="home-top">
-              <span class="app-version" aria-label="Versión">4.0.1</span>
+              <span class="app-version" aria-label="Versión">4.0.2</span>
               <button type="button" class="topnav-action" onclick="go('perfil')" aria-label="Perfil">Perfil</button>
             </div>
             <div class="greeting">Buenos días</div>
@@ -2755,7 +2853,7 @@
               <button class="btn btn-ghost" data-continue-hole onclick="go('hole')">Continuar · Hoyo 1</button>
               <button class="btn btn-ghost" data-recover-backup onclick="recoverActiveRoundFromBackup()" style="display:none">Recuperar copia local</button>
               <button class="btn btn-ghost" data-round-ajustes onclick="go('ajustes')" style="display:none">Ajustes</button>
-              <button class="btn btn-ghost" data-finish-round onclick="finishRoundEarly()" style="display:none">Cerrar ronda</button>
+              <button class="btn btn-ghost btn-end-round" data-finish-round onclick="finishRoundEarly()" style="display:none">Cerrar ronda en curso</button>
               <div class="stat-row">
                 <div class="stat-pill"><div class="v" id="homeToPar">—</div><div class="l">Al par</div></div>
                 <div class="stat-pill"><div class="v" id="homeThru">0</div><div class="l">Thru</div></div>
@@ -2825,19 +2923,23 @@
             <span class="badge badge-tier" id="tierBadge" hidden></span>
           </div>
           <div class="hole-tools">
-            <button type="button" class="topnav-action" onclick="openReferee()">Árbitro</button>
-            <span class="hole-tools-gap"></span>
             <button type="button" class="hole-jump-btn" id="holeJumpBtn" onclick="openHoleSheet()">
               Hoyos <span class="chev">▾</span>
             </button>
             <span class="micro" style="display:none;" id="holeJumpHint"></span>
-            <button type="button" class="hole-foto-link" id="holeFotoLink" hidden onclick="setHoleTab('foto')">Mapa</button>
+            <details class="hole-more" id="holeMore">
+              <summary class="hole-more-btn" aria-label="Más acciones">···</summary>
+              <div class="hole-more-menu">
+                <button type="button" class="topnav-action" onclick="closeHoleMore(); openReferee()">Árbitro</button>
+                <button type="button" class="hole-foto-link" id="holeFotoLink" hidden onclick="closeHoleMore(); setHoleTab('foto')">Mapa</button>
+                <div class="club-calls" id="holeClubCalls" hidden>
+                  <a id="holeCallCaddie" href="tel:+34918905111" onclick="closeHoleMore()"><span class="call-mark" aria-hidden="true"></span>Caddie master</a>
+                  <a id="holeCallRest" href="tel:+34918905630" onclick="closeHoleMore()"><span class="call-mark" aria-hidden="true"></span>Restaurante</a>
+                </div>
+              </div>
+            </details>
           </div>
           <div class="progress-holes" id="holeProgress" aria-hidden="true"></div>
-        </div>
-        <div class="club-calls" id="holeClubCalls" hidden style="margin:0 16px 6px;justify-content:flex-end;">
-          <a id="holeCallCaddie" href="tel:+34918905111"><span class="call-mark" aria-hidden="true"></span>Caddie master</a>
-          <a id="holeCallRest" href="tel:+34918905630"><span class="call-mark" aria-hidden="true"></span>Restaurante</a>
         </div>
         <div id="holePlayPane" class="hole-tab-pane active" role="tabpanel">
           <div class="hole-play-main">
@@ -6008,6 +6110,11 @@ function normalizeCoursePhotoFile(courseId, file) {
   return cfg.dir + "/" + name.replace(/^\/+/, "");
 }
 
+function closeHoleMore() {
+  const d = document.getElementById("holeMore");
+  if (d) d.open = false;
+}
+
 function setHoleTab(tab) {
   state.holeTab = tab === "foto" ? "foto" : "play";
   const isFoto = state.holeTab === "foto";
@@ -8516,7 +8623,7 @@ function collectFairwayBackup() {
   return {
     version: 3,
     app: "Fairway",
-    appVersion: "4.0.1",
+    appVersion: "4.0.2",
     exportedAt: new Date().toISOString(),
     updatedAt: (typeof getDataUpdatedAt === "function" ? getDataUpdatedAt() : "") || "",
     includes: ["rounds", "players.scores", "players.putts", "players.fir", "players.gir", "players.ball", "players.withdrawn", "roster", "host", "activeRound", "winners", "standings"],
@@ -9530,7 +9637,7 @@ function renderPerfil() {
     <div class="profile-hero">
       <div class="avatar-lg">${escapeHtml(initials)}</div>
       <p class="muted" style="margin-top:8px;">Tu perfil en este dispositivo</p>
-      <p class="micro">Fairway 4.0.1</p>
+      <p class="micro">Fairway 4.0.2</p>
     </div>
     <div class="card mb-16">
       <div class="eyebrow">Nombre</div>
@@ -9694,7 +9801,7 @@ function renderAjustes() {
            <button type="button" class="btn btn-primary" style="width:100%;" onclick="saveEditingRoundDraft()">Guardar cambios</button>`
         : `<p class="micro mb-8">El progreso se guarda solo en este teléfono. Cierra la ronda cuando terminéis.</p>
            <button type="button" class="btn btn-ghost" style="width:100%;" onclick="if(persistActiveRound())showToast('Progreso guardado')">Guardar ahora</button>`}
-      <button type="button" class="btn btn-ghost mt-8" style="width:100%;" onclick="finishRoundEarly()">Cerrar ronda</button>
+      <button type="button" class="btn btn-ghost btn-end-round mt-8" style="width:100%;" onclick="finishRoundEarly()">Cerrar ronda en curso</button>
     </div>`;
 }
 
@@ -10108,6 +10215,8 @@ function renderStats() {
 document.addEventListener("click", function (ev) {
   const t = ev.target;
   if (!t || !t.closest) return;
+  const more = document.getElementById("holeMore");
+  if (more && more.open && !more.contains(t)) more.open = false;
   const act = t.closest("[data-round-action]");
   if (act) {
     const id = act.getAttribute("data-round-id") || state.detalleId;
