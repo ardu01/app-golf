@@ -2587,29 +2587,35 @@
     display: flex;
     flex-direction: column;
     padding-bottom: 0;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
   }
+  /* 4.0.3 — la ficha mide su contenido. El carrusel no estira la tarjeta. */
   #screen-hole .carousel {
-    flex: 1 1 auto;
+    flex: 0 0 auto;
     min-height: 0;
+    height: auto;
     display: flex;
     flex-direction: column;
   }
   #screen-hole .carousel-track {
-    flex: 1 1 auto;
+    flex: 0 0 auto;
     min-height: 0;
-    height: 100%;
-    align-items: stretch;
+    height: auto;
+    align-items: flex-start;
     padding: 6px 16px 8px;
   }
   #screen-hole .player-card {
     display: flex;
     flex-direction: column;
-    height: 100% !important;
-    min-height: 100% !important;
-    max-height: 100% !important;
-    overflow: auto !important;
-    padding: 14px 14px 12px;
+    justify-content: flex-start;
+    align-self: flex-start;
+    flex-grow: 0;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: hidden !important;
+    padding: 16px 16px 14px;
     background: rgba(255,255,255,0.82);
     border: 0.5px solid rgba(60,60,67,0.18);
     border-radius: 16px;
@@ -2629,14 +2635,18 @@
   }
   #screen-hole .entry-section.putts {
     order: 1;
-    margin: 0 0 8px;
-    padding: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0 0 2px;
     border: 0;
   }
+  /* Sin margin-top auto: eso empujaba Golpes al fondo y alargaba la ficha. */
   #screen-hole .entry-section.golpes {
     order: 2;
-    margin: 18px 0 0;
-    padding-top: 4px;
+    width: 100%;
+    margin: 12px 0 0;
+    padding-top: 12px;
+    border-top: 0.5px solid rgba(60,60,67,0.12);
   }
   #screen-hole .entry-section.putts .entry-label,
   #screen-hole .stats-toggle,
@@ -2644,12 +2654,13 @@
     color: rgba(60,60,67,0.5);
     font-size: 12px;
   }
+  #screen-hole .entry-section.putts .entry-label,
   #screen-hole .entry-section.golpes .entry-label {
     text-align: center;
     color: rgba(60,60,67,0.45);
-    margin-bottom: 2px;
+    margin-bottom: 6px;
   }
-  /* 4.0.2 — número 54px; −/+ 48–52px. El + puede llegar a 52, nunca a 92. */
+  /* 4.0.3 — número 52px; − y + iguales, 48×48, cristal con glifo negro. */
   #screen-hole .entry-section.golpes .stepper-row {
     display: flex;
     align-items: center;
@@ -2657,10 +2668,11 @@
     gap: 16px;
     margin: 0 0 10px;
     min-height: 0;
+    width: 100%;
   }
   #screen-hole .entry-section.golpes .step-val {
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
-    font-size: 54px;
+    font-size: 52px;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     letter-spacing: -1px;
@@ -2678,9 +2690,11 @@
   #screen-hole .entry-section.golpes .stepper-row .step-btn:last-of-type {
     width: 48px;
     height: 48px;
+    min-width: 48px;
+    min-height: 48px;
     justify-self: auto;
     border-radius: 14px;
-    border: 0.5px solid rgba(60,60,67,0.22);
+    border: 0.5px solid rgba(60,60,67,0.28);
     background: rgba(255,255,255,0.92);
     color: #000000;
     font-size: 26px;
@@ -2688,19 +2702,13 @@
     line-height: 1;
     display: grid;
     place-items: center;
-  }
-  #screen-hole .entry-section.golpes .stepper-row .step-btn:last-of-type {
-    width: 52px;
-    height: 52px;
-    border-color: #000000;
-    background: #000000;
-    color: #fff;
-    font-size: 28px;
+    box-shadow: none;
   }
   #screen-hole .entry-section.golpes .step-btn:active,
   #screen-hole .entry-section.golpes .stepper-row .step-btn:last-of-type:active {
-    background: #3A3A3C;
-    color: #fff;
+    background: rgba(0,0,0,0.06);
+    color: #000000;
+    border-color: rgba(0,0,0,0.40);
   }
   #screen-hole .entry-section.golpes .chip-row-entry { justify-content: center; }
   #screen-hole .entry-section.golpes .chip-row-entry .qs {
@@ -2721,20 +2729,27 @@
     box-shadow: inset 0 0 0 1px #000000;
   }
   #screen-hole .entry-section.putts .stepper-row {
-    justify-content: flex-start;
-    gap: 10px;
-    margin: 0 0 6px;
+    justify-content: center;
+    gap: 12px;
+    margin: 0 0 8px;
+    width: 100%;
   }
+  #screen-hole .entry-section.putts .chip-row-entry { justify-content: center; }
   #screen-hole .entry-section.putts .step-btn {
     width: 36px;
     height: 36px;
+    min-width: 36px;
+    min-height: 36px;
     line-height: 1;
     font-size: 20px;
+    font-weight: 400;
     border-radius: 10px;
     display: grid;
     place-items: center;
-    background: rgba(120,120,128,0.10);
-    color: rgba(60,60,67,0.75);
+    border: 0.5px solid rgba(60,60,67,0.22);
+    background: rgba(255,255,255,0.92);
+    color: #000000;
+    box-shadow: none;
   }
   #screen-hole .entry-section.putts .step-val {
     min-width: 24px;
@@ -2839,7 +2854,7 @@
         <div class="fit">
           <div class="home-hero">
             <div class="home-top">
-              <span class="app-version" aria-label="Versión">4.0.2</span>
+              <span class="app-version" aria-label="Versión">4.0.3</span>
               <button type="button" class="topnav-action" onclick="go('perfil')" aria-label="Perfil">Perfil</button>
             </div>
             <div class="greeting">Buenos días</div>
@@ -8626,7 +8641,7 @@ function collectFairwayBackup() {
   return {
     version: 3,
     app: "Fairway",
-    appVersion: "4.0.2",
+    appVersion: "4.0.3",
     exportedAt: new Date().toISOString(),
     updatedAt: (typeof getDataUpdatedAt === "function" ? getDataUpdatedAt() : "") || "",
     includes: ["rounds", "players.scores", "players.putts", "players.fir", "players.gir", "players.ball", "players.withdrawn", "roster", "host", "activeRound", "winners", "standings"],
@@ -9640,7 +9655,7 @@ function renderPerfil() {
     <div class="profile-hero">
       <div class="avatar-lg">${escapeHtml(initials)}</div>
       <p class="muted" style="margin-top:8px;">Tu perfil en este dispositivo</p>
-      <p class="micro">Fairway 4.0.2</p>
+      <p class="micro">Fairway 4.0.3</p>
     </div>
     <div class="card mb-16">
       <div class="eyebrow">Nombre</div>
