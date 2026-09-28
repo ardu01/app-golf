@@ -606,7 +606,7 @@
   .stat-pill .l { font-size: 10px; color: var(--text-2); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.06em; }
   .section-label { display: flex; align-items: center; justify-content: space-between; margin: 8px 0 6px; flex-shrink: 0; }
   .section-label h2 { font-size: 13px; color: var(--ink-secondary); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
-  .quick-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; flex-shrink: 0; }
+  .quick-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; flex-shrink: 0; }
   .quick-tile {
     background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg);
     padding: 10px 12px; cursor: pointer; text-align: left; color: inherit; font-family: inherit;
@@ -632,7 +632,7 @@
   .setup-footer { padding: 12px var(--pad-x) 8px; display: flex; gap: 8px; flex-shrink: 0; }
   .setup-footer .btn { flex: 1; }
 
-  .rule-list { display: flex; flex-direction: column; gap: 10px; padding-bottom: 8px; }
+  .rule-list { display: flex; flex-direction: column; gap: 12px; padding-bottom: 8px; }
   .rule-card {
     background: var(--bg-paper-elevated); border: 1px solid var(--border-paper);
     border-radius: var(--r-lg); padding: 12px 14px; box-shadow: var(--shadow-paper);
@@ -810,12 +810,12 @@
     border: 1px solid var(--border-paper);
     border-radius: 14px;
     background: var(--bg-paper-elevated);
-    margin-bottom: 10px;
+    margin-bottom: 12px;
     overflow: visible;
   }
   .player-block:first-of-type,
   .player-block:last-of-type {
-    border-radius: 14px; margin-bottom: 10px; border-top: 1px solid var(--border-paper);
+    border-radius: 14px; margin-bottom: 12px; border-top: 1px solid var(--border-paper);
     border-bottom: 1px solid var(--border-paper);
   }
   .player-block .player-row {
@@ -1331,7 +1331,7 @@
   }
   .aj-player {
     background: var(--bg-paper-elevated); border: 1px solid var(--border-paper);
-    border-radius: 14px; padding: 14px; margin-bottom: 10px;
+    border-radius: 14px; padding: 14px; margin-bottom: 12px;
   }
   .aj-player.wd { opacity: 0.55; }
   .aj-row {
@@ -1477,7 +1477,7 @@
   .close-hero { text-align: center; padding: 4px 4px 8px; }
   .close-hero .trophy { font-size: 28px; margin-bottom: 4px; }
   .close-stats {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
     margin-bottom: 12px;
   }
   .close-stat {
@@ -1673,7 +1673,7 @@
   }
   .saved-roster .sr-row {
     display: flex; align-items: center; gap: 8px; padding: 10px 12px;
-    background: var(--bg-paper-elevated); border-radius: 12px; margin-bottom: 8px;
+    background: var(--bg-paper-elevated); border-radius: 12px; margin-bottom: 12px;
     border: 1px solid var(--border-paper);
   }
   .saved-roster .sr-row .name { flex: 1; font-weight: 600; font-size: 15px; }
@@ -2346,7 +2346,7 @@
     color: var(--glass-ink-secondary);
   }
   #screen-home .quick-grid {
-    gap: 10px;
+    gap: 12px;
     padding-bottom: 4px;
   }
   #screen-home .quick-tile {
@@ -2888,6 +2888,22 @@
     -webkit-backdrop-filter: blur(18px);
     backdrop-filter: blur(18px);
   }
+
+  /* 4.0.4 — 12px entre fichas de cristal hermanas. El fondo se ve en la V. */
+  .card + .card,
+  .card + .list-card,
+  .list-card + .card,
+  .card + .winners-block,
+  .winners-block + .card,
+  .card + .player-list,
+  .player-list + .card,
+  .rule-card + .rule-card,
+  .aj-player + .aj-player,
+  .player-block + .player-block,
+  .saved-roster .sr-row + .sr-row {
+    margin-top: 12px;
+  }
+  .rule-list > .rule-card + .rule-card { margin-top: 0; }
 </style>
 </head>
 <body>
@@ -4160,7 +4176,7 @@ function renderRules() {
       ${note}${extra}
     </div>`;
   }).join("");
-  body.innerHTML = `<button type="button" class="btn btn-primary mb-16" onclick="openReferee()">Consultar un lie</button><p class="muted" style="margin:4px 0 12px;">Oficiales y sociales. Las que llevas en la partida van marcadas.</p>${cards}`;
+  body.innerHTML = `<button type="button" class="btn btn-primary mb-16" onclick="openReferee()">Consultar un lie</button><p class="muted" style="margin:4px 0 12px;">Oficiales y sociales. Las que llevas en la partida van marcadas.</p><div class="rule-list">${cards}</div>`;
 }
 
 function go(name) {
