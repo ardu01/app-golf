@@ -63,8 +63,12 @@ assert.strictEqual(round.standings[0].sf, 36);
 
 assert.strictEqual(api.validateFairwayBackup({ rounds: "no" }).ok, false);
 assert.strictEqual(api.validateFairwayBackup(null).ok, false);
-const many = api.validateFairwayBackup({ rounds: Array.from({ length: 201 }, (_, i) => ({ id: "r" + i })) });
+const atCap = api.validateFairwayBackup({ rounds: Array.from({ length: 99999 }, (_, i) => ({ id: "r" + i })) });
+assert.strictEqual(atCap.ok, true);
+assert.strictEqual(atCap.data.rounds.length, 99999);
+const many = api.validateFairwayBackup({ rounds: Array.from({ length: 100000 }, (_, i) => ({ id: "r" + i })) });
 assert.strictEqual(many.ok, false);
+assert.strictEqual(many.reason, "Demasiadas partidas en la copia");
 
 const newer = api.validateFairwayBackup({ version: 4, rounds: [{ id: "r1", players: [] }] });
 assert.strictEqual(newer.ok, true);
@@ -87,7 +91,13 @@ assert.ok(!html.includes("onclick=\"openDetalle('${r.id}')\""));
 assert.ok(!html.includes("onclick=\"reopenRound('${d.id}'"));
 assert.ok(html.includes("data-open-detalle"));
 assert.ok(html.includes("data-round-action"));
-assert.ok(html.includes('appVersion: "4.0.6"'));
+assert.ok(html.includes("const ROUNDS_MAX = 99999;"));
+assert.ok(html.includes("saveRounds(list.slice(0, ROUNDS_MAX))"));
+assert.ok(html.includes("data.rounds.length > ROUNDS_MAX"));
+assert.ok(html.includes(".slice(0, ROUNDS_MAX)"));
+assert.ok(!html.includes("saveRounds(list.slice(0, 50))"));
+assert.ok(!html.includes("o.rounds.slice(0, 200)"));
+assert.ok(html.includes('appVersion: "4.0.7"'));
 assert.ok(!html.includes('appVersion: "4.0.0-alpha"'));
 assert.ok(html.includes("fairwayShouldHoldUpdate"));
 assert.ok(html.includes("fairway.rounds.bak.v1"));

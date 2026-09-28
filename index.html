@@ -2901,7 +2901,7 @@
         <div class="fit">
           <div class="home-hero">
             <div class="home-top">
-              <span class="app-version" aria-label="Versión">4.0.6</span>
+              <span class="app-version" aria-label="Versión">4.0.7</span>
               <button type="button" class="topnav-action" onclick="go('perfil')" aria-label="Perfil">Perfil</button>
             </div>
             <div class="greeting">Buenos días</div>
@@ -4601,6 +4601,7 @@ function setHostHcpFromPerfil(raw) {
 }
 
 const ROUNDS_KEY = "fairway.rounds.v1";
+const ROUNDS_MAX = 99999;
 const ROUNDS_BAK_KEY = "fairway.rounds.bak.v1";
 const ACTIVE_KEY = "fairway.activeRound.v1";
 const ACTIVE_BAK_KEY = "fairway.activeRound.bak.v1";
@@ -5054,7 +5055,7 @@ function persistCompletedRound() {
       rec.dateISO = prev.dateISO || rec.dateISO;
       rec.date = prev.date || rec.date;
       list[idx] = rec;
-      saveRounds(list.slice(0, 50));
+      saveRounds(list.slice(0, ROUNDS_MAX));
       state._roundSaved = rec.id;
       state.editingRoundId = null;
       endActiveRoundMemory();
@@ -5063,7 +5064,7 @@ function persistCompletedRound() {
     }
   }
   list.unshift(rec);
-  saveRounds(list.slice(0, 50));
+  saveRounds(list.slice(0, ROUNDS_MAX));
   state._roundSaved = rec.id;
   state.editingRoundId = null;
   endActiveRoundMemory();
@@ -8673,7 +8674,7 @@ function collectFairwayBackup() {
   return {
     version: 3,
     app: "Fairway",
-    appVersion: "4.0.6",
+    appVersion: "4.0.7",
     exportedAt: new Date().toISOString(),
     updatedAt: (typeof getDataUpdatedAt === "function" ? getDataUpdatedAt() : "") || "",
     includes: ["rounds", "players.scores", "players.putts", "players.fir", "players.gir", "players.ball", "players.withdrawn", "roster", "host", "activeRound", "winners", "standings"],
@@ -8831,7 +8832,7 @@ function validateFairwayBackup(data) {
   if (!data || typeof data !== "object" || Array.isArray(data) || !Array.isArray(data.rounds)) {
     return { ok: false, reason: "JSON no válido" };
   }
-  if (data.rounds.length > 200) return { ok: false, reason: "Demasiadas partidas en la copia" };
+  if (data.rounds.length > ROUNDS_MAX) return { ok: false, reason: "Demasiadas partidas en la copia" };
   const rounds = data.rounds.map(sanitizeImportedRound).filter(Boolean);
   const out = {
     version: Number(data.version) || 1,
@@ -8901,7 +8902,7 @@ function mergeFairwayBackup(remote) {
   let localActive = null;
   try { localActive = JSON.parse(localStorage.getItem(ACTIVE_KEY) || "null"); } catch (e) { localActive = null; }
   const keepLocalActive = driveActiveRoundDirty(localActive) || drivePlayScreen() || (typeof localActiveRoundIsProtected === "function" && localActiveRoundIsProtected());
-  const merged = driveMergeRounds(loadRounds(), remote.rounds || []).slice(0, 200);
+  const merged = driveMergeRounds(loadRounds(), remote.rounds || []).slice(0, ROUNDS_MAX);
   saveRounds(merged);
   if (Array.isArray(remote.roster) && typeof saveRoster === "function") {
     const loc = loadRoster();
@@ -9215,7 +9216,7 @@ function driveApplyResolved(remote, remoteUpdatedAt, opts) {
   const o = opts || {};
   _driveApplying = true;
   try {
-    if (Array.isArray(o.rounds)) saveRounds(o.rounds.slice(0, 200));
+    if (Array.isArray(o.rounds)) saveRounds(o.rounds.slice(0, ROUNDS_MAX));
     if (Array.isArray(o.roster) && typeof saveRoster === "function") saveRoster(o.roster);
     if (o.host && typeof o.host === "object") {
       try {
@@ -9687,7 +9688,7 @@ function renderPerfil() {
     <div class="profile-hero">
       <div class="avatar-lg">${escapeHtml(initials)}</div>
       <p class="muted" style="margin-top:8px;">Tu perfil en este dispositivo</p>
-      <p class="micro">Fairway 4.0.6</p>
+      <p class="micro">Fairway 4.0.7</p>
     </div>
     <div class="card mb-16">
       <div class="eyebrow">Nombre</div>

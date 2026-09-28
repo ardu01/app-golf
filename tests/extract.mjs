@@ -53,12 +53,15 @@ export function extractBetween(source, startMark, endMark) {
 
 export function loadFunctions(source, names, scope) {
   const code = names.map(n => extractFunction(source, n)).join("\n");
+  const roundsMax = source.match(/const ROUNDS_MAX = (\d+);/);
+  const roundsLine = roundsMax ? "var ROUNDS_MAX = " + roundsMax[1] + ";" : "";
   const fn = new Function("scope", [
     "var state = scope.state;",
     "var PLAYERS = scope.PLAYERS;",
     "var HOLES = scope.HOLES;",
     "var FX = scope.FX;",
     "var getSelectedCourse = scope.getSelectedCourse;",
+    roundsLine,
     code,
     "return {" + names.join(",") + "};"
   ].join("\n"));
