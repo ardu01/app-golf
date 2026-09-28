@@ -157,7 +157,7 @@ La 4.0.1 es solo piel: monocromo glass claro en Inicio, hoyo, tarjeta, cierre y 
 
 La 4.0.2 deja el mismo monocromo y corrige la densidad del marcador: −, el número y + de Golpes vuelven a la misma altura, los chips de Putts y Golpes comparten tamaño, y Árbitro, Mapa, Caddie y Restaurante pasan a un menú ···. En Inicio, cerrar la ronda se lee como acción de terminar y sigue pidiendo las dos confirmaciones.
 
-La 4.0.3 deja la ficha del hoyo a la altura del contenido. Putts y Golpes comparten el eje centrado. El − de Golpes es cristal y el + es negro sólido; los dos miden 48×48. Siguiente sigue en negro, a 50px. El esquema de la copia sigue en 3.
+La 4.0.3 deja la ficha del hoyo a la altura del contenido. Putts y Golpes comparten el eje centrado. El − y el + de Golpes son cristal, los dos a 48×48. El negro sólido se queda solo en Siguiente. El esquema de la copia sigue en 3.
 
 Google Drive, si se conecta, es el Drive de cada uno: una carpeta Fairway y un solo `fairway-data.json`. La partida se apunta siempre primero en el teléfono. Drive es la copia entre aparatos, no un servidor de Fairway. Sin red se sigue jugando y, al volver la cobertura, se manda lo pendiente. El identificador OAuth de la web va en el código (`FAIRWAY_DRIVE_CLIENT_ID`); no hay secreto de cliente ni token de refresco guardado. Una sesión silenciosa de varias semanas haría falta un backend, y esta copia no lo finge. La exportación manual del JSON sigue donde estaba.
 

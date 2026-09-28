@@ -2659,7 +2659,7 @@
     color: rgba(60,60,67,0.45);
     margin-bottom: 6px;
   }
-  /* 4.0.3 — número 48px. − cristal y + negro, los dos 48×48. */
+  /* 4.0.3 opción B — número 48px. − y + cristal, los dos 48×48. */
   #screen-hole .entry-section.golpes .stepper-row {
     display: flex;
     align-items: center;
@@ -2693,6 +2693,9 @@
     min-height: 48px;
     justify-self: auto;
     border-radius: 14px;
+    border: 0.5px solid rgba(60,60,67,0.28);
+    background: rgba(255,255,255,0.92);
+    color: #000000;
     font-size: 26px;
     font-weight: 400;
     line-height: 1;
@@ -2700,26 +2703,11 @@
     place-items: center;
     box-shadow: none;
   }
-  #screen-hole .entry-section.golpes .step-btn {
-    border: 0.5px solid rgba(60,60,67,0.28);
-    background: rgba(255,255,255,0.92);
-    color: #000000;
-  }
-  #screen-hole .entry-section.golpes .stepper-row .step-btn:last-of-type {
-    width: 48px;
-    height: 48px;
-    min-width: 48px;
-    min-height: 48px;
-    border: 0.5px solid #000000;
-    background: #000000;
-    color: #fff;
-    font-size: 26px;
-  }
   #screen-hole .entry-section.golpes .step-btn:active,
   #screen-hole .entry-section.golpes .stepper-row .step-btn:last-of-type:active {
-    background: #3A3A3C;
-    color: #fff;
-    border-color: #3A3A3C;
+    background: rgba(0,0,0,0.06);
+    color: #000000;
+    border-color: rgba(60,60,67,0.28);
   }
   #screen-hole .entry-section.golpes .chip-row-entry { justify-content: center; }
   #screen-hole .entry-section.golpes .chip-row-entry .qs {
