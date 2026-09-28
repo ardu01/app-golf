@@ -147,7 +147,7 @@ Sigue siendo un solo `index.html`. No lo he partido en módulos: la partida real
 
 `strokesRecv` aparece dos veces, una dentro de la clasificación de una vuelta guardada y otra al dibujar la tarjeta. No es la misma función repetida en el mismo sitio. Las dos llaman a `strokesOnHole`.
 
-La copia de seguridad sigue en el esquema 3, así que las de antes entran. El texto de versión dentro del JSON es 4.0.6. Si el historial o la ronda en curso se corrompen, hay una copia local anterior y no se pisa lo que no se puede leer.
+La copia de seguridad sigue en el esquema 3, así que las de antes entran. El texto de versión dentro del JSON es 4.0.7. Si el historial o la ronda en curso se corrompen, hay una copia local anterior y no se pisa lo que no se puede leer.
 
 La 3.0.2 escribe la ronda al esconder la pestaña y al suspender Safari. Si la copia principal falta o no se puede leer, Inicio ofrece Recuperar copia local. Nueva partida no borra la ronda guardada hasta que la nueva empieza de verdad.
 
@@ -164,6 +164,8 @@ La 4.0.4 ensancha esa ficha (8px de aire a cada lado) y centra el bloque ficha +
 La 4.0.5 deja el marcador igual y saca Árbitro, Mapa, Caddie y Restaurante del menú ···. Quedan en una fila de fichas de cristal bajo el progreso de hoyos, y solo si hay destino (mapa o teléfono). Hoyos sigue en la cabecera. El esquema de la copia sigue en 3.
 
 La 4.0.6 deja el marcador igual y separa esa fila del progreso (12px). Hoyos pasa a ser la primera ficha y abre el salto de hoyos; Árbitro, Mapa, Caddie y Restaurante siguen en el mismo orden, y solo si hay destino. El esquema de la copia sigue en 3.
+
+La 4.0.7 deja el marcador igual y sube el tope del historial a 1000 partidas. Guardar una ronda, validar la copia y restaurar desde Drive o un JSON usan el mismo límite. El esquema de la copia sigue en 3. Las fórmulas no cambian. Para que el teléfono coja el service worker nuevo hace falta borrar los datos del sitio o reinstalar la PWA.
 
 Google Drive, si se conecta, es el Drive de cada uno: una carpeta Fairway y un solo `fairway-data.json`. La partida se apunta siempre primero en el teléfono. Drive es la copia entre aparatos, no un servidor de Fairway. Sin red se sigue jugando y, al volver la cobertura, se manda lo pendiente. El identificador OAuth de la web va en el código (`FAIRWAY_DRIVE_CLIENT_ID`); no hay secreto de cliente ni token de refresco guardado. Una sesión silenciosa de varias semanas haría falta un backend, y esta copia no lo finge. La exportación manual del JSON sigue donde estaba.
 
