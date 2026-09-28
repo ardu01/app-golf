@@ -2391,6 +2391,262 @@
     opacity: 1;
     color: var(--glass-accent);
   }
+
+  /* Hole screen — hierarchy + thumb zone (right hand). Skin only. */
+  #screen-hole {
+    background: #F2F2F7;
+    color: #000;
+  }
+  #screen-hole .topnav { min-height: 40px; padding-bottom: 0; }
+  #screen-hole .topnav .title { display: none; }
+  #screen-hole .topnav .topnav-action,
+  #screen-hole .btn-icon {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    color: rgba(60,60,67,0.72);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  #screen-hole .hole-header { padding: 0 16px 2px; }
+  #screen-hole .hole-kicker {
+    margin: 0;
+    text-align: center;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.41px;
+    line-height: 1.2;
+    color: #000;
+  }
+  #screen-hole .hole-kicker .n { font-variant-numeric: tabular-nums; }
+  #screen-hole .hole-chips,
+  #screen-hole .progress-holes,
+  #screen-hole #holeYards { display: none !important; }
+  #screen-hole .hole-tools {
+    justify-content: flex-end;
+    gap: 4px;
+    padding: 2px 0 0;
+  }
+  #screen-hole .hole-tools .topnav-action,
+  #screen-hole .hole-jump-btn,
+  #screen-hole .hole-foto-link {
+    height: 28px;
+    min-height: 28px;
+    padding: 0 8px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    box-shadow: none;
+    color: rgba(60,60,67,0.55);
+    font-size: 13px;
+    font-weight: 500;
+  }
+  #screen-hole .club-calls a { color: rgba(60,60,67,0.45); }
+  #screen-hole .hole-play-main {
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 0;
+    overflow: hidden;
+  }
+  #screen-hole .carousel {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  #screen-hole .carousel-track {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
+    align-items: stretch;
+    padding: 6px 16px 8px;
+  }
+  #screen-hole .player-card {
+    display: flex;
+    flex-direction: column;
+    height: 100% !important;
+    min-height: 100% !important;
+    max-height: 100% !important;
+    overflow: auto !important;
+    padding: 14px 14px 12px;
+    background: rgba(255,255,255,0.82);
+    border: 0.5px solid rgba(60,60,67,0.18);
+    border-radius: 16px;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.85) inset, 0 8px 24px rgba(0,0,0,0.05);
+    backdrop-filter: saturate(160%) blur(18px);
+    -webkit-backdrop-filter: saturate(160%) blur(18px);
+  }
+  #screen-hole .player-card.active {
+    border: 0.5px solid rgba(60,60,67,0.22);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.85) inset, 0 8px 24px rgba(0,0,0,0.05);
+  }
+  #screen-hole .player-card .pc-head { order: 0; margin-bottom: 8px; }
+  #screen-hole .player-card .pc-head .name {
+    font-size: 15px;
+    font-weight: 600;
+    color: #000;
+  }
+  #screen-hole .entry-section.putts {
+    order: 1;
+    margin: 0 0 8px;
+    padding: 0;
+    border: 0;
+  }
+  #screen-hole .entry-section.golpes {
+    order: 2;
+    margin: auto 0 0;
+    padding-top: 4px;
+  }
+  #screen-hole .entry-section.putts .entry-label,
+  #screen-hole .stats-toggle,
+  #screen-hole .stats-toggle .micro {
+    color: rgba(60,60,67,0.5);
+    font-size: 12px;
+  }
+  #screen-hole .entry-section.golpes .entry-label {
+    text-align: center;
+    color: rgba(60,60,67,0.45);
+    margin-bottom: 2px;
+  }
+  #screen-hole .entry-section.golpes .stepper-row {
+    display: grid;
+    grid-template-columns: 76px minmax(0, 1fr) 92px;
+    align-items: end;
+    justify-content: stretch;
+    gap: 6px;
+    margin: 0 0 8px;
+    min-height: 108px;
+  }
+  #screen-hole .entry-section.golpes .step-val {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    font-size: 84px;
+    font-weight: 600;
+    letter-spacing: -2.5px;
+    text-align: center;
+    color: #000;
+    line-height: 0.9;
+  }
+  #screen-hole .entry-section.golpes .step-val.empty {
+    color: rgba(60,60,67,0.32);
+    font-weight: 500;
+    font-size: 72px;
+  }
+  #screen-hole .entry-section.golpes .step-btn {
+    width: 76px;
+    height: 76px;
+    border-radius: 22px;
+    border: 0.5px solid rgba(60,60,67,0.2);
+    background: rgba(255,255,255,0.92);
+    color: #1C1C1E;
+    font-size: 40px;
+    line-height: 74px;
+  }
+  #screen-hole .entry-section.golpes .stepper-row .step-btn:last-of-type {
+    width: 92px;
+    height: 92px;
+    justify-self: end;
+    border-radius: 26px;
+    border: 0.5px solid #1C1C1E;
+    background: #1C1C1E;
+    color: #fff;
+    font-size: 48px;
+    line-height: 90px;
+  }
+  #screen-hole .entry-section.golpes .step-btn:active,
+  #screen-hole .entry-section.golpes .stepper-row .step-btn:last-of-type:active {
+    background: #000;
+    color: #fff;
+  }
+  #screen-hole .entry-section.golpes .chip-row-entry { justify-content: center; }
+  #screen-hole .entry-section.golpes .chip-row-entry .qs {
+    flex: 0 1 56px;
+    min-width: 44px;
+    height: 32px;
+    line-height: 32px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 8px;
+    background: rgba(120,120,128,0.10);
+    color: rgba(60,60,67,0.62);
+  }
+  #screen-hole .entry-section.golpes .chip-row-entry .qs.on {
+    background: rgba(60,60,67,0.14);
+    color: #1C1C1E;
+  }
+  #screen-hole .entry-section.putts .stepper-row {
+    justify-content: flex-start;
+    gap: 10px;
+    margin: 0 0 6px;
+  }
+  #screen-hole .entry-section.putts .step-btn {
+    width: 36px;
+    height: 36px;
+    line-height: 36px;
+    font-size: 20px;
+    border-radius: 10px;
+    background: rgba(120,120,128,0.10);
+    color: rgba(60,60,67,0.75);
+  }
+  #screen-hole .entry-section.putts .step-val {
+    min-width: 28px;
+    font-size: 22px;
+    font-weight: 600;
+    color: rgba(60,60,67,0.8);
+  }
+  #screen-hole .entry-section.putts .step-val.empty { color: rgba(60,60,67,0.32); }
+  #screen-hole .entry-section.putts .chip-row-entry .qs {
+    flex: 0 1 44px;
+    min-width: 36px;
+    height: 28px;
+    line-height: 28px;
+    font-size: 13px;
+    font-weight: 500;
+    background: rgba(120,120,128,0.08);
+    color: rgba(60,60,67,0.6);
+  }
+  #screen-hole .entry-section.putts .chip-row-entry .qs.on,
+  #screen-hole .entry-section.putts .step-btn:active {
+    background: rgba(60,60,67,0.16);
+    color: #1C1C1E;
+  }
+  #screen-hole .stats-collapse {
+    order: -1;
+    margin: 0 16px 4px;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  #screen-hole .social-pills { order: -1; }
+  #screen-hole .hole-nav {
+    background: rgba(242,242,247,0.92);
+    border-top: 0.5px solid rgba(60,60,67,0.12);
+    box-shadow: none;
+  }
+  #screen-hole .hole-nav .btn {
+    height: 40px;
+    font-size: 15px;
+    font-weight: 600;
+    background: transparent;
+    color: #1C1C1E;
+    box-shadow: none;
+  }
+  #screen-hole .hole-nav .btn-primary {
+    background: rgba(255,255,255,0.78);
+    border: 0.5px solid rgba(60,60,67,0.18);
+    color: #1C1C1E;
+  }
+  #screen-hole .hole-foto-empty {
+    color: rgba(60,60,67,0.55);
+    background: rgba(255,255,255,0.72);
+    border: 0.5px solid rgba(60,60,67,0.18);
+  }
+  #screen-hole .stroke-badge,
+  #screen-hole .stroke-badge.two,
+  #screen-hole .stroke-badge.give {
+    background: rgba(120,120,128,0.12);
+    color: rgba(60,60,67,0.75);
+  }
 </style>
 </head>
 <body>
@@ -2481,16 +2737,10 @@
           <button type="button" class="topnav-action" onclick="go('ajustes')" aria-label="Ajustes de la partida">Ajustes</button>
         </div>
         <div class="hole-header">
-          <div class="hole-meta">
-            <div class="hole-num">
-              <span class="n" id="holeNum">1</span>
-              <span class="par">Par <span id="holePar">5</span></span>
-            </div>
-            <div class="hole-yards">
-              <strong id="holeYards">476 m</strong>
-              <span id="holeHcpLine">HCP 4 · Amarillas</span>
-            </div>
-          </div>
+          <p class="hole-kicker">
+            <span class="n" id="holeNum">1</span><span aria-hidden="true"> · </span>Par <span id="holePar">5</span><span aria-hidden="true"> · </span><span id="holeHcpLine">SI 4</span>
+          </p>
+          <span id="holeYards" hidden>476 m</span>
           <div class="hole-chips">
             <span class="badge" id="holeClubBadge">Centro Nacional de Golf</span>
             <span class="badge badge-tier" id="tierBadge" hidden></span>
@@ -5820,12 +6070,7 @@ function renderHole(opts) {
   document.getElementById("holePar").textContent = h.par;
   document.getElementById("holeYards").textContent = h.m + " m";
   refreshPlayerHandicaps();
-  document.getElementById("holeHcpLine").textContent = (() => {
-    const n = holesInRound();
-    const rel = n < 18 ? relativeStrokeIndex(h.hcp) : null;
-    const siPart = rel != null && rel !== h.hcp ? `SI ${h.hcp} · rel ${rel}` : `SI ${h.hcp}`;
-    return `${siPart} · ${state.setup.tee}`;
-  })();
+  document.getElementById("holeHcpLine").textContent = "SI " + h.hcp;
   const _siB = document.getElementById("holeSiBanner");
   if (_siB) _siB.remove();
   document.getElementById("holeClubBadge").textContent = CLUB;
