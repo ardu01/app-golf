@@ -2610,12 +2610,12 @@
     flex-direction: column;
     justify-content: flex-start;
     align-self: flex-start;
-    flex-grow: 0;
-    height: auto !important;
-    min-height: 0 !important;
-    max-height: none !important;
-    overflow: hidden !important;
-    padding: 16px 16px 14px;
+    flex: 0 0 auto;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    overflow: hidden;
+    padding: 12px 14px 14px;
     background: rgba(255,255,255,0.82);
     border: 0.5px solid rgba(60,60,67,0.18);
     border-radius: 16px;
@@ -2636,17 +2636,17 @@
   #screen-hole .entry-section.putts {
     order: 1;
     width: 100%;
-    margin: 0;
-    padding: 0 0 2px;
+    margin: 0 0 8px;
+    padding: 0;
     border: 0;
   }
-  /* Sin margin-top auto: eso empujaba Golpes al fondo y alargaba la ficha. */
+  /* 10px, nunca auto ni 18px: Golpes no se empuja al fondo de la ficha. */
   #screen-hole .entry-section.golpes {
     order: 2;
     width: 100%;
-    margin: 12px 0 0;
-    padding-top: 12px;
-    border-top: 0.5px solid rgba(60,60,67,0.12);
+    margin: 10px 0 0;
+    padding: 0;
+    border: 0;
   }
   #screen-hole .entry-section.putts .entry-label,
   #screen-hole .stats-toggle,
@@ -2660,26 +2660,26 @@
     color: rgba(60,60,67,0.45);
     margin-bottom: 6px;
   }
-  /* 4.0.3 — número 52px; − y + iguales, 48×48, cristal con glifo negro. */
+  /* 4.0.3 — número 48px. − cristal y + negro, los dos 48×48. */
   #screen-hole .entry-section.golpes .stepper-row {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 16px;
+    gap: 14px;
     margin: 0 0 10px;
     min-height: 0;
     width: 100%;
   }
   #screen-hole .entry-section.golpes .step-val {
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
-    font-size: 52px;
+    font-size: 48px;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     letter-spacing: -1px;
     text-align: center;
     color: #000;
     line-height: 1;
-    min-width: 52px;
+    min-width: 48px;
   }
   #screen-hole .entry-section.golpes .step-val.empty {
     color: rgba(60,60,67,0.32);
@@ -2694,9 +2694,6 @@
     min-height: 48px;
     justify-self: auto;
     border-radius: 14px;
-    border: 0.5px solid rgba(60,60,67,0.28);
-    background: rgba(255,255,255,0.92);
-    color: #000000;
     font-size: 26px;
     font-weight: 400;
     line-height: 1;
@@ -2704,15 +2701,32 @@
     place-items: center;
     box-shadow: none;
   }
+  #screen-hole .entry-section.golpes .step-btn {
+    border: 0.5px solid rgba(60,60,67,0.22);
+    background: rgba(255,255,255,0.92);
+    color: #000000;
+  }
+  #screen-hole .entry-section.golpes .stepper-row .step-btn:last-of-type {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    min-height: 48px;
+    border: 0;
+    background: #000000;
+    color: #fff;
+    font-size: 26px;
+  }
   #screen-hole .entry-section.golpes .step-btn:active,
   #screen-hole .entry-section.golpes .stepper-row .step-btn:last-of-type:active {
-    background: rgba(0,0,0,0.06);
-    color: #000000;
-    border-color: rgba(0,0,0,0.40);
+    background: #3A3A3C;
+    color: #fff;
+    border-color: #3A3A3C;
   }
   #screen-hole .entry-section.golpes .chip-row-entry { justify-content: center; }
   #screen-hole .entry-section.golpes .chip-row-entry .qs {
-    flex: 0 1 56px;
+    flex: 0 1 52px;
+    width: 52px;
+    max-width: 52px;
     min-width: 44px;
     height: 36px;
     line-height: 36px;
@@ -2730,12 +2744,13 @@
   }
   #screen-hole .entry-section.putts .stepper-row {
     justify-content: center;
-    gap: 12px;
+    gap: 10px;
     margin: 0 0 8px;
     width: 100%;
   }
   #screen-hole .entry-section.putts .chip-row-entry { justify-content: center; }
   #screen-hole .entry-section.putts .step-btn {
+    position: relative;
     width: 36px;
     height: 36px;
     min-width: 36px;
@@ -2746,22 +2761,34 @@
     border-radius: 10px;
     display: grid;
     place-items: center;
-    border: 0.5px solid rgba(60,60,67,0.22);
-    background: rgba(255,255,255,0.92);
+    border: 0;
+    background: rgba(120,120,128,0.10);
     color: #000000;
     box-shadow: none;
   }
+  /* Glifo 36px; el toque llega a 44px sin agrandar el botón. */
+  #screen-hole .entry-section.putts .step-btn::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+  }
   #screen-hole .entry-section.putts .step-val {
     min-width: 24px;
-    font-size: 22px;
+    font-size: 20px;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     color: rgba(60,60,67,0.88);
   }
   #screen-hole .entry-section.putts .step-val.empty { color: rgba(60,60,67,0.32); }
   #screen-hole .entry-section.putts .chip-row-entry .qs {
-    flex: 0 1 44px;
+    flex: 0 0 36px;
+    width: 36px;
     min-width: 36px;
+    max-width: 36px;
     height: 36px;
     line-height: 36px;
     font-size: 14px;
@@ -2791,7 +2818,7 @@
     box-shadow: none;
   }
   #screen-hole .hole-nav .btn {
-    height: 48px;
+    height: 50px;
     font-size: 17px;
     font-weight: 600;
     background: transparent;
