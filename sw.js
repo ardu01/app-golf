@@ -1,4 +1,4 @@
-const SHELL = "fairway-v4-404";
+const SHELL = "fairway-v4-405";
 const MAPS = "fairway-maps-v1";
 const MAPS_MAX = 120;
 const ASSETS = [
