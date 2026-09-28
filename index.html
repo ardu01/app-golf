@@ -2582,9 +2582,19 @@
     justify-content: flex-start;
   }
   #screen-hole .hole-more-menu .club-calls a { color: #000000; }
+  /* 4.0.4 — sin flex:1 y min-height:0 el margin auto del carrusel no empuja. */
+  #screen-hole #holePlayPane.active {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+  }
   #screen-hole .hole-play-main {
     display: flex;
     flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
     padding-bottom: 0;
     overflow-x: hidden;
     overflow-y: auto;
