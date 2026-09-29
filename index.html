@@ -1752,7 +1752,7 @@
   #screen-hole .player-card .pc-head .seat,
   #screen-hole .player-card .pc-head .thru { display: none !important; }
   #screen-hole .entry-section {
-    margin-top: 0; flex: none !important; min-height: 0 !important;
+    margin-top: 0; flex: none; min-height: 0;
   }
   #screen-hole .entry-section.golpes { margin-bottom: 4px; }
   #screen-hole .entry-section.putts {
@@ -2585,7 +2585,7 @@
     overflow-y: auto;
   }
   /* 4.0.8 — la ficha llena el hueco entre las fichas de acceso y el pie.
-     Sin margin auto. El aire queda fuera del bloque Golpes/Putts. */
+     4.0.9 — sin margin auto. El aire sobrante vive dentro de Golpes. */
   #screen-hole .carousel {
     flex: 1 1 auto;
     min-height: 0;
@@ -2614,9 +2614,8 @@
     align-self: stretch;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    justify-content: safe center;
-    gap: 10px;
+    justify-content: flex-start;
+    gap: 0;
     margin: 0;
     padding: 16px;
     overflow: auto;
@@ -2642,24 +2641,30 @@
     border: 0.5px solid rgba(60,60,67,0.22);
     box-shadow: 0 1px 0 rgba(255,255,255,0.85) inset, 0 8px 24px rgba(0,0,0,0.05);
   }
-  #screen-hole .player-card .pc-head { order: 0; margin-bottom: 0; }
+  #screen-hole .player-card .pc-head { order: 0; margin-bottom: 12px; }
   #screen-hole .player-card .pc-head .name {
     font-size: 17px;
     font-weight: 600;
     color: #000;
   }
+  /* 4.0.9 — el aire sobrante queda dentro de Golpes. Entre secciones, 12px fijos. */
   #screen-hole .entry-section.golpes {
     order: 1;
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     width: 100%;
     margin: 0;
     padding: 0;
     border: 0;
   }
-  /* 10px entre Golpes y Putts lo pone el gap de la ficha. Sin margin auto. */
   #screen-hole .entry-section.putts {
     order: 2;
+    flex: 0 0 auto;
     width: 100%;
-    margin: 0;
+    margin: 12px 0 0;
     padding: 0;
     border: 0;
   }
@@ -2675,40 +2680,41 @@
     color: rgba(60,60,67,0.45);
     margin-bottom: 6px;
   }
-  /* 4.0.4 opción B — número 52px. − y + cristal, los dos 48×48. Negro solo en Siguiente. */
+  #screen-hole .entry-section.golpes .entry-label { font-size: 13px; }
+  /* 4.0.9 cristal B — número 64px. − y + cristal, los dos 56×56. Negro solo en Siguiente. */
   #screen-hole .entry-section.golpes .stepper-row {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 14px;
+    gap: 16px;
     margin: 0 0 10px;
     min-height: 0;
     width: 100%;
   }
   #screen-hole .entry-section.golpes .step-val {
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
-    font-size: 52px;
+    font-size: 64px;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     letter-spacing: -1px;
     text-align: center;
     color: #000;
     line-height: 1;
-    min-width: 52px;
+    min-width: 56px;
   }
   #screen-hole .entry-section.golpes .step-val.empty {
     color: rgba(60,60,67,0.32);
     font-weight: 500;
-    font-size: 52px;
+    font-size: 64px;
   }
   #screen-hole .entry-section.golpes .step-btn,
   #screen-hole .entry-section.golpes .stepper-row .step-btn:last-of-type {
-    width: 48px;
-    height: 48px;
-    min-width: 48px;
-    min-height: 48px;
+    width: 56px;
+    height: 56px;
+    min-width: 56px;
+    min-height: 56px;
     justify-self: auto;
-    border-radius: 14px;
+    border-radius: 16px;
     border: 0.5px solid rgba(60,60,67,0.28);
     background: rgba(255,255,255,0.92);
     color: #000000;
@@ -2727,12 +2733,12 @@
   }
   #screen-hole .entry-section.golpes .chip-row-entry { justify-content: center; }
   #screen-hole .entry-section.golpes .chip-row-entry .qs {
-    flex: 0 1 56px;
-    width: 56px;
-    max-width: 56px;
+    flex: 0 1 64px;
+    width: 64px;
+    max-width: 64px;
     min-width: 44px;
-    height: 36px;
-    line-height: 36px;
+    height: 40px;
+    line-height: 40px;
     font-size: 15px;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
@@ -2917,7 +2923,7 @@
         <div class="fit">
           <div class="home-hero">
             <div class="home-top">
-              <span class="app-version" aria-label="Versión">4.0.8</span>
+              <span class="app-version" aria-label="Versión">4.0.9</span>
               <button type="button" class="topnav-action" onclick="go('perfil')" aria-label="Perfil">Perfil</button>
             </div>
             <div class="greeting">Buenos días</div>
@@ -8691,7 +8697,7 @@ function collectFairwayBackup() {
   return {
     version: 3,
     app: "Fairway",
-    appVersion: "4.0.8",
+    appVersion: "4.0.9",
     exportedAt: new Date().toISOString(),
     updatedAt: (typeof getDataUpdatedAt === "function" ? getDataUpdatedAt() : "") || "",
     includes: ["rounds", "players.scores", "players.putts", "players.fir", "players.gir", "players.ball", "players.withdrawn", "roster", "host", "activeRound", "winners", "standings"],
@@ -9705,7 +9711,7 @@ function renderPerfil() {
     <div class="profile-hero">
       <div class="avatar-lg">${escapeHtml(initials)}</div>
       <p class="muted" style="margin-top:8px;">Tu perfil en este dispositivo</p>
-      <p class="micro">Fairway 4.0.8</p>
+      <p class="micro">Fairway 4.0.9</p>
     </div>
     <div class="card mb-16">
       <div class="eyebrow">Nombre</div>
