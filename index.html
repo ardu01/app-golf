@@ -2484,10 +2484,10 @@
     -webkit-backdrop-filter: saturate(160%) blur(18px);
     backdrop-filter: saturate(160%) blur(18px);
   }
-  /* 4.0.6 — 4px sobre la línea, sin padding inferior: el aire hacia las fichas lo pone .hole-access. */
+  /* 4.0.11 — 2px sobre la línea. La cabecera queda más baja. */
   #screen-hole .progress-holes {
     margin: 0;
-    padding: 4px 16px 0;
+    padding: 2px 16px 0;
     flex-shrink: 0;
   }
   #screen-hole .progress-holes span { background: rgba(60,60,67,0.18); }
@@ -2514,12 +2514,12 @@
     font-weight: 500;
   }
   #screen-hole .club-calls a { color: rgba(60,60,67,0.45); }
-  /* 4.0.6 — 12px de aire bajo el progreso; 10px hacia FIR/ficha. */
+  /* 4.0.11 — 8px bajo el progreso, 6px hacia el FIR. Las fichas siguen a 32px (toque 44). */
   #screen-hole .hole-access {
     display: flex;
     flex-wrap: nowrap;
     gap: 8px;
-    padding: 12px 16px 10px;
+    padding: 8px 16px 6px;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     flex-shrink: 0;
@@ -2567,7 +2567,7 @@
     transform: translate(-50%, -50%);
   }
   #screen-hole .hole-access-chip[hidden] { display: none !important; }
-  /* 4.0.10 — el pane y el main siguen flex:1 para que el carrusel se centre en el hueco. */
+  /* 4.0.11 — el pane y el main siguen flex:1. La ficha no se centra: el aire cae hacia el pie. */
   #screen-hole #holePlayPane.active {
     display: flex;
     flex-direction: column;
@@ -2584,10 +2584,10 @@
     overflow-x: hidden;
     overflow-y: auto;
   }
-  /* 4.0.10 — la ficha no llena el alto. El carrusel se centra en el hueco que queda. */
+  /* 4.0.11 — la ficha se queda arriba del hueco. Alto del contenido, sin estirar. */
   #screen-hole .carousel {
     flex: 0 0 auto;
-    margin-top: auto;
+    margin-top: 8px;
     margin-bottom: auto;
     height: auto;
     display: flex;
@@ -2597,15 +2597,15 @@
     flex: 0 0 auto;
     align-items: flex-start;
     height: auto;
-    padding: 4px 16px 8px;
-    gap: 12px;
+    padding: 0 12px 8px;
+    gap: 10px;
     overflow-x: auto;
     overflow-y: visible;
   }
-  /* 16px de asomo por lado: calc(100% - 32px). */
+  /* Asomo del siguiente: calc(100% - 24px). */
   #screen-hole .carousel-track .player-card {
-    flex: 0 0 calc(100% - 32px);
-    width: calc(100% - 32px);
+    flex: 0 0 calc(100% - 24px);
+    width: calc(100% - 24px);
     height: auto;
     min-height: 0;
     max-height: none;
@@ -2624,27 +2624,27 @@
     backdrop-filter: saturate(160%) blur(18px);
     -webkit-backdrop-filter: saturate(160%) blur(18px);
   }
-  /* Un jugador: 12px de margen a cada lado, sin asomo. */
+  /* Un jugador: calc(100% - 20px), sin asomo. */
   #screen-hole .carousel-track.solo {
     padding-left: 0;
     padding-right: 0;
     justify-content: center;
   }
   #screen-hole .carousel-track.solo .player-card {
-    width: calc(100% - 24px);
-    flex-basis: calc(100% - 24px);
+    width: calc(100% - 20px);
+    flex-basis: calc(100% - 20px);
   }
   #screen-hole .player-card.active {
     border: 0.5px solid rgba(60,60,67,0.22);
     box-shadow: 0 1px 0 rgba(255,255,255,0.85) inset, 0 8px 24px rgba(0,0,0,0.05);
   }
-  #screen-hole .player-card .pc-head { order: 0; margin-bottom: 12px; }
+  #screen-hole .player-card .pc-head { order: 0; margin-bottom: 10px; }
   #screen-hole .player-card .pc-head .name {
     font-size: 17px;
     font-weight: 600;
     color: #000;
   }
-  /* 4.0.10 — Golpes no se estira. Putts a 12px, sin margin-top auto. */
+  /* 4.0.11 — Golpes no se estira. Putts a 12px fijos, sin margin-top auto. */
   #screen-hole .entry-section.golpes {
     order: 1;
     flex: 0 0 auto;
@@ -2675,7 +2675,7 @@
     margin-bottom: 6px;
   }
   #screen-hole .entry-section.golpes .entry-label { font-size: 13px; }
-  /* 4.0.10 cristal B — número 56px. − y + cristal, los dos 48×48. Negro solo en Siguiente. */
+  /* 4.0.11 cristal B — número 60px. − y + cristal, los dos 52×52. Negro solo en Siguiente. */
   #screen-hole .entry-section.golpes .stepper-row {
     display: flex;
     align-items: center;
@@ -2687,26 +2687,26 @@
   }
   #screen-hole .entry-section.golpes .step-val {
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
-    font-size: 56px;
+    font-size: 60px;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     letter-spacing: -1px;
     text-align: center;
     color: #000;
     line-height: 1;
-    min-width: 56px;
+    min-width: 60px;
   }
   #screen-hole .entry-section.golpes .step-val.empty {
     color: rgba(60,60,67,0.32);
     font-weight: 600;
-    font-size: 56px;
+    font-size: 60px;
   }
   #screen-hole .entry-section.golpes .step-btn,
   #screen-hole .entry-section.golpes .stepper-row .step-btn:last-of-type {
-    width: 48px;
-    height: 48px;
-    min-width: 48px;
-    min-height: 48px;
+    width: 52px;
+    height: 52px;
+    min-width: 52px;
+    min-height: 52px;
     justify-self: auto;
     border-radius: 14px;
     border: 0.5px solid rgba(60,60,67,0.28);
@@ -2818,12 +2818,19 @@
     color: #000000;
     box-shadow: inset 0 0 0 1px #000000;
   }
+  /* 4.0.11 — FIR más bajo. El interruptor queda en 28px. */
   #screen-hole .stats-collapse {
     order: -1;
-    margin: 0 16px 4px;
+    margin: 0 16px 0;
+    padding: 0;
     border: 0;
     background: transparent;
     box-shadow: none;
+  }
+  #screen-hole .stats-toggle {
+    min-height: 28px;
+    padding: 0;
+    font-size: 12px;
   }
   #screen-hole .social-pills { order: -1; }
   #screen-hole .player-dots {
@@ -2917,7 +2924,7 @@
         <div class="fit">
           <div class="home-hero">
             <div class="home-top">
-              <span class="app-version" aria-label="Versión">4.0.10</span>
+              <span class="app-version" aria-label="Versión">4.0.11</span>
               <button type="button" class="topnav-action" onclick="go('perfil')" aria-label="Perfil">Perfil</button>
             </div>
             <div class="greeting">Buenos días</div>
@@ -8691,7 +8698,7 @@ function collectFairwayBackup() {
   return {
     version: 3,
     app: "Fairway",
-    appVersion: "4.0.10",
+    appVersion: "4.0.11",
     exportedAt: new Date().toISOString(),
     updatedAt: (typeof getDataUpdatedAt === "function" ? getDataUpdatedAt() : "") || "",
     includes: ["rounds", "players.scores", "players.putts", "players.fir", "players.gir", "players.ball", "players.withdrawn", "roster", "host", "activeRound", "winners", "standings"],
@@ -9705,7 +9712,7 @@ function renderPerfil() {
     <div class="profile-hero">
       <div class="avatar-lg">${escapeHtml(initials)}</div>
       <p class="muted" style="margin-top:8px;">Tu perfil en este dispositivo</p>
-      <p class="micro">Fairway 4.0.10</p>
+      <p class="micro">Fairway 4.0.11</p>
     </div>
     <div class="card mb-16">
       <div class="eyebrow">Nombre</div>
