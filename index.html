@@ -2938,6 +2938,16 @@
   }
   .rule-list > .rule-card + .rule-card { margin-top: 0; }
 
+  /* 4.2.6 — la ficha de la sala no va pegada a la ronda. 16px es el margen de iOS. */
+  #screen-home .home-hero > #sharedRoundHome {
+    margin-top: 16px;
+  }
+  #sharedRoundAjustes .shared-card,
+  #sharedRoundInvite .shared-card {
+    margin-top: 16px;
+    margin-bottom: 16px;
+  }
+
   .shared-card .shared-code {
     font-size: 28px;
     font-weight: 600;
@@ -2970,7 +2980,7 @@
         <div class="fit">
           <div class="home-hero">
             <div class="home-top">
-              <span class="app-version" aria-label="Versión">4.2.5</span>
+              <span class="app-version" aria-label="Versión">4.2.6</span>
               <button type="button" class="topnav-action" onclick="go('perfil')" aria-label="Perfil">Perfil</button>
             </div>
             <div class="greeting">Buenos días</div>
@@ -9433,7 +9443,7 @@ function collectFairwayBackup() {
   return {
     version: 3,
     app: "Fairway",
-    appVersion: "4.2.5",
+    appVersion: "4.2.6",
     exportedAt: new Date().toISOString(),
     updatedAt: (typeof getDataUpdatedAt === "function" ? getDataUpdatedAt() : "") || "",
     includes: ["rounds", "players.scores", "players.putts", "players.fir", "players.gir", "players.ball", "players.withdrawn", "roster", "host", "activeRound", "winners", "standings"],
@@ -10519,7 +10529,7 @@ function renderPerfil() {
     <div class="profile-hero">
       <div class="avatar-lg">${escapeHtml(initials)}</div>
       <p class="muted" style="margin-top:8px;">Tu perfil en este dispositivo</p>
-      <p class="micro">Fairway 4.2.5</p>
+      <p class="micro">Fairway 4.2.6</p>
     </div>
     <div class="card mb-16">
       <div class="eyebrow">Nombre</div>

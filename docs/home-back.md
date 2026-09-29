@@ -1,8 +1,8 @@
 # Inicio y el swipe atrás del iPhone
 
-Producto **4.2.5**. La 4.1.3.1 dejó un solo centinela en el hash. En un iPhone ese gesto no se queda en Fairway: un swipe terminado sale de Safari o cierra la PWA. El botón Atrás del navegador sí veía el hash; el gesto del borde no se detiene en entradas del mismo documento.
+Producto **4.2.6**. La 4.1.3.1 dejó un solo centinela en el hash. En un iPhone ese gesto no se queda en Fairway: un swipe terminado sale de Safari o cierra la PWA. El botón Atrás del navegador sí veía el hash; el gesto del borde no se detiene en entradas del mismo documento.
 
-## Qué hace la 4.2.5
+## Qué hace la 4.2.2, y sigue en la 4.2.6
 
 El velo de la 4.2.2 sigue, solo en Inicio: una franja de 30px en el borde izquierdo. Desde iOS 13.4, un `touchstart` no pasivo que llama a `preventDefault()` en esa franja impide que Safari arme el swipe, en la pestaña y en la PWA instalada. `overscroll-behavior-x` no lo hace en WebKit (bug 240183). No hay clave del manifest que lo apague.
 
@@ -20,7 +20,7 @@ Eso no reproduce el gesto de WebKit. El navegador de escritorio no cierra una PW
 
 ## Cómo comprobarlo en un iPhone
 
-Hace falta la build **4.2.5** (el número está en Inicio). Si la PWA ya estaba instalada, cerrarla del todo y abrirla otra vez para que coja el shell `fairway-v4-425`. Probar las dos: Safari y el icono de la pantalla de inicio.
+Hace falta la build **4.2.6** (el número está en Inicio). Si la PWA ya estaba instalada, cerrarla del todo y abrirla otra vez para que coja el shell `fairway-v4-426`. Probar las dos: Safari y el icono de la pantalla de inicio.
 
 1. Abrir Inicio, sin haber entrado en otra pantalla. Deslizar desde el borde izquierdo, despacio y luego del todo. Fairway sigue en Inicio. No aparece el escritorio ni la página anterior de Safari.
 2. Repetir después de haber hecho scroll en Inicio, con el dedo ya parado.

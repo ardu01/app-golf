@@ -1,13 +1,21 @@
 /**
  * Store-and-forward mailbox for a shared round.
- * Default: public MQTT broker, retained JSON, no credentials.
+ * The document both phones share is HTTPS, keyed only by the room code:
+ *   POST/GET https://mantledb.sh/v2/{code}/card
+ * No account and no API key. Do not claim the namespace: that returns a
+ * secret write key, and this file must not store one.
+ * MQTT (wss://test.mosquitto.org:8081/mqtt, subprotocol "mqtt", retained)
+ * is a best-effort mirror. Safari often fails that socket (iOS Private
+ * Relay sends CONNECT instead of a WebSocket upgrade; the test broker
+ * also drops WebSocket/TLS). A failed mirror must not block the HTTPS put.
  * Optional: HTTP GET/PUT {base}/{code} when FAIRWAY_ROOM_HTTP is set.
- * Neither value is a secret.
+ * None of these URLs is a secret.
  */
 
 import { sanitizeRoom } from "./shared-round.js";
 
 export const FAIRWAY_ROOM_BROKER = "wss://test.mosquitto.org:8081/mqtt";
+export const FAIRWAY_ROOM_STORE = "https://mantledb.sh/v2";
 export const FAIRWAY_ROOM_HTTP = "";
 export const FAIRWAY_ROOM_TOPIC = "fairway/v1/room/";
 
@@ -100,6 +108,12 @@ export function parsePublish(pkt) {
   return { topic: topic, payload: dec.decode(pkt.slice(i)), retain: (pkt[0] & 0x01) === 1 };
 }
 
+function sendBytes(socket, bytes) {
+  const raw = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+  const copy = raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.byteLength);
+  socket.send(copy);
+}
+
 function concatBytes(chunks) {
   const parts = chunks.filter(Boolean);
   let n = 0;
@@ -172,10 +186,21 @@ export function createMqttMailbox(opts) {
   }
 
   function onData(data) {
-    const chunk = data instanceof Uint8Array ? data : new Uint8Array(data);
+    let chunk = null;
+    if (data instanceof Uint8Array) chunk = data;
+    else if (data instanceof ArrayBuffer) chunk = new Uint8Array(data);
+    else return;
     const split = splitPackets(concatBytes([rest, chunk]));
     rest = split.rest;
     split.packets.forEach(handlePacket);
+  }
+
+  function takeMessage(data) {
+    if (data && typeof data.arrayBuffer === "function" && !(data instanceof Uint8Array) && !(data instanceof ArrayBuffer)) {
+      data.arrayBuffer().then((buf) => onData(buf)).catch(() => {});
+      return;
+    }
+    onData(data);
   }
 
   function connect() {
@@ -195,17 +220,17 @@ export function createMqttMailbox(opts) {
       };
       socket.onopen = () => {
         const wait = new Promise((res, rej) => connackWait.push({ resolve: res, reject: rej }));
-        socket.send(encodeConnect(clientId));
+        sendBytes(socket, encodeConnect(clientId));
         wait.then(() => {
           opening = null;
           if (pingTimer) clearInterval(pingTimer);
           pingTimer = setInterval(() => {
-            try { if (ws && ws.readyState === 1) ws.send(encodePing()); } catch (e) {}
+            try { if (ws && ws.readyState === 1) sendBytes(ws, encodePing()); } catch (e) {}
           }, 20000);
           resolve();
         }).catch(fail);
       };
-      socket.onmessage = (ev) => onData(ev.data);
+      socket.onmessage = (ev) => takeMessage(ev.data);
       socket.onerror = () => fail(new Error("socket"));
       socket.onclose = () => {
         ws = null;
@@ -228,7 +253,7 @@ export function createMqttMailbox(opts) {
     const retained = new Promise((resolve, reject) => {
       retainedWait.push({ topic: topic, resolve: resolve, reject: reject });
     });
-    ws.send(encodeSubscribe(topic, 1));
+    sendBytes(ws, encodeSubscribe(topic, 1));
     await wait;
     subscribed.add(topic);
     if (latest.has(topic)) return latest.get(topic);
@@ -254,7 +279,7 @@ export function createMqttMailbox(opts) {
       const topic = roomTopic(code);
       const clean = sanitizeRoom(doc) || doc;
       latest.set(topic, clean);
-      ws.send(encodePublish(topic, JSON.stringify(doc), true));
+      sendBytes(ws, encodePublish(topic, JSON.stringify(doc), true));
     },
     subscribe(fn) {
       live.push(fn);
@@ -270,6 +295,63 @@ export function createMqttMailbox(opts) {
       try { if (ws) ws.close(); } catch (e) {}
       ws = null;
     }
+  };
+}
+
+export function storeRoomUrl(base, code) {
+  return String(base || FAIRWAY_ROOM_STORE).replace(/\/$/, "") + "/" + encodeURIComponent(code) + "/card";
+}
+
+function fetchWithTimeout(fetchFn, url, opts, ms) {
+  const Ctrl = globalThis.AbortController;
+  const ctrl = typeof Ctrl === "function" ? new Ctrl() : null;
+  const timer = setTimeout(() => { try { if (ctrl) ctrl.abort(); } catch (e) {} }, ms || 8000);
+  const next = Object.assign({}, opts || {});
+  if (ctrl && !next.signal) next.signal = ctrl.signal;
+  return Promise.resolve()
+    .then(() => fetchFn(url, next))
+    .finally(() => clearTimeout(timer));
+}
+
+/**
+ * Public room document. One entry per code, no key.
+ * GET 404 means the room does not exist yet.
+ * cache: "no-store" so Safari does not reuse a stale card.
+ */
+export function createStoreMailbox(opts) {
+  const root = String((opts && opts.base) || FAIRWAY_ROOM_STORE).replace(/\/$/, "");
+  const fetchFn = (opts && opts.fetchImpl) || globalThis.fetch;
+  async function write(code, doc) {
+    return fetchWithTimeout(fetchFn, storeRoomUrl(root, code), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      cache: "no-store",
+      body: JSON.stringify(doc)
+    }, opts && opts.timeoutMs);
+  }
+  return {
+    transport: "http",
+    async get(code) {
+      const res = await fetchWithTimeout(fetchFn, storeRoomUrl(root, code), {
+        method: "GET",
+        cache: "no-store"
+      }, opts && opts.timeoutMs);
+      if (res.status === 404) return null;
+      if (!res.ok) throw new Error("http " + res.status);
+      const doc = await res.json();
+      if (!doc || typeof doc !== "object" || !doc.code) return null;
+      return sanitizeRoom(doc);
+    },
+    async put(code, doc) {
+      let res = await write(code, doc);
+      if (res.status === 413 && doc && Array.isArray(doc.signals) && doc.signals.length) {
+        const slim = Object.assign({}, doc, { signals: [] });
+        res = await write(code, slim);
+      }
+      if (!res.ok && res.status !== 201 && res.status !== 204) throw new Error("http " + res.status);
+    },
+    subscribe() { return function () {}; },
+    close() {}
   };
 }
 
@@ -299,7 +381,34 @@ export function createHttpMailbox(opts) {
 }
 
 export function createRoomMailbox(opts) {
-  const http = opts && opts.httpBase != null ? opts.httpBase : FAIRWAY_ROOM_HTTP;
-  if (http) return createHttpMailbox(Object.assign({}, opts, { base: http }));
-  return createMqttMailbox(opts || {});
+  const o = opts || {};
+  const explicit = o.httpBase != null ? o.httpBase : FAIRWAY_ROOM_HTTP;
+  if (explicit) return createHttpMailbox(Object.assign({}, o, { base: explicit }));
+  const store = o.storeBase != null ? o.storeBase : FAIRWAY_ROOM_STORE;
+  if (!store) return createMqttMailbox(o);
+  const httpBox = createStoreMailbox(Object.assign({}, o, { base: store }));
+  const mirror = o.mirrorMqtt === false ? null : createMqttMailbox(o);
+  function poke(code, doc) {
+    if (!mirror) return;
+    const job = doc ? mirror.put(code, doc) : mirror.get(code);
+    job.then(() => { if (doc) return mirror.get(code); }).catch(() => {});
+  }
+  return {
+    transport: "http",
+    async get(code) {
+      poke(code);
+      return httpBox.get(code);
+    },
+    async put(code, doc) {
+      await httpBox.put(code, doc);
+      poke(code, doc);
+    },
+    subscribe(fn) {
+      return mirror && mirror.subscribe ? mirror.subscribe(fn) : function () {};
+    },
+    close() {
+      httpBox.close();
+      if (mirror) mirror.close();
+    }
+  };
 }

@@ -233,7 +233,7 @@ assert.ok(html.includes("DRIVE_DEBOUNCE_MS = 4000"));
 assert.ok(html.includes('method: safeFile ? "PATCH" : "POST"'));
 assert.ok(!html.includes("driveClientIdInput"));
 
-assert.ok(sw.includes('const SHELL = "fairway-v4-425"'));
+assert.ok(sw.includes('const SHELL = "fairway-v4-426"'));
 assert.ok(sw.includes("accounts.google.com"));
 assert.ok(sw.includes(".googleapis.com"));
 assert.ok(sw.includes("fairway-maps-v1"));

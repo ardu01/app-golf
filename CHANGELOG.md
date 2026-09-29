@@ -1,5 +1,17 @@
 # Changelog
 
+## 4.2.6
+
+Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 4.2.5 siguen entrando.
+
+- En Inicio, la ficha de la partida compartida ya no va pegada a la ronda. Hay 16px entre las dos, el margen habitual de iOS. En Ajustes y en la hoja de varios móviles la ficha también respira.
+- Dos móviles con el mismo código comparten la misma tarjeta. El documento está en `https://mantledb.sh/v2/{código}/card`. No hay cuenta ni clave. Quien tiene el código puede leer los golpes; no van cifrados. Una sala sin escrituras se borra a los 30 días. Cada entrada cabe en 64 KB.
+- El MQTT `wss://test.mosquitto.org:8081/mqtt` sigue como aviso en vivo, con subprotocolo `mqtt` y mensaje retenido. En Safari ese socket a menudo no abre (iOS con Private Relay manda CONNECT en vez del cambio a WebSocket; el broker de prueba también deja caer WebSocket y TLS). Si el socket no abre, la sala HTTPS sigue. No bloquea el envío.
+- Drive, si el buzón público no responde, sigue siendo un archivo de esta cuenta de Google. Otro teléfono con otra cuenta no lo ve. No es la tarjeta compartida.
+- Quien se une con la tarjeta vacía adopta jugadores, campo y golpes del anfitrión. Si los ids no coinciden, se suman los jugadores que faltan y se siguen aplicando los golpes remotos. Un móvil no borra el hoyo que solo tiene el otro.
+- El service worker pasa a `fairway-v4-426` y no recarga con una ronda abierta.
+- Siguen el esquema 3, el velo de Inicio de la 4.2.2, la selección al deslizar la ficha de la 4.2.4 y los mapas. No vuelven los workflows que hacían `git push`.
+
 ## 4.2.5
 
 Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 4.2.4 siguen entrando.

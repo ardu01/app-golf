@@ -1,6 +1,6 @@
 /** Storage keys. JSON backup schema stays 3. Shared-round queue is local, not inside that JSON. */
 
-export const APP_VERSION = "4.2.5";
+export const APP_VERSION = "4.2.6";
 export const BACKUP_SCHEMA = 3;
 
 export const DB_NAME = "fairway";

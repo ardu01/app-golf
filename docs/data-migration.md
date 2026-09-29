@@ -2,7 +2,7 @@
 
 El marcador sigue leyendo `localStorage`. IndexedDB (`fairway`, versión 1, almacén `kv`) es una copia verificada de las mismas claves. No es un segundo marcador.
 
-El JSON de copia sigue en **esquema 3**. `appVersion` dentro de ese JSON es el texto de producto (`4.2.5`). Una copia de la 4.0.11 a la 4.2.4, que también eran esquema 3, entra por `validateFairwayBackup`.
+El JSON de copia sigue en **esquema 3**. `appVersion` dentro de ese JSON es el texto de producto (`4.2.6`). Una copia de la 4.0.11 a la 4.2.5, que también eran esquema 3, entra por `validateFairwayBackup`.
 
 `fairway.sharedRound.v1` es la cola de la partida compartida. Se espeja en IndexedDB con el resto de claves locales. No forma parte del JSON de copia: un import o un Drive personal no sustituye esa cola ni borra golpes de la ronda en curso.
 

@@ -1,6 +1,8 @@
 # Partida compartida
 
-Producto **4.2.5**. El esquema del JSON de copia sigue en **3**. Sin código, Fairway se juega como en la 4.2.4: el marcador lee la ronda de este móvil y no pregunta a nadie. El velo de Inicio de la 4.2.2 sigue. Deslizar la ficha selecciona al jugador, como en la 4.2.4.
+Producto **4.2.6**. El esquema del JSON de copia sigue en **3**. Sin código, Fairway se juega como en la 4.2.4: el marcador lee la ronda de este móvil y no pregunta a nadie. El velo de Inicio de la 4.2.2 sigue. Deslizar la ficha selecciona al jugador, como en la 4.2.4.
+
+En Inicio hay 16px entre la ronda y la ficha de la sala. No van pegadas.
 
 ## Qué no cambia
 
@@ -26,24 +28,38 @@ Un campo que el otro no envía no se borra. Un valor imposible (golpe 99, HTML e
 
 La sala no sustituye la ronda entera. `mergeFairwayBackup` no interviene en estos campos.
 
-## Buzón
+El documento que se publica lleva la unión de los campos, no solo los del móvil que escribe. Un jugador que este teléfono todavía no tiene no se borra del JSON.
 
-El transporte por defecto es un mensaje retenido en el broker público `wss://test.mosquitto.org:8081/mqtt`, tema `fairway/v1/room/{código}`. No hay usuario ni clave. La URL está en `FAIRWAY_ROOM_BROKER` (`fairway/js/shared-mail.js`). No es un secreto: cualquiera con el código puede leer la sala. Los golpes no van cifrados.
+Quien entra con la tarjeta vacía (sin golpes) adopta el campo, el tee y los jugadores del anfitrión, y pinta sus golpes. Si este móvil ya tenía golpes, no se tiran: se suman los jugadores cuyo id no estaba y se siguen aplicando los campos remotos. Los dos acaban con la misma lista y los mismos golpes. Ids distintos no se pisan; el mismo id es el mismo jugador de la tarjeta.
 
-`FAIRWAY_ROOM_HTTP` queda vacío. Si se rellena con una base que acepte `GET` y `PUT /{código}` y devuelva el JSON de la sala, se usa eso y no el broker. Tampoco es un sitio para poner una clave.
+## Sala
 
-Si el buzón falla y este móvil ya tiene un token de Drive en memoria, se intenta `Fairway/fairway-room-{código}.json` con el mismo alcance `drive.file`. No se toca `fairway-data.json`. Ese archivo lo ve la cuenta de Google de este móvil, no otra cuenta. Sirve de reserva, no de sala entre amigos.
+La tarjeta que ven los dos móviles es un JSON público, `https://mantledb.sh/v2/{código}/card` (`FAIRWAY_ROOM_STORE` en `fairway/js/shared-mail.js`). El código de 6 caracteres es el namespace. La entrada se llama `card`. `GET` lee y `POST` sustituye el documento entero. No hay cuenta, ni cabecera de clave, ni llamada para reclamar el namespace: reclamarlo devolvería una clave de escritura y esa clave no puede estar en el repositorio.
+
+CORS permite el origen de la PWA (`access-control-allow-origin: *`). El `fetch` pide `cache: no-store` para que Safari no se quede con una tarjeta vieja. Quien conoce el código puede leer y escribir los golpes. No van cifrados. El servicio borra un namespace sin escrituras a los 30 días. Cada entrada cabe en 64 KB; si la señal WebRTC no entra, se reintenta sin ella. Pasado el cupo diario el servicio responde 429 y este móvil guarda la cola.
+
+Eso es un buzón público, no un servidor de Fairway. Puede caerse, cambiar de sitio o borrar la sala. Mientras responda, dos teléfonos con el mismo código convergen en el mismo documento.
+
+## MQTT
+
+`wss://test.mosquitto.org:8081/mqtt`, tema `fairway/v1/room/{código}`, subprotocolo `mqtt`, mensaje retenido. La URL está en `FAIRWAY_ROOM_BROKER`. No es un secreto.
+
+En la 4.2.5 ese broker era el único buzón. Desde un ordenador el protocolo conecta y el mensaje retenido vuelve. Desde Safari a menudo no: iOS con Private Relay envía `CONNECT` en lugar del cambio a WebSocket, y el propio broker de prueba avisa de que WebSocket y TLS se caen. El código no espera a ese socket. Si abre, republica el mismo JSON para quien esté suscrito. Si no abre, la sala HTTPS sigue.
+
+`FAIRWAY_ROOM_HTTP` queda vacío. Si se rellena con una base que acepte `GET` y `PUT /{código}` y devuelva el JSON de la sala, se usa eso y no Mantle ni el broker. Tampoco es un sitio para poner una clave.
+
+Si la sala HTTPS falla y este móvil ya tiene un token de Drive en memoria, se intenta `Fairway/fairway-room-{código}.json` con el mismo alcance `drive.file`. No se toca `fairway-data.json`. Ese archivo lo ve la cuenta de Google de este móvil, no otra cuenta. No es la tarjeta compartida entre dos teléfonos.
 
 ## WebRTC
 
-Opcional y solo si los dos están en línea. La señalización (oferta, respuesta, ICE) va dentro del mismo JSON de la sala. El STUN es `stun:stun.l.google.com:19302`, público, sin credencial. Si el canal no abre, el buzón sigue. No hace falta tener los dos móviles despiertos a la vez: el que tenga red más tarde recoge el mensaje retenido.
+Opcional y solo si los dos están en línea. La señalización (oferta, respuesta, ICE) va dentro del mismo JSON de la sala. El STUN es `stun:stun.l.google.com:19302`, público, sin credencial. Si el canal no abre, la sala HTTPS sigue. No hace falta tener los dos móviles despiertos a la vez: el que tenga red más tarde lee el documento.
 
 ## Módulos
 
 | Archivo | Rol |
 | --- | --- |
 | `fairway/js/shared-round.js` | Cola, fusión, estado. Sin red y sin DOM |
-| `fairway/js/shared-mail.js` | Buzón MQTT o HTTP |
+| `fairway/js/shared-mail.js` | Sala HTTPS. MQTT solo si el socket abre |
 | `fairway/js/shared-rtc.js` | Atajo WebRTC. Si no hay `RTCPeerConnection`, no hace nada |
 | `fairway/js/shared-boot.js` | Pantalla en español y el arranque en el navegador |
 

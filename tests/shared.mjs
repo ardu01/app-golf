@@ -13,10 +13,11 @@ import {
   queueDeltas,
   sanitizeValue,
   sharedStatus,
+  mergeRoomPlayers,
   stampExisting,
   syncShared
 } from "../fairway/js/shared-round.js";
-import { createMqttMailbox, encodePublish, parsePublish } from "../fairway/js/shared-mail.js";
+import { createMqttMailbox, createRoomMailbox, encodePublish, parsePublish } from "../fairway/js/shared-mail.js";
 import { pickPeer } from "../fairway/js/shared-rtc.js";
 import { APP_VERSION, BACKUP_SCHEMA, SHARED_KEY } from "../fairway/js/keys.js";
 
@@ -43,7 +44,7 @@ function session(deviceId, code, role) {
 }
 
 assert.strictEqual(BACKUP_SCHEMA, 3);
-assert.strictEqual(APP_VERSION, "4.2.5");
+assert.strictEqual(APP_VERSION, "4.2.6");
 assert.strictEqual(SHARED_KEY, "fairway.sharedRound.v1");
 assert.strictEqual(normalizeCode("k7nq4p"), "K7NQ4P");
 assert.strictEqual(normalizeCode("K7NQ4O"), "");
@@ -272,6 +273,145 @@ assert.ok(remote);
 assert.strictEqual(remote.fields["p1|1|scores"].v, 4);
 mqtt.close();
 
+const split = createMemoryMailbox();
+const hostOnly = player("pHost", { 1: 4 }, { name: "Ana" });
+const guestOnly = player("pGuest", { 2: 5 }, { name: "Luis" });
+const splitMeta = { courseId: "la-herreria", club: "La Herrería", tee: "Amarillas", holes: 18 };
+const hostSplit = session("dHOST0001", "K7NQ4P", "host");
+hostSplit.createdBy = "dHOST0001";
+hostSplit.stamps = { "pHost|1|scores": 100 };
+hostSplit.pending = [{ playerId: "pHost", hole: 1, field: "scores", value: 4, at: 100, by: "dHOST0001" }];
+await syncShared({
+  shared: hostSplit,
+  players: [hostOnly],
+  mailbox: split,
+  online: true,
+  now: 100,
+  meta: Object.assign({}, splitMeta, { players: [hostOnly] })
+});
+const guestSplit = session("dGUEST009", "K7NQ4P", "join");
+guestSplit.createdBy = "dHOST0001";
+guestSplit.stamps = { "pGuest|2|scores": 200 };
+guestSplit.pending = [{ playerId: "pGuest", hole: 2, field: "scores", value: 5, at: 200, by: "dGUEST009" }];
+const guestSplitSync = await syncShared({
+  shared: guestSplit,
+  players: [guestOnly],
+  mailbox: split,
+  online: true,
+  now: 200,
+  meta: Object.assign({}, splitMeta, { players: [guestOnly] })
+});
+const splitRoom = await split.get("K7NQ4P");
+assert.strictEqual(splitRoom.fields["pHost|1|scores"].v, 4);
+assert.strictEqual(splitRoom.fields["pGuest|2|scores"].v, 5);
+assert.ok(splitRoom.meta.players.some((p) => p.id === "pHost"));
+assert.ok(splitRoom.meta.players.some((p) => p.id === "pGuest"));
+const guestCard = applyFieldsToPlayers(
+  mergeRoomPlayers([guestOnly], splitRoom.meta.players),
+  splitRoom.fields,
+  guestSplitSync.shared.stamps
+);
+assert.strictEqual(guestCard.players.find((p) => p.id === "pHost").scores[1], 4);
+assert.strictEqual(guestCard.players.find((p) => p.id === "pGuest").scores[2], 5);
+await syncShared({
+  shared: hostSplit,
+  players: [hostOnly],
+  mailbox: split,
+  online: true,
+  now: 210,
+  meta: Object.assign({}, splitMeta, { players: [hostOnly] })
+});
+const splitAgain = await split.get("K7NQ4P");
+assert.strictEqual(splitAgain.fields["pHost|1|scores"].v, 4);
+assert.strictEqual(splitAgain.fields["pGuest|2|scores"].v, 5);
+const hostCard = applyFieldsToPlayers(
+  mergeRoomPlayers([hostOnly], splitAgain.meta.players),
+  splitAgain.fields,
+  {}
+);
+assert.strictEqual(hostCard.players.find((p) => p.id === "pHost").scores[1], 4);
+assert.strictEqual(hostCard.players.find((p) => p.id === "pGuest").scores[2], 5);
+const emptyJoin = applyFieldsToPlayers(mergeRoomPlayers([], splitAgain.meta.players), splitAgain.fields, {});
+assert.strictEqual(emptyJoin.players.find((p) => p.id === "pHost").name, "Ana");
+assert.strictEqual(emptyJoin.players.find((p) => p.id === "pHost").scores[1], 4);
+assert.strictEqual(emptyJoin.players.find((p) => p.id === "pGuest").scores[2], 5);
+
+const savedDocs = new Map();
+const fetchImpl = async (url, opts) => {
+  const method = (opts && opts.method) || "GET";
+  if (method === "POST") {
+    savedDocs.set(String(url), opts.body);
+    return { ok: true, status: 200, json: async () => ({ success: true, path: "card" }) };
+  }
+  if (!savedDocs.has(String(url))) {
+    return { ok: false, status: 404, json: async () => ({ error: "missing" }) };
+  }
+  return { ok: true, status: 200, json: async () => JSON.parse(savedDocs.get(String(url))) };
+};
+const store = createRoomMailbox({
+  storeBase: "https://mantledb.sh/v2",
+  fetchImpl: fetchImpl,
+  mirrorMqtt: false
+});
+const storeHost = session("dHOST0001", "K7NQ4P", "host");
+storeHost.createdBy = "dHOST0001";
+const storePlayers = [player("p1", { 3: 4 }, { name: "Ana" })];
+storeHost.stamps = { "p1|3|scores": 300 };
+storeHost.pending = [{ playerId: "p1", hole: 3, field: "scores", value: 4, at: 300, by: "dHOST0001" }];
+await syncShared({
+  shared: storeHost,
+  players: storePlayers,
+  mailbox: store,
+  online: true,
+  now: 300,
+  meta: Object.assign({}, splitMeta, { players: storePlayers }),
+  transport: "http"
+});
+const storeUrl = "https://mantledb.sh/v2/K7NQ4P/card";
+assert.ok(savedDocs.has(storeUrl));
+const storeGuest = session("dGUEST009", "K7NQ4P", "join");
+storeGuest.createdBy = "dHOST0001";
+const storeGuestPlayers = [player("p9", { 4: 6 }, { name: "Luis" })];
+storeGuest.stamps = { "p9|4|scores": 310 };
+storeGuest.pending = [{ playerId: "p9", hole: 4, field: "scores", value: 6, at: 310, by: "dGUEST009" }];
+const storeJoined = await syncShared({
+  shared: storeGuest,
+  players: storeGuestPlayers,
+  mailbox: store,
+  online: true,
+  now: 310,
+  meta: Object.assign({}, splitMeta, { players: storeGuestPlayers }),
+  transport: "http"
+});
+const storeDoc = await store.get("K7NQ4P");
+assert.strictEqual(storeDoc.fields["p1|3|scores"].v, 4);
+assert.strictEqual(storeDoc.fields["p9|4|scores"].v, 6);
+const storeCard = applyFieldsToPlayers(
+  mergeRoomPlayers(storeGuestPlayers, storeDoc.meta.players),
+  storeDoc.fields,
+  storeJoined.shared.stamps
+);
+assert.strictEqual(storeCard.players.find((p) => p.id === "p1").scores[3], 4);
+assert.strictEqual(storeCard.players.find((p) => p.id === "p9").scores[4], 6);
+const backToHost = await syncShared({
+  shared: storeHost,
+  players: storePlayers,
+  mailbox: store,
+  online: true,
+  now: 320,
+  meta: Object.assign({}, splitMeta, { players: storePlayers })
+});
+const storeDoc2 = await store.get("K7NQ4P");
+assert.strictEqual(storeDoc2.fields["p9|4|scores"].v, 6);
+const hostSeesGuest = applyFieldsToPlayers(
+  mergeRoomPlayers(backToHost.players, storeDoc2.meta.players),
+  storeDoc2.fields,
+  backToHost.shared.stamps
+);
+assert.strictEqual(hostSeesGuest.players.find((p) => p.id === "p1").scores[3], 4);
+assert.strictEqual(hostSeesGuest.players.find((p) => p.id === "p9").scores[4], 6);
+store.close();
+
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const boot = readFileSync(new URL("../fairway/js/shared-boot.js", import.meta.url), "utf8");
 const sw = readFileSync(new URL("../sw.js", import.meta.url), "utf8");
@@ -280,14 +420,21 @@ assert.ok(readFileSync(new URL("../fairway/js/shared-round.js", import.meta.url)
 assert.ok(html.includes('id="sharedRoundHome"'));
 assert.ok(html.includes("fairwaySharedAfterPersist"));
 assert.ok(html.includes("fairway/js/shared-boot.js"));
-assert.ok(html.includes('aria-label="Versión">4.2.5</span>'));
+assert.ok(html.includes('aria-label="Versión">4.2.6</span>'));
+assert.ok(html.includes("#screen-home .home-hero > #sharedRoundHome"));
+assert.ok(/#screen-home \.home-hero > #sharedRoundHome \{\s*margin-top:\s*16px;/.test(html));
 assert.ok(html.includes("version: 3"));
 assert.ok(html.includes("function fairwayNavDecide"));
 assert.ok(!html.includes("client_secret"));
 assert.ok(!html.includes('id="holeBagBtn"'));
-assert.ok(sw.includes('const SHELL = "fairway-v4-425"'));
+assert.ok(sw.includes('const SHELL = "fairway-v4-426"'));
 assert.ok(sw.includes("fairway/js/shared-boot.js"));
-assert.ok(readFileSync(new URL("../fairway/js/shared-mail.js", import.meta.url), "utf8").includes("wss://test.mosquitto.org:8081/mqtt"));
-assert.ok(!readFileSync(new URL("../fairway/js/shared-mail.js", import.meta.url), "utf8").includes("@"));
+const mailSrc = readFileSync(new URL("../fairway/js/shared-mail.js", import.meta.url), "utf8");
+assert.ok(mailSrc.includes("wss://test.mosquitto.org:8081/mqtt"));
+assert.ok(mailSrc.includes("https://mantledb.sh/v2"));
+assert.ok(mailSrc.includes('cache: "no-store"'));
+assert.ok(!mailSrc.includes("/claim"));
+assert.ok(!mailSrc.includes("@"));
+assert.ok(readFileSync(new URL("../fairway/js/shared-boot.js", import.meta.url), "utf8").includes("ensureRemotePlayers"));
 
 console.log("shared ok");
