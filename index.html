@@ -2924,7 +2924,7 @@
         <div class="fit">
           <div class="home-hero">
             <div class="home-top">
-              <span class="app-version" aria-label="Versión">4.1.3</span>
+              <span class="app-version" aria-label="Versión">4.1.3.1</span>
               <button type="button" class="topnav-action" onclick="go('perfil')" aria-label="Perfil">Perfil</button>
             </div>
             <div class="greeting">Buenos días</div>
@@ -4178,8 +4178,9 @@ function renderRules() {
 }
 
 /* In-app screens share one document. pushState lets Safari’s edge swipe and the
-   browser Back button pop a sheet or a screen. The root entry stays so a live
-   round is not unloaded: that last step is a no-op and scores are left alone. */
+   browser Back button pop a sheet or a screen. Home always keeps a sentinel so
+   that gesture does not leave the PWA. A live round traps the same last step
+   on any screen, and scores are left alone. */
 let _fairwayNavLock = false;
 
 function fairwayNavKnownScreen(name) {
@@ -4216,7 +4217,8 @@ function fairwayNavDecide(app, frame, flags) {
   const trap = !!(flags && flags.trap);
   const keepsPlay = !!(flags && flags.keepsPlay);
   const view = app || { screen: "home", sheet: "", setupStep: 0 };
-  if (!frame || !frame.fairwayNav) return trap ? { type: "trap" } : { type: "stay" };
+  const homeView = (view.screen || "home") === "home" && !(view.sheet);
+  if (!frame || !frame.fairwayNav) return (trap || homeView) ? { type: "trap" } : { type: "stay" };
   if ((view.sheet || "") === "hole" && frame.sheet !== "hole" && (frame.screen || "home") === view.screen) {
     return { type: "apply", screen: view.screen, sheet: "", setupStep: view.setupStep || 0, repush: false };
   }
@@ -4224,13 +4226,14 @@ function fairwayNavDecide(app, frame, flags) {
     return { type: "stay", resync: true };
   }
   const target = fairwayNavTarget(frame, keepsPlay);
-  if (frame.root && trap && fairwayNavSameView(view, target)) return { type: "trap" };
+  const homeTarget = target.screen === "home" && !target.sheet;
+  if (frame.root && fairwayNavSameView(view, target) && (trap || homeView)) return { type: "trap" };
   return {
     type: "apply",
     screen: target.screen,
     sheet: target.sheet,
     setupStep: target.setupStep,
-    repush: !!(frame.root && trap)
+    repush: !!(frame.root && (trap || homeTarget))
   };
 }
 
@@ -4273,6 +4276,7 @@ function fairwayNavRoundKeepsPlayScreen() {
 
 function fairwayNavShouldTrap() {
   try {
+    if (state && state.screen === "home") return true;
     if (typeof fairwayShouldHoldUpdate === "function" && fairwayShouldHoldUpdate()) return true;
   } catch (e) {}
   return fairwayNavRoundKeepsPlayScreen();
@@ -8925,7 +8929,7 @@ function collectFairwayBackup() {
   return {
     version: 3,
     app: "Fairway",
-    appVersion: "4.1.3",
+    appVersion: "4.1.3.1",
     exportedAt: new Date().toISOString(),
     updatedAt: (typeof getDataUpdatedAt === "function" ? getDataUpdatedAt() : "") || "",
     includes: ["rounds", "players.scores", "players.putts", "players.fir", "players.gir", "players.ball", "players.withdrawn", "roster", "host", "activeRound", "winners", "standings"],
@@ -9940,7 +9944,7 @@ function renderPerfil() {
     <div class="profile-hero">
       <div class="avatar-lg">${escapeHtml(initials)}</div>
       <p class="muted" style="margin-top:8px;">Tu perfil en este dispositivo</p>
-      <p class="micro">Fairway 4.1.3</p>
+      <p class="micro">Fairway 4.1.3.1</p>
     </div>
     <div class="card mb-16">
       <div class="eyebrow">Nombre</div>
