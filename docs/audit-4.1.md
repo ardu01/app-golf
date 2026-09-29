@@ -85,7 +85,9 @@ Contado en el árbol de la 4.0.11 (`COURSES` en `index.html`, `HOLE_MAP_COURSES`
 
 Los otros 18 con manifiesto, mismos criterios (manifiesto de 18, `course.holes` de 18, ningún archivo citado ausente): `centro-nacional-de-golf`, `olivar-de-la-hinojosa`, `real-club-de-campo-villa-de-madrid`, `real-club-la-moraleja`, `las-rozas`, `lomas-bosque`, `retamares`, `el-encin`, `olivar-hinojosa-pitch-putt`, `villa-de-madrid-amarillo`, `aranjuez`, `lafinca-golf`, `torrejon`, `moraleja-campo-2`, `moraleja-campo-3`, `moraleja-campo-4`, `moraleja-pitch-putt`, `olivar-hinojosa-rec-2`.
 
-**Sin manifiesto**, y el test los acepta así: `el-robledal`, `rshecc-norte`, `rshecc-sur`. No les faltan los planos numerados: los tres tienen `01.webp`–`18.webp`. `rshecc-norte` y `rshecc-sur` tienen además `overview.webp`. `el-robledal` no.
+**Sin manifiesto en la 4.0.11**, y el test de entonces los aceptaba así: `el-robledal`, `rshecc-norte`, `rshecc-sur`. No les faltaban los planos numerados: los tres tienen `01.webp`–`18.webp`. `rshecc-norte` y `rshecc-sur` tienen además `overview.webp`. `el-robledal` no.
+
+**Fase 5.** Esos tres ya tienen `manifest.json`. Cada hoyo es solo `n` y `file`. No hay `name`: no se han inventado nombres de hoyo. `overview.webp` no entra como hoyo. Siguen 404 webp y 28 campos sin carpeta. El test ya no perdona un manifiesto ausente en un campo con planos numerados.
 
 **`overviewOnly`**, un solo `overview.webp` cada uno: `forus-las-rejas-pares-3`, `forus-las-rejas-pitch-putt`, `centro-tecnificacion-golf-madrid`, `centro-tecnificacion-pitch-putt`.
 
@@ -331,3 +333,7 @@ El client id de Drive sigue vacío. Está documentado en `docs/drive-sync.md` (c
 ## Fase 4 en esta rama
 
 Stats muestra Gross · 9 y Gross · 18 por separado. Una vuelta de 9 y otra de 18 ya no se quedan sin media de gross: cada largo tiene la suya y no se mezclan. La fórmula de hándicap no se ha movido ni extraído. El caddie de juego es la ficha (par, SI, metros si la ficha los trae) más nombres de palos en `fairway.bag.v1`. No hay distancias inventadas. El `tel:` de La Herrería sigue. `PH` sigue igual que `CH`.
+
+## Fase 5 en esta rama
+
+Manifiestos nuevos, sin nombres, para `el-robledal`, `rshecc-norte` y `rshecc-sur`, apuntando a los webp que ya existían. `tests/maps.mjs` comprueba que cada `file` existe y que esos tres no llevan `name` ni `overview` como hoyo. No hay planos nuevos. Las fichas de acceso del hoyo tienen área de toque 48×48; el pie del hoyo ya era 50px y el − / + de golpes 52×52. No se ha rediseñado la piel de la 4.0.11.

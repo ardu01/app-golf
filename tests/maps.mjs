@@ -23,7 +23,8 @@ const registered = new Set();
 let perHole = 0;
 let overview = 0;
 let images = 0;
-const noManifestOk = new Set(["rshecc-norte", "rshecc-sur", "el-robledal"]);
+const noManifestOk = new Set();
+const fileOnlyManifest = new Set(["rshecc-norte", "rshecc-sur", "el-robledal"]);
 
 for (const [, id, dir, ovFlag] of entries) {
   assert.ok(courses.some(c => c.id === id), "campo sin ficha " + id);
@@ -43,6 +44,13 @@ for (const [, id, dir, ovFlag] of entries) {
       const raw = JSON.parse(readFileSync(new URL(dir + "/manifest.json", root), "utf8"));
       const holes = Array.isArray(raw) ? raw : (Array.isArray(raw.holes) ? raw.holes : (raw.n ? [raw] : Object.values(raw)));
       assert.ok(holes.length >= 9, "manifest corto " + id);
+      if (fileOnlyManifest.has(id)) {
+        assert.strictEqual(holes.length, 18, id);
+        for (const h of holes) {
+          assert.ok(!("name" in h), id + " no inventa nombre");
+          assert.ok(!/overview/i.test(String(h.file || "")), id + " no lista overview como hoyo");
+        }
+      }
       for (const h of holes) {
         const src = h.src || h.file || h.img || h.path;
         if (!src) continue;

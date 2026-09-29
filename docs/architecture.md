@@ -60,3 +60,7 @@ El nombre de caché del shell sigue `fairway-v4-411` hasta el commit de la 4.1.0
 `statsGrossByLayout` separa el gross de 9 y el de 18. No los promedia juntos. La media dentro de cada largo es la misma media aritmética de `me.gross` que ya había. `courseHandicapFor` sigue en `index.html` (`hi * slope / 113`). No se ha extraído la puntuación: la suite la saca por texto y un traslado que no sea idéntico cambiaría el número.
 
 `fairway/js/caddie.js` lee par, SI y metros de la ficha del hoyo. La bolsa (`fairway.bag.v1`) guarda solo nombres que escribe el jugador, como máximo 14, sin metros. Esa clave entra en la migración. El enlace `tel:` del caddie de La Herrería sigue en el hoyo. El área de toque de las fichas de acceso pasa a 48×48.
+
+## Cartografía
+
+`el-robledal`, `rshecc-norte` y `rshecc-sur` tienen manifiesto de los `01.webp`–`18.webp` que ya estaban. Sin nombres de hoyo. No se han creado planos ni se han movido coordenadas `approx: true`. Los 28 campos sin carpeta, Puerta de Hierro incluida, siguen sin carpeta.
