@@ -1,5 +1,13 @@
 # Changelog
 
+## 4.2.4
+
+Esquema del JSON de copia: 3. Las copias de la 4.0.11, de la 4.1.x, de la 4.2.1, de la 4.2.2 y de la 4.2.3 siguen entrando.
+
+- En el marcador del hoyo, al deslizar hasta la ficha de otro jugador, ese jugador queda seleccionado: es el jugador activo de golpes, putts, FIR y GIR, igual que si se tocara la ficha.
+- Con un solo jugador la ficha no cambia de selección.
+- El service worker pasa a `fairway-v4-424` y no recarga con una ronda abierta.
+
 ## 4.2.3
 
 Esquema del JSON de copia: 3. Las copias de la 4.0.11, de la 4.1.x, de la 4.2.1 y de la 4.2.2 siguen entrando.

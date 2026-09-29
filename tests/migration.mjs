@@ -93,17 +93,17 @@ function localsOf(local) {
 }
 
 {
-  assert.strictEqual(APP_VERSION, "4.2.3");
+  assert.strictEqual(APP_VERSION, "4.2.4");
   assert.strictEqual(BACKUP_SCHEMA, 3);
   assert.ok(MIRRORED_KEYS.indexOf(DRIVE_CLIENT_KEY) < 0);
   assert.ok(MIRRORED_KEYS.indexOf(CREATIVE_PRESETS_KEY) >= 0);
   const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
   const sw = readFileSync(new URL("../sw.js", import.meta.url), "utf8");
-  assert.ok(html.includes('appVersion: "4.2.3"'));
+  assert.ok(html.includes('appVersion: "4.2.4"'));
   assert.ok(html.includes("version: 3"));
   assert.ok(html.includes("hi * (Number(tee.slope) / 113)"));
   assert.ok(html.includes('src="fairway/js/persist-boot.js"'));
-  assert.ok(sw.includes('const SHELL = "fairway-v4-423"'));
+  assert.ok(sw.includes('const SHELL = "fairway-v4-424"'));
   assert.ok(MIRRORED_KEYS.indexOf("fairway.bag.v1") < 0);
   assert.ok(RETIRED_KEYS.indexOf("fairway.bag.v1") >= 0);
   assert.ok(sw.includes("fairway/js/persist-boot.js"));
@@ -135,7 +135,7 @@ function localsOf(local) {
   const state = await idb.get(MIGRATION_STATE_KEY);
   assert.strictEqual(state.status, "verified");
   assert.strictEqual(state.schema, 3);
-  assert.strictEqual(state.appVersion, "4.2.3");
+  assert.strictEqual(state.appVersion, "4.2.4");
   assert.strictEqual(state.deletedLocal, false);
   const backupAt = idb.log.findIndex((row) => row[0] === "set" && row[1] === MIGRATION_BACKUP_KEY);
   const firstPayload = idb.log.findIndex((row) => row[0] === "set" && row[1] === ROUNDS_KEY);

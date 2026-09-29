@@ -109,6 +109,10 @@ History API: gesto atrás / botón Atrás cierra hoja de hoyo y pantallas dentro
 
 Ancla de historial en **Inicio** (intento inicial). Shell `fairway-v4-4131`. Media en [v4.1.3.1](https://github.com/ardu01/app-golf/releases/tag/v4.1.3.1).
 
+### 4.2.4
+
+En el marcador, deslizar hasta otra ficha selecciona a ese jugador (golpes, putts, FIR y GIR), igual que tocarla. Un solo jugador no cambia. Shell `fairway-v4-424`. Esquema 3.
+
 ### 4.2.3
 
 Salen los workflows que descargaban otra app o hacían `git push` (`publish-fairway-v3`, multicourse, tees, assemble, decode). Queda `test-fairway.yml` con `contents: read`; Pages no se toca. Los mapas de `holes/` y la ficha Mapa siguen. Shell `fairway-v4-423`. Esquema 3.
