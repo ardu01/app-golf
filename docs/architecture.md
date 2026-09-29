@@ -37,6 +37,14 @@ Si `localStorage` llega vacío y IndexedDB ya tiene datos verificados (o queda l
 
 `drive.meta` se copia sin `access_token`, `refresh_token`, `id_token` ni `token`. El access token de la sesión sigue solo en memoria.
 
-## Workflow multi-curso
+## Workflows que escribían en la rama
 
-En esta rama `apply-fairway-multicourse.yml` no tiene `workflow_dispatch`, no copia `sw.js` y no hace `git push`. En `main`, hasta que esto se fusione, el archivo viejo sigue pudiendo pisar `index.html` y `sw.js`. No se fusiona desde esta fase.
+En esta rama no tienen `workflow_dispatch` ni `git push`, el permiso es `contents: read` y el job lleva `if: false`:
+
+- `publish-fairway-v3.yml`
+- `apply-fairway-multicourse.yml` (antes copiaba un `sw.js` viejo encima del actual)
+- `apply-player-tees.yml`
+- `assemble-fairway-index.yml`
+- `decode-fairway-binaries.yml`
+
+`test-fairway.yml` solo lanza `node tests/run.mjs`. En `main`, hasta que esto se fusione, los cinco archivos viejos siguen pudiendo empujar la rama del checkout. No se fusiona desde esta fase.

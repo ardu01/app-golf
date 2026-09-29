@@ -185,9 +185,9 @@ Bloqueo externo, no inventado aquí: sin un client id de OAuth registrado para e
 | `test-fairway.yml` | push a `main`, y todo pull request | `node tests/run.mjs`. No despliega y no tiene `needs` que Pages pueda esperar | Se deja. Hoy no llega a ejecutarse (ver defectos). Un comentario en el YAML remite a esta página: no es la puerta de Pages |
 | `publish-fairway-v3.yml` | En `main` sigue `workflow_dispatch` + `contents: write`. En esta rama ya no | En `main`: curl de `index.html` desde `ardu01/app-golf-v3` y `git push` de la rama elegida (el botón usa `main` por defecto) | **Neutralizado en esta rama.** Sin `workflow_dispatch`, sin `contents: write`, sin curl, sin commit y sin `git push`. El job lleva `if: false` y `contents: read`. El botón de Actions lo sigue sirviendo `main` hasta que este PR se fusione. Esta fase no fusiona |
 | `apply-fairway-multicourse.yml` | En `main`: `workflow_dispatch` y push de `ops/fairway-multicourse-patch/**`. En esta rama ya no | En `main`: `apply.py`, copia `ops/fairway-multicourse-patch/sw.js` (caché `fairway-v159`, `skipWaiting`, borra el resto de cachés, mapas incluidos) y `git push` | **Neutralizado en esta rama**, igual que el de V3: sin dispatch, sin copia de `sw.js`, sin push, `if: false`, `contents: read`. En `main` sigue hasta fusionar |
-| `apply-player-tees.yml` | `workflow_dispatch` y push del parche o del propio YAML. `permissions: contents: write` | Si `index.html` no contiene `function setPlayerTee`, aplica `patches/player-tees.patch`, commit y `git push` de la rama del checkout | Sigue activo. `git apply --check patches/player-tees.patch` **falla** hoy (`patch failed: index.html:1884`). En el árbol actual no existe `setPlayerTee`. Con runner, el job fallaría en `git apply` antes del commit, salvo que el parche vuelva a encajar |
-| `assemble-fairway-index.yml` | `workflow_dispatch`, `contents: write` en el job | Si existe `index.parts/`, concatena y **reemplaza** `index.html`. Decodifica `*.b64`, `git add -A` y `git push` si hay diff | Sigue activo. No hay `index.parts` ni `*.b64` en el árbol. Sin cambios, el paso de commit no crea commit |
-| `decode-fairway-binaries.yml` | `workflow_dispatch`, `contents: write` en el job | Decodifica todo `*.b64`, borra el sidecar, exige `count > 0`, luego `git add -A`, commit y `git push` | Sigue activo. Sin `*.b64` el job fallaría en `test "$count" -gt 0` antes del commit |
+| `apply-player-tees.yml` | En `main`: `workflow_dispatch` y push del parche o del propio YAML, `contents: write`. En esta rama ya no | En `main`: si `index.html` no contiene `function setPlayerTee`, aplica `patches/player-tees.patch`, commit y `git push` | **Neutralizado en esta rama.** Sin dispatch, sin `git apply`, sin push, `if: false`, `contents: read`. El parche sigue sin aplicar (`index.html:1884`). En `main` el botón sigue hasta fusionar |
+| `assemble-fairway-index.yml` | En `main`: `workflow_dispatch`, `contents: write`. En esta rama ya no | En `main`: si existe `index.parts/`, reemplaza `index.html`, decodifica `*.b64` y `git push` si hay diff | **Neutralizado en esta rama.** Sin dispatch, sin ensamblado, sin push, `if: false`, `contents: read`. No hay `index.parts` ni `*.b64` |
+| `decode-fairway-binaries.yml` | En `main`: `workflow_dispatch`, `contents: write`. En esta rama ya no | En `main`: decodifica `*.b64`, exige `count > 0`, commit y `git push` | **Neutralizado en esta rama.** Sin dispatch, sin decode, sin push, `if: false`, `contents: read` |
 
 Historial consultado con `gh` (solo lectura):
 
@@ -237,12 +237,15 @@ Confirmado leyendo el YAML. Ninguno escribe `git push origin main` a mano. Todos
 | `publish-fairway-v3.yml` en esta rama | No. El paso no hace push y el permiso es `contents: read` | El archivo de esta rama no ofrece dispatch |
 | `apply-fairway-multicourse.yml` en `main` | Sí, `index.html` y `sw.js`, si hay diff | Sí, por dispatch o por un push a `main` dentro de `ops/fairway-multicourse-patch/**` |
 | `apply-fairway-multicourse.yml` en esta rama | No | El archivo de esta rama no ofrece dispatch ni el push por carpeta |
-| `apply-player-tees.yml` | Sí, `index.html`, si el parche se aplica | Sí, por dispatch o por un push a `main` de `patches/player-tees.patch` o del propio YAML. Hoy el parche no aplica |
-| `assemble-fairway-index.yml` | Sí, `git add -A`, si hay diff | Sí, si se dispara eligiendo `main` |
-| `decode-fairway-binaries.yml` | Sí, `git add -A`, si hay `*.b64` | Sí, si se dispara eligiendo `main` |
+| `apply-player-tees.yml` en `main` | Sí, `index.html`, si el parche se aplica | Sí, por dispatch o por un push a `main` del parche o del YAML. Hoy el parche no aplica |
+| `apply-player-tees.yml` en esta rama | No | El archivo de esta rama no ofrece dispatch |
+| `assemble-fairway-index.yml` en `main` | Sí, `git add -A`, si hay diff | Sí, si se dispara eligiendo `main` |
+| `assemble-fairway-index.yml` en esta rama | No | El archivo de esta rama no ofrece dispatch |
+| `decode-fairway-binaries.yml` en `main` | Sí, `git add -A`, si hay `*.b64` | Sí, si se dispara eligiendo `main` |
+| `decode-fairway-binaries.yml` en esta rama | No | El archivo de esta rama no ofrece dispatch |
 | `test-fairway.yml` | No | No escribe en el repo |
 
-No se ha desactivado el de tees, el de ensamblado ni el de decode. El de V3 y el multi-curso quedan cortados en esta rama; en `main` siguen hasta la fusión.
+En esta rama quedan cortados V3, multi-curso, tees, ensamblado y decode. En `main` siguen hasta la fusión. Ningún YAML de esta rama hace `git push`.
 
 ## Defectos demostrados
 
@@ -300,13 +303,13 @@ Previstas por la misión 4.1 y **no empezadas** aquí. No son defectos demostrad
 - Modalidades sociales una a una (Chaos, Rey, Back Nine, Last Call, No Bogey, Creativo). `tests/scoring.mjs` fija hándicap, reparto y Stableford, no cada modo social.
 - Árbitro: la suite cubre un conjunto de frases (agua, árbol, divot, búnker, injugable). No es una cobertura de las Reglas completas.
 - Migración IndexedDB: no hay implementación que probar.
-- Que un dispatch de los workflows que siguen activos no pueda pisar `index.html` o `sw.js`. En esta rama el de V3 ya no tiene dispatch ni push. En `main` ese botón sigue hasta la fusión. Los otros cuatro con `git push` no se han tocado.
+- Que un dispatch en `main` no pueda pisar `index.html` o `sw.js`. En esta rama V3, multi-curso, tees, ensamblado y decode ya no tienen dispatch ni `git push`. En `main` esos botones siguen hasta la fusión. Esta fase no fusiona.
 
 ## Orden recomendado para las fases 2–7
 
 El orden sale de lo que está demostrado arriba, no de reescribir la app en abstracto.
 
-1. **Fase 2 — contrato de datos, luego módulos.** En esta rama ya está la migración a IndexedDB descrita en `docs/architecture.md`: idempotente, con foto previa, sin borrar `localStorage`, con tests de round-trip, JSON corrupto, cuota e interrupción. El esquema del JSON sigue en 3. El corte grande de `index.html` (puntuación, pantallas, CSS) sigue pendiente: la suite extrae funciones por texto y un extract roto la dejaría ciega. `apply-fairway-multicourse.yml` queda neutralizado en esta rama para que un push no pise `sw.js` después de la fusión.
+1. **Fase 2 — contrato de datos, luego módulos.** En esta rama ya está la migración a IndexedDB descrita en `docs/architecture.md`: idempotente, con foto previa, sin borrar `localStorage`, con tests de round-trip, JSON corrupto, cuota e interrupción. El esquema del JSON sigue en 3. El corte grande de `index.html` (puntuación, pantallas, CSS) sigue pendiente: la suite extrae funciones por texto y un extract roto la dejaría ciega. Los workflows que hacían `git push` quedan neutralizados en esta rama.
 2. **Fase 3 — Drive y service worker, sin credenciales inventadas.** El client id sigue vacío y documentado como único requisito externo. Se puede endurecer el versionado del `SHELL` ligado al release y la espera de reload con ronda activa; no se puede dar por probado el sync real. Conflictos: el plan ya existe en tests; falta el caso de perfil (`host`) que hoy se pisa.
 3. **Fase 4 — puntuación, stats, caddie.** No cambiar `courseHandicapFor` ni `strokesOnHole` sin un test que fije el número anterior. Separar CH y PH solo si hay una regla nueva y tests; hoy son el mismo valor a propósito. El caddie nuevo no sustituye el `tel:` de La Herrería ni al árbitro.
 4. **Fase 5 — cartografía y UX.** Partir del inventario contado: 54 campos, 26 carpetas, 404 webp, 19 con manifiesto (referencia La Herrería), 3 sin manifiesto, 4 `overviewOnly`, 28 sin carpeta (Puerta de Hierro incluida, ya en `COURSE_GEO`). No crear planos ni recolocar los `approx: true`. La piel de partida es la de la 4.0.11. Los párrafos 4.0.1–4.0.10 del README son el camino hasta esa piel, no otra versión de partida. Esta fase no la rediseña.
@@ -319,4 +322,4 @@ La fase 1 no partió `index.html`, no cambió fórmulas ni mapas, no inventó un
 
 ## Fase 2 en esta rama
 
-IndexedDB guarda una copia verificada de las claves de la auditoría (historial, ronda activa y `.bak`, roster, host, creativo, presets, punteros de Drive). No guarda el token OAuth ni `fairway.drive.clientId`. `localStorage` sigue siendo la copia que lee el marcador y no se borra al verificar. El esquema del JSON sigue en 3. Los módulos nuevos están en `fairway/js/`. El CSS y la puntuación no se han extraído. `apply-fairway-multicourse.yml` queda en el mismo estado que el de V3: sin dispatch y sin push, en esta rama. `main` no se ha fusionado.
+IndexedDB guarda una copia verificada de las claves de la auditoría (historial, ronda activa y `.bak`, roster, host, creativo, presets, punteros de Drive). No guarda el token OAuth ni `fairway.drive.clientId`. `localStorage` sigue siendo la copia que lee el marcador y no se borra al verificar. El esquema del JSON sigue en 3. Los módulos nuevos están en `fairway/js/`. El CSS y la puntuación no se han extraído. Los cinco workflows que hacían `git push` (V3, multi-curso, tees, ensamblado, decode) quedan sin dispatch y sin push en esta rama. `main` no se ha fusionado.

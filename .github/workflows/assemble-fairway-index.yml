@@ -1,42 +1,38 @@
-name: Assemble Fairway index
+# DISABLED — Fairway 4.1 Phase 2 (2026-09-29).
+#
+# Why this file used to be dangerous:
+#   on: workflow_dispatch
+#   permissions: contents: write
+#   If index.parts/ existed it concatenated those parts over index.html,
+#   decoded every *.b64, then `git add -A`, commit, and `git push` of
+#   the checkout branch. The Actions UI defaults that branch to main.
+#
+# The 4.0.11 tree has no index.parts and no *.b64, so a run with no
+# diff would exit before the commit. The button would still be live.
+#
+# This copy removes workflow_dispatch. It has no assemble, no decode,
+# no commit, and no git push. contents is read. The job is `if: false`.
+#
+# Until this change is merged, main still serves the old file.
+# Do not restore workflow_dispatch or the assemble/push steps.
+
+name: Assemble Fairway index (disabled)
+
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - "__disabled__/assemble-fairway-index"
+
 jobs:
   assemble:
+    if: false
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
     steps:
-      - uses: actions/checkout@v4
-      - name: Assemble index.html and decode b64 binaries
+      - name: Refused
         run: |
-          set -euo pipefail
-          if [ -d index.parts ]; then
-            cat $(ls index.parts/part-* | sort) > index.html
-            rm -rf index.parts
-            echo "assembled index.html"
-            wc -c index.html
-          fi
-          count=0
-          while IFS= read -r -d '' f; do
-            out="${f%.b64}"
-            mkdir -p "$(dirname "$out")"
-            base64 -d "$f" > "$out"
-            rm -f "$f"
-            count=$((count+1))
-            echo "decoded $out"
-          done < <(find . -name '*.b64' -print0 | sort -z)
-          echo "Decoded $count b64 files"
-      - name: Commit assembled assets
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git status
-          if git diff --cached --quiet; then
-            echo "Nothing to commit"
-            exit 0
-          fi
-          git commit -m "Fairway lote1: assemble index.html with new hole maps (~9.6MB)"
-          git push
+          echo "Disabled in Fairway 4.1 Phase 2."
+          echo "This workflow would replace index.html from index.parts and push."
+          echo "See docs/audit-4.1.md."
+          exit 1
