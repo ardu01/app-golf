@@ -121,7 +121,7 @@
     top: 0;
     bottom: 0;
     width: 30px;
-    z-index: 70;
+    z-index: 90;
     touch-action: none;
     background: transparent;
     -webkit-tap-highlight-color: transparent;
@@ -4244,11 +4244,22 @@ function renderRules() {
    preventDefault is ignored while a scroll is already in progress. The guard
    exists only on Inicio. Nested screens keep a normal one-step swipe.
 
-   If a swipe still commits, the home popstate is a trap: no go(), no sheet
-   change, document scroll left where it was. The cushion refills on a later
-   turn. The first touch on Inicio still pushes a sentinel inside a user
-   gesture, which standalone mode actually honors. A live round still traps
-   the last step on any screen. Scores are left alone. */
+   4.1.3.1 put a single hash sentinel on Inicio. On a real iPhone that entry
+   is one step from the session edge, and WebKit’s interactive swipe does not
+   stop on same-document hashes the way the Back button does: one finished
+   swipe leaves the PWA. The 4.2.2 veil cancels the touch, but the same
+   touchstart used to push another sentinel first. That push is the entry the
+   swipe animates, and it happens before preventDefault. The edge listener is
+   now registered first, preventDefault and stopImmediatePropagation run
+   before any push, and a touch in the band does not arm a sentinel.
+
+   If a swipe still commits, the home popstate is a trap: no screen change,
+   scroll left where it was. pushState in that turn is ignored, so the trap
+   calls history.go(1) to step forward onto the entry just left, then refills
+   the cushion on a later turn. A touch that is not on the edge still pushes
+   one sentinel inside a user gesture. Nested screens keep a normal one-step
+   swipe. A live round still traps the last step on any screen. Scores are
+   left alone. */
 let _fairwayNavLock = false;
 let _fairwayNavTrapSerial = 0;
 let _fairwayNavSentinelToken = 0;
@@ -4549,6 +4560,7 @@ function fairwayNavBlockEdgeTouch(ev) {
     if (!fairwayNavEdgeBand(t.clientX, w)) return;
     box.touch = true;
     if (ev.cancelable) ev.preventDefault();
+    if (ev.stopImmediatePropagation) ev.stopImmediatePropagation();
     fairwayNavArmEdgeMove();
   } catch (e) {}
 }
@@ -4584,6 +4596,25 @@ function fairwayNavSyncEdgeGuard() {
   } catch (e) {}
 }
 
+function fairwayNavPointInEdge(ev) {
+  if (!ev) return false;
+  let x = null;
+  if (ev.touches && ev.touches.length) x = ev.touches[0].clientX;
+  else if (typeof ev.clientX === "number") x = ev.clientX;
+  let w = 0;
+  try { w = window.innerWidth; } catch (e) { w = 0; }
+  return fairwayNavEdgeBand(x, w);
+}
+
+function fairwayNavUndoHomeSwipe() {
+  if (fairwayNavUndoHomeSwipe.busy) return;
+  if (typeof history === "undefined" || !history.go) return;
+  fairwayNavUndoHomeSwipe.busy = true;
+  try { history.go(1); }
+  catch (e) {}
+  setTimeout(function () { fairwayNavUndoHomeSwipe.busy = false; }, 0);
+}
+
 function fairwayNavHoldHomeTrap() {
   const box = fairwayNavEdgeState();
   box.lock = true;
@@ -4602,6 +4633,7 @@ function fairwayNavView() {
 }
 
 function fairwayOnPopState(ev) {
+  if (fairwayNavUndoHomeSwipe.busy) return;
   if (_fairwayNavFilling) {
     _fairwayNavSentinelRedo = true;
     return;
@@ -4618,7 +4650,10 @@ function fairwayOnPopState(ev) {
     return;
   }
   if (decision.type === "trap") {
-    if (state && state.screen === "home") fairwayNavHoldHomeTrap();
+    if (state && state.screen === "home") {
+      fairwayNavHoldHomeTrap();
+      fairwayNavUndoHomeSwipe();
+    }
     fairwayNavScheduleHomeSentinel();
     try { fairwayNavSyncEdgeGuard(); } catch (e) {}
     return;
@@ -4644,10 +4679,12 @@ function fairwayOnPopState(ev) {
   try { fairwayNavSyncEdgeGuard(); } catch (e) {}
 }
 
-function fairwayNavArmTrap() {
+function fairwayNavArmTrap(ev) {
   try {
     if (!fairwayNavShouldTrap()) return;
     if (!state || state.screen !== "home" || fairwayHoleSheetIsOpen()) return;
+    /* The edge swipe is this touch. Pushing here gives WebKit the entry it animates away. */
+    if (fairwayNavPointInEdge(ev)) return;
     const cur = (typeof history !== "undefined" && history.state) || null;
     const view = fairwayNavView();
     if (cur && cur.fairwayNav && !fairwayNavSameView(cur, view)) return;
@@ -4680,9 +4717,9 @@ function fairwayNavBoot() {
   } catch (e) {}
   window.addEventListener("popstate", fairwayOnPopState);
   window.addEventListener("pageshow", fairwayNavOnPageShow);
+  document.addEventListener("touchstart", fairwayNavBlockEdgeTouch, { passive: false, capture: true });
   document.addEventListener("touchstart", fairwayNavArmTrap, { passive: true, capture: true });
   document.addEventListener("pointerdown", fairwayNavArmTrap, { passive: true, capture: true });
-  document.addEventListener("touchstart", fairwayNavBlockEdgeTouch, { passive: false, capture: true });
   document.addEventListener("touchend", fairwayNavBlockEdgeEnd, { passive: true, capture: true });
   document.addEventListener("touchcancel", fairwayNavBlockEdgeEnd, { passive: true, capture: true });
   try {

@@ -6,7 +6,7 @@ El esquema del JSON de copia sigue en **3**. Sin código, Fairway se juega como 
 
 - Sin red se anota igual. El golpe se escribe en `fairway.activeRound.v1` antes de intentar salir.
 - Drive personal sigue siendo `Fairway/fairway-data.json`, alcance `drive.file`, client id público de la 4.1.2, token solo en memoria.
-- El gesto atrás de la 4.1.3 y el bloqueo en Inicio de la 4.1.3.1 no se tocan.
+- En Perfil, en el alta y en la hoja de hoyos el gesto atrás sigue un paso. En Inicio no sale de la PWA.
 - No hay bolsa ni recomendación de palo. El teléfono del caddie de La Herrería sigue.
 - No hay servidor de partida ni secreto en el repositorio.
 

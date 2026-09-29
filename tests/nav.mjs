@@ -295,9 +295,24 @@ const gateAt = blockSrc.indexOf("fairwayNavShouldBlockEdge");
 const bandAt = blockSrc.indexOf("fairwayNavEdgeBand");
 const prevAt = blockSrc.indexOf("preventDefault");
 assert.ok(gateAt > 0 && bandAt > gateAt && prevAt > bandAt);
+assert.ok(blockSrc.indexOf("stopImmediatePropagation") > prevAt);
 assert.ok(blockSrc.includes("touches.length !== 1"));
 assert.ok(blockSrc.includes("cancelable"));
 const bootEdge = extractFunction(html, "fairwayNavBoot");
+const blockReg = bootEdge.indexOf('addEventListener("touchstart", fairwayNavBlockEdgeTouch');
+const armReg = bootEdge.indexOf('addEventListener("touchstart", fairwayNavArmTrap');
+assert.ok(blockReg > 0 && armReg > blockReg);
+assert.ok(extractFunction(html, "fairwayNavArmTrap").includes("fairwayNavPointInEdge(ev)"));
+const undoSrc = extractFunction(html, "fairwayNavUndoHomeSwipe");
+assert.ok(undoSrc.includes("history.go(1)"));
+assert.ok(undoSrc.includes("busy"));
+const popUndo = extractFunction(html, "fairwayOnPopState");
+assert.ok(popUndo.indexOf("fairwayNavUndoHomeSwipe.busy") < popUndo.indexOf("fairwayNavDecide"));
+const trapUndoAt = popUndo.indexOf('if (decision.type === "trap")');
+const trapUndoEnd = popUndo.indexOf("return;", trapUndoAt);
+const trapUndo = popUndo.slice(trapUndoAt, trapUndoEnd);
+assert.ok(trapUndo.includes("fairwayNavUndoHomeSwipe()"));
+assert.ok(!trapUndo.includes("history.go"));
 assert.ok(bootEdge.includes('scrollRestoration = "manual"'));
 assert.ok(bootEdge.includes("fairwayNavSyncEdgeGuard"));
 assert.ok(bootEdge.includes('guard.addEventListener("touchmove", fairwayNavBlockEdgeMove, { passive: false })'));
@@ -419,6 +434,57 @@ edge.fairwayNavNoteScroll();
 global.window.scrollY = 0;
 edge.fairwayNavRestoreScroll();
 assert.strictEqual(global.window.scrollY, 40);
+
+let pushes = 0;
+const prevHistory = global.history;
+global.history = {
+  state: null,
+  pushState(frame) { pushes += 1; this.state = frame; },
+  replaceState(frame) { this.state = frame; }
+};
+const armApi = loadFunctions(html, [
+  "fairwayNavKnownScreen",
+  "fairwayNavSameView",
+  "fairwayNavEdgeBandPx",
+  "fairwayNavEdgeBand",
+  "fairwayNavPointInEdge",
+  "fairwayNavHomeSentinelDepth",
+  "fairwayNavRoundKeepsPlayScreen",
+  "fairwayHoleSheetIsOpen",
+  "fairwayNavShouldTrap",
+  "fairwayNavCapture",
+  "fairwayNavView",
+  "fairwayNavHref",
+  "fairwayNavRepush",
+  "fairwayNavArmTrap"
+], { state: homeState });
+homeState.screen = "home";
+global._fairwayNavTrapSerial = 0;
+armApi.fairwayNavArmTrap({ touches: [{ clientX: 4 }] });
+assert.strictEqual(pushes, 0, "el toque del borde no empuja un centinela");
+armApi.fairwayNavArmTrap({ touches: [{ clientX: 80 }] });
+assert.strictEqual(pushes, armApi.fairwayNavHomeSentinelDepth());
+let stopped = 0;
+edge.fairwayNavBlockEdgeTouch({
+  cancelable: true,
+  touches: [{ clientX: 2 }],
+  preventDefault() {},
+  stopImmediatePropagation() { stopped += 1; }
+});
+assert.strictEqual(stopped, 1);
+let goes = 0;
+const undoApi = loadFunctions(html, ["fairwayNavUndoHomeSwipe"]);
+global.history = {
+  go(n) {
+    goes += 1;
+    assert.strictEqual(n, 1);
+    undoApi.fairwayNavUndoHomeSwipe();
+  }
+};
+undoApi.fairwayNavUndoHomeSwipe.busy = false;
+undoApi.fairwayNavUndoHomeSwipe();
+assert.strictEqual(goes, 1);
+global.history = prevHistory;
 
 global.document = prevDocument;
 global.window = prevWindow;
