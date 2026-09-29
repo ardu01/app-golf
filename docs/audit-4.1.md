@@ -1,0 +1,235 @@
+# Fairway 4.1 — Fase 1: auditoría e inventario
+
+Fecha de la auditoría: 2026-09-29.
+Árbol auditado: `main` en `7bbfee7474dbc11b1874b1c707cd98763a63965e` (fast-forward desde el checkout local, que estaba en `e709f1322058480fb8755ac9d180e0b8063e4afd`, tres commits por detrás).
+Esta fase no modulariza `index.html`, no introduce IndexedDB y no cambia fórmulas, mapas ni datos.
+
+## Identidad de partida
+
+| Dato | Valor | Dónde se ve |
+| --- | --- | --- |
+| Versión de producto | **4.0.11** | `index.html` (`appVersion: "4.0.11"` en `collectFairwayBackup`), `manifest.webmanifest` (`description`), `README.md` (párrafo 4.0.11), `sw.js` (`SHELL = "fairway-v4-411"`) |
+| Esquema de la copia | **3** | `collectFairwayBackup` escribe `version: 3`. `validateFairwayBackup` marca `newer` si `version > 3` y sigue importando las partidas que reconoce |
+| Commit de partida | `7bbfee7474dbc11b1874b1c707cd98763a63965e` | `Fairway 4.0.11 — top fino y ficha arriba del hueco (#44)` |
+| Rama de trabajo | `release/fairway-4.1` | Creada desde ese commit. No se ha empujado a `main` |
+| Runtime de la app | Un solo `index.html` (10419 líneas, 543366 bytes, 316 `function` y 13 `async function`) más `sw.js` y `manifest.webmanifest` | Sin `package.json` y sin bundler |
+| Node usado para tests | v22.14.0 | Solo la suite. Jugar no usa npm |
+
+El README abre la sección de versión con «Esto es la 3.0». El texto de producto dentro del JSON y el manifiesto ya dicen 4.0.11. Es deriva de documentación, no una versión distinta en el código de la app.
+
+## Resultado real de `node tests/run.mjs`
+
+Ejecutado en la raíz del repo, sobre ese commit, el 2026-09-29. Código de salida **0**. Seis suites, **0 suites fallidas**. El runner (`tests/run.mjs`) lanza `scoring.mjs`, `backup.mjs`, `maps.mjs`, `referee.mjs`, `drive.mjs`, `persist.mjs` y sale 1 solo si algún hijo no devuelve 0.
+
+```
+scoring ok
+backup ok
+maps ok { courses: 54, perHole: 22, overview: 4, images: 404 }
+referee ok
+drive ok
+storageSetItem fairway.activeRound.v1 Error [QuotaExceededError]: quota
+    at Object.setItem (file:///workspace/tests/persist.mjs:90:21)
+    at storageSetItem (eval at load (file:///workspace/tests/persist.mjs:57:14), <anonymous>:65:18)
+    at Object.persistActiveRound (eval at load (file:///workspace/tests/persist.mjs:57:14), <anonymous>:150:10)
+    at file:///workspace/tests/persist.mjs:256:28
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:116:5)
+persist ok
+all tests ok
+```
+
+El `QuotaExceededError` no es un fallo de suite. `tests/persist.mjs` (bloque que asigna `memoryStorage("throw")` y llama `persistActiveRound`) fuerza esa excepción. `storageSetItem` la registra con `console.warn` y devuelve `false`. La aserción espera `persistActiveRound() === false` y un toast «No se pudo guardar». Después se imprime `persist ok`.
+
+Lo que la suite cubre, y lo que no: hándicap y Stableford con campos de prueba; saneado e importación del JSON (incluye tope 99999 y rechazo a 100000); inventario de 54 campos y 404 imágenes; un subconjunto de citas del árbitro; plan de sync de Drive con dobles en memoria; persistencia de la ronda activa con almacenamiento simulado (cuota, escritura que no queda, JSON corrupto, copia `.bak`). No hay navegador, no hay Google real, no hay cuota real de `localStorage`.
+
+## Inventario de funciones (lo que hay hoy)
+
+Todo vive en `index.html` salvo el service worker. No hay módulos `fairway/js/*`.
+
+- Partida en un solo teléfono: campo, tee, 9 o 18 hoyos, varios jugadores, golpes, putts, FIR, GIR, bruto, neto, Stableford, cierre con ganadores y placas (La Herrería usa `icons/escorial-monasterio.png`).
+- Modalidades oficiales: Stroke Play, Stableford. Sociales: Putting King, GIR King, Birdie Hunt, Chaos Golf, Rey del Hoyo, Back Nine Brawl, Last Call, No Bogey Club, Creativo (reglas y puntos definidos en la partida; presets locales).
+- Árbitro: chat en el dispositivo, Reglas de Golf 2023 (R&A / USGA), sin red. Pantalla `arbitro` y catálogo de reglas.
+- Mapas: 26 carpetas en `holes/`, todas registradas en `HOLE_MAP_COURSES`. 22 con plano por hoyo, 4 solo `overview`. 404 imágenes. Tres campos sin `manifest.json` y aceptados por el test: `rshecc-norte`, `rshecc-sur`, `el-robledal`. Ortofoto IGN PNOA (`pnoaOrthoUrl` → `https://www.ign.es/wms-inspire/pnoa-ma`) para los ids de `COURSE_GEO`. Varios centros van marcados `approx: true` en el propio objeto. No se ha inventado cartografía en esta fase.
+- Caddie y restaurante, hoy: enlaces `tel:` solo para `la-herreria` (`CLUB_CONTACTS`). No hay un caddie de palos o de estrategia. El árbitro menciona al caddie en las reglas 10.2a y 10.2b(4).
+- Stats: últimas 5, 10 o 20, temporada (desde enero), último año, o todo. La media de golpes brutos no mezcla largos distintos (el README lo describe; esta auditoría no ha reejecutado esa rama en un navegador).
+- Perfil (nombre e Handicap Index), roster de jugadores guardados, historial, reabrir una vuelta, ajustes a mitad de ronda.
+- Copia JSON manual (compartir archivo o descarga) y restauración desde un `.json`.
+- Google Drive: código presente, identificador vacío (detalle abajo).
+- PWA: `manifest.webmanifest`, iconos en `icons/` (192, 512, 512 maskable, apple-touch, svg, 180, monasterio), `.nojekyll`. GitHub Pages publica el repo tal cual. El despliegue `pages-build-deployment` del commit de partida terminó en success (run `36531237675`).
+- Offline: el service worker precachea el shell y guarda planos vistos en `fairway-maps-v1`, con tope 120. No cachea hosts de Google.
+
+Pantallas: `home`, `setup`, `lobby`, `hole`, `scorecard`, `leader`, `reglas`, `arbitro`, `close`, `perfil`, `historial`, `detalle`, `ajustes`, `stats`.
+
+Hándicap, sin cambiarlo: `courseHandicapFor` hace `round(HI * slope/113 + (CR − par))` cuando el tee trae slope y CR; si no, redondea el HI. Nueve hoyos de un campo de dieciocho usan `round(CH18 / 2)` (`scaleHandicapForRound`). `refreshPlayerHandicaps` copia ese CH a `ph` («playing handicap = CH, 100% allowance»). Los tests de `tests/scoring.mjs` fijan el caso HI 10, slope 125, CR 71.5, par 72 → CH 11, y el reparto de golpes incluidos los plus. `clampHcp` recorta a −10…54 (el test lo comprueba).
+
+## Dependencias
+
+- App en el navegador: APIs de plataforma (`localStorage`, `sessionStorage`, Cache / service worker, canvas, Web Share, `File`). Cero paquetes npm.
+- Red opcional: `https://accounts.google.com/gsi/client` (solo al conectar Drive), `https://www.googleapis.com/drive/v3/` y upload multipart, WMS del IGN. El service worker no intercepta esos hosts.
+- Tests: módulos nativos de Node (`assert`, `fs`, `child_process`, `url`, `path`). `tests/extract.mjs` recorta funciones del HTML por llaves.
+- CI: `actions/checkout@v4` en `test-fairway.yml`. Pages es el workflow dinámico de GitHub, no un YAML del repo.
+
+## Claves de almacenamiento
+
+No hay `indexedDB` en el código. La persistencia es `localStorage`, más una clave de `sessionStorage`.
+
+| Clave | Rol | ¿Entra en el JSON de copia? |
+| --- | --- | --- |
+| `fairway.rounds.v1` | Historial. Tope `ROUNDS_MAX = 99999` | Sí, como `rounds` |
+| `fairway.rounds.bak.v1` | Copia anterior del historial si el principal no se lee | No. Es red de seguridad local |
+| `fairway.activeRound.v1` | Ronda en curso | Sí, como `activeRound`. Al exportar, si el principal no tiene jugadores, se usa el `.bak` |
+| `fairway.activeRound.bak.v1` | Copia anterior de la ronda en curso | Solo como respaldo de lectura, no como campo propio |
+| `fairway.savedPlayers.v1` | Roster | Sí, como `roster` |
+| `fairway.host.v1` | Nombre e HI del anfitrión | Sí, como `host` |
+| `fairway.dataUpdatedAt` | Sello ISO para el plan de sync | Sí, como `updatedAt` (el valor, no el nombre de la clave) |
+| `fairway.creative.v1` | Borrador de la modalidad Creativo | No como clave. Puede ir dentro de `activeRound.setup.creative` o de una partida cerrada |
+| `fairway.creativePresets.v1` | Presets con nombre | **No** |
+| `fairway.drive.fileId` | Id del `fairway-data.json` en Drive | No (puntero local) |
+| `fairway.drive.folderId` | Id de la carpeta `Fairway` | No |
+| `fairway.drive.meta` | Estado de sync (conectado, sellos, conflicto, pendiente). No guarda el access token | No |
+| `fairway.drive.clientId` | Solo se borra en `driveDisconnect`. `getDriveClientId()` no la lee | No |
+| `fairway.swReload` (`sessionStorage`) | Evita recargas del service worker en menos de 10 s | No |
+
+En memoria, y se pierden al recargar: el access token de Drive (`_driveToken`), `state.deletedRounds`, `state.visibilityOverride`. `deleteRound` sí llama a `deleteSavedRound` y reescribe `fairway.rounds.v1`. `softDeleteDetalle` y `cycleDetalleVisibility` no tienen ningún llamador en el HTML; no son un borrado o una visibilidad que el usuario pueda pulsar hoy.
+
+## Esquema JSON (exportar, restaurar, importar, Drive)
+
+Un solo documento. Lo construye `collectFairwayBackup`. Lo acepta `validateFairwayBackup` (también `driveAcceptRemote`). Lo aplica `mergeFairwayBackup` (importación manual) y, con el plan de sync, `driveApplyResolved`.
+
+Nombre de archivo manual: `fairway-data-AAAA-MM-DD.json`. En Drive: carpeta `Fairway`, archivo `fairway-data.json`. Scope OAuth: `https://www.googleapis.com/auth/drive.file`.
+
+Campos de primer nivel que **escribe** la exportación:
+
+- `version` (número, hoy 3), `app` (`"Fairway"`), `appVersion` (texto, hoy `"4.0.11"`), `exportedAt`, `updatedAt`
+- `includes`: lista descriptiva, no se valida al importar
+- `rounds[]`, `activeRound`, `roster[]`, `host`, `setup`
+
+`setup` de primer nivel (courseId, tee, holes, modalities) **se exporta y no se restaura**. `validateFairwayBackup` no lo copia al objeto saneado. La ronda en curso viaja en `activeRound`, que sí lleva su `setup`.
+
+`validateFairwayBackup` exige un objeto con `rounds` array. Rechaza más de 99999 partidas (`reason: "Demasiadas partidas en la copia"`). `version` ausente pasa a 1. `version > 3` pone `newer: true` y el import avisa y sigue con lo reconocible. No es un rechazo.
+
+Partida (`sanitizeImportedRound`), campos que sobreviven al import:
+
+- `id` (obligatorio tras recortar; si queda vacío, la partida se descarta), `dateISO`, `updatedAt`, `date`, `club`, `courseId`, `layout`, `tee`, `par`, `holes` (1–18), `holesPlayed` (0–18), `modalities` (máx. 12), `creative`, `official`, `players` (máx. 8), `me`, `winners` (máx. 12), `standings` (máx. 8)
+- El texto pierde caracteres de control y `<>` (`clipStr`)
+
+Jugador importado: `id`, `name`, `short`, `initials`, `hcp` (o null; si hay número, `clampHcp`), `ch` y `ph` redondeados a −18…54, `guest`, `ball`, `withdrawn`, `scores` (hoyos 1–18, valor 0–30), `putts` (0–15), `fir` (`hit`/`miss`/`na`), `gir` (`yes`/`no`/`na`), `totalsGross`, `totalsPutts`, `creativePts`, `creativeLog` (máx. 80).
+
+`me` y cada fila de `standings`: agregados numéricos (`gross`, `net`, `toPar`, `sf`, `thru`, `ch`, `strokesUsed`, putts, birdies, FIR/GIR, etc.). Un número no finito pasa a `null`.
+
+`activeRound` saneado: `v: 1`, `hole` 1–18, `activePlayer`, `editingRoundId`, `dataTier`, `scNine` (`in` u `out`), `scCard` (`net` o `gross`), `club`, `setup` (incluye `writeMode` forzado a `"single_device"` y `creative` saneado), `players`, `setupPlayers`.
+
+`roster`: máx. 80, exige `id` y `name`, `hcp` por defecto 18 si no es finito.
+
+`host`: `name` y `hcp` (null si viene vacío).
+
+Creativo: `rulesText` (máx. 2000) y hasta 30 acciones (`id`, `trigger`, `label`, `pts` −20…20).
+
+Fusión de partidas (`driveMergeRounds`): por `id`, gana el `updatedAt` o, si no hay, el `dateISO` más reciente (comparación de cadenas `>=`). Las que solo están en un lado se conservan. El resultado se corta a 99999.
+
+Protección de la ronda local, leída en el código y cubierta en parte por tests: `localActiveRoundIsProtected`, `drivePickActiveRound`, `driveSyncPlan` con `keepLocalActive`. Importar no sustituye la ronda local si está sucia, si la pantalla es de juego, o si la protección local está activa; en ese caso hay un toast «La ronda en curso de este dispositivo se mantiene». `driveAuthFailure` devuelve `wipeLocal: false` en 401, 403 y 500. No hay `localStorage.clear` ni `client_secret` en `index.html` (el test de Drive lo afirma).
+
+El toast de importación usa `data.rounds.length` del JSON crudo, no el número de partidas que quedan tras sanear. Si alguna partida se descarta por `id` vacío, el mensaje puede contar de más. No se ha reproducido con un archivo de usuario; el código hace eso.
+
+`mergeFairwayBackup` escribe `remote.host` encima de `fairway.host.v1` siempre que el JSON traiga `host`, también cuando conserva la ronda local. No compara sellos del perfil. Es un comportamiento del código, no una pérdida observada en un dispositivo.
+
+## Google Drive
+
+`FAIRWAY_DRIVE_CLIENT_ID = ""` en `index.html` (línea 8445). El comentario del propio código dice que es un client id público de OAuth web, no un secreto, y que se deja vacío hasta registrar el origen de GitHub Pages. `getDriveClientId()` devuelve solo esa constante. `driveConnect()` si está vacía muestra «Esta copia de Fairway todavía no tiene Google Drive configurado.» y no llama a Google.
+
+No hay client secret en el repo. El access token vive en memoria. `fairway.drive.meta` guarda banderas y sellos (`connected`, `lastSync`, `lastSyncUpdatedAt`, `lastSyncRemoteModifiedTime`, `lastSyncedHash`, `pending`, `status`, `needsReconnect`, `conflict`, `conflictChoice`), no el token.
+
+Estados de UI ya implementados en `driveUiState`: No conectado, Conectando…, Sincronizando…, Sin conexión, Cambios pendientes, Necesita reconexión, Conflicto, Sincronizado. Debounce 4000 ms. El cierre de ronda y el sync manual piden envío inmediato (`driveSyncImmediate`).
+
+Bloqueo externo, no inventado aquí: sin un client id de OAuth registrado para el origen de Pages, Drive no se puede probar de punta a punta. Los tests de `tests/drive.mjs` cubren el plan, el merge y el saneado con datos ficticios. No cubren GIS ni la API real.
+
+## Workflows
+
+| Workflow | Disparo | Qué haría si un runner arranca | Estado en esta fase |
+| --- | --- | --- | --- |
+| `test-fairway.yml` | push a `main`, y todo pull request | `node tests/run.mjs` | Se deja. Hoy no llega a ejecutarse (ver defectos) |
+| `publish-fairway-v3.yml` | `workflow_dispatch` | Sustituía `index.html` por el de `ardu01/app-golf-v3` y hacía `git push` | **Desactivado** en este cambio: `if: false`, permiso `contents: read`, sin `curl` ni `push`. El archivo sigue, con el comportamiento antiguo comentado |
+| `apply-fairway-multicourse.yml` | `workflow_dispatch` y push que toque `ops/fairway-multicourse-patch/**` | Ejecuta `apply.py`, copia `ops/fairway-multicourse-patch/sw.js` encima de `sw.js` y hace push. Ese `sw.js` es caché `fairway-v159`, llama a `skipWaiting()` en install y borra cualquier caché que no sea esa (también `fairway-maps-v1`) | Sigue activo. No se ha disparado en esta fase |
+| `apply-player-tees.yml` | `workflow_dispatch` y push del parche o del propio YAML | Si `index.html` no contiene `function setPlayerTee`, aplica `patches/player-tees.patch` y hace push | Sigue activo. `git apply --check patches/player-tees.patch` **falla** hoy (`patch failed: index.html:1884`). En el árbol actual no existe `setPlayerTee`. Un dispatch con runner fallaría en `git apply` antes del commit, salvo que el parche vuelva a encajar |
+| `assemble-fairway-index.yml` | `workflow_dispatch` | Si existe `index.parts/`, concatena y **reemplaza** `index.html`. Decodifica `*.b64`, `git add -A` y push | Sigue activo. No hay `index.parts` ni `*.b64` en el árbol. Sin cambios, el paso de commit no crea commit |
+| `decode-fairway-binaries.yml` | `workflow_dispatch` | Decodifica todo `*.b64`, borra el sidecar, exige `count > 0`, luego `git add -A` y push | Sigue activo. Sin `*.b64` el job fallaría en `test "$count" -gt 0` antes del commit |
+
+Historial consultado con `gh` (solo lectura):
+
+- `test-fairway`: los runs recientes, incluido el del commit de partida `36531238573`, están en failure. La anotación del check es «The job was not started because your account is locked due to a billing issue.» La consulta de runs con `status=success` de ese workflow devuelve total 0. No es un fallo de aserción: el job no arranca. El mismo texto aparece en un run del 4.0.2 (`36463852053`).
+- `Publish Fairway V3`: dos `workflow_dispatch` sobre `main` el 2026-09-23 (runs `35834656865` y `35834594078`). Los dos en failure con la misma anotación de facturación. No hay evidencia de que llegaran a escribir `index.html`.
+- El apply multi-course, el de tees y el decode también tienen runs en failure con esa anotación. Assemble no tiene runs en el listado pedido.
+
+Pages sí construye: el run `36531237675` del mismo push 4.0.11 terminó en success. El bloqueo de Actions no ha parado el despliegue estático en ese push.
+
+## Defectos demostrados
+
+1. **El check `test-fairway` está rojo en `main` y el job no llega a ejecutar tests.** En el commit `7bbfee7474dbc11b1874b1c707cd98763a63965e`, run `36531238573`, job `109285172078`: conclusion failure, steps vacíos, anotación de facturación citada arriba. La suite, en esta máquina, termina en `all tests ok`. No se presenta el rojo de GitHub como un fallo de hándicap, mapas o persistencia.
+
+2. **No se ha reproducido un defecto de lógica de la app** en las seis suites ni leyendo los caminos de guardado que esas suites extraen. La traza `QuotaExceededError` del log es el caso de prueba de cuota, y la suite la da por buena.
+
+## Riesgos potenciales
+
+No son bugs confirmados en un dispositivo. Son capacidades o huecos leídos en el código o en los workflows.
+
+1. **`publish-fairway-v3.yml` podía sustituir la app.** El YAML, antes de este cambio, hacía curl del `index.html` de `app-golf-v3` y `git push`. Sigue siendo el riesgo más grave si alguien revierte el guard y hay runners. Los dos dispatch de septiembre no llegaron a ejecutarse por la facturación.
+2. **`apply-fairway-multicourse.yml` sigue armado** y, si un push toca esa carpeta y el runner existe, pisa `sw.js` con la variante v159 (skipWaiting inmediato y borrado del resto de cachés, mapas incluidos) y empuja `index.html`.
+3. **Al desbloquearse la facturación se reactivan a la vez** el test y todos los workflows con `contents: write`, no solo el test.
+4. **Presets creativos (`fairway.creativePresets.v1`) no viajan** en el JSON ni en Drive. Un cambio de teléfono los deja atrás. No hay constancia en el repo de que un usuario los esté usando.
+5. **El perfil (`host`) del JSON remoto pisa el local** en `mergeFairwayBackup` y en `driveApplyResolved` sin comparar fechas, aunque la ronda en curso se conserve.
+6. **`setup` de primer nivel se exporta y se tira al validar.** La ronda viva va en `activeRound`. Quien dependa del `setup` suelto del JSON no lo recupera.
+7. **Historial hasta 99999 partidas contra la cuota de `localStorage`.** El código responde a `QuotaExceededError` (test de memoria) y no migra a IndexedDB. No se ha medido el tamaño real en Safari ni en Chrome.
+8. **Service worker cache-first del shell.** `fairwayShouldHoldUpdate` evita `SKIP_WAITING` y el reload con ronda, cierre o pantallas de juego, y `fairway.swReload` corta recargas a menos de 10 s. Un `index.html` nuevo con el mismo `sw.js` se sirve primero desde caché y se actualiza en segundo plano. El README de la 4.0.7 dice que a veces hace falta borrar datos del sitio para coger el worker nuevo. No se ha medido en un teléfono en esta fase.
+9. **Drive de punta a punta no es comprobable** mientras `FAIRWAY_DRIVE_CLIENT_ID` esté vacío. El plan de conflicto está testeado con dobles, no contra Google. No se inventan credenciales.
+10. **Centros `COURSE_GEO` con `approx: true`** son aproximados por marca del propio código. Tratarlos como levantamiento no está justificado. Esta fase no los mueve.
+11. **El parche de tee por jugador no entra en el `index.html` actual.** Si más adelante el contexto vuelve a coincidir, el workflow lo aplicaría y haría push. Hoy `git apply --check` falla.
+
+## Deuda técnica
+
+- Un solo `index.html` de 10419 líneas (CSS, marcado y JS). Los tests dependen de extraer funciones por texto. Partirlo es la fase 2, no esta.
+- No hay `package.json`, ni changelog, ni `docs/architecture.md`. `docs/` ya existía para `docs/recorrido/` (capturas y vídeos del README).
+- El README sigue presentando «Versión 3.0» mientras el producto es 4.0.11. El esquema de copia, a propósito, sigue en 3.
+- `softDeleteDetalle` y `cycleDetalleVisibility` no se llaman. `fairway.drive.clientId` se borra y no se lee.
+- `ops/fairway-multicourse-patch/sw.js` y `patches/player-tees.patch` no describen el árbol 4.0.11.
+- `icons/icon-512-maskable.png` está en el manifiesto y en disco. El precache del service worker no lo incluye (sí incluye 192, 512, apple-touch y el monasterio). El maskable se pide al instalar la PWA, no al precachear el shell.
+- `PH` se guarda igual que `CH`. Es el comportamiento actual comentado en `refreshPlayerHandicaps`, no una corrección pendiente de esta auditoría. No se toca la fórmula.
+
+## Mejoras funcionales
+
+Previstas por la misión 4.1 y **no empezadas** aquí. No son defectos demostrados.
+
+- Migración a IndexedDB idempotente, con copia previa y sin borrar `localStorage` hasta verificar. Hace falta antes de subir el volumen del historial con seguridad.
+- Módulos (`css/` y `js/` de la misión) sin cambiar el comportamiento ni exigir un build para abrir la app. El README dice que la partida real depende del archivo único.
+- Drive utilizable cuando exista un client id público para el origen de Pages, con los estados que el código ya nombra. Sigue sin backend y sin refresh token de larga duración; el propio README lo dice.
+- Incluir en la copia los presets creativos, si se decide que son datos de usuario que deben sobrevivir a un cambio de aparato.
+- Tee de salida por jugador: existe como parche que no aplica, no como función en 4.0.11. El producto actual tiene un tee de partida.
+- Caddie de juego (palos, estrategia): no está. Lo que hay es la llamada al caddie master de La Herrería y las reglas sobre el caddie.
+- Stats y cartografía nuevas solo con datos ya existentes. No inventar planos.
+
+## Pruebas pendientes
+
+- Volver a lanzar `test-fairway` en GitHub cuando la cuenta pueda arrancar runners. Hasta entonces el verde local no se refleja en el check.
+- Recorrido manual de la PWA: actualizar el service worker con una ronda abierta, offline, y un plano ya visto dentro del tope de 120. Esta fase no abrió el navegador contra un servidor.
+- Importar un JSON real de un usuario (no hay muestras de partidas en el repo) y comprobar el conteo del toast frente a las partidas que el saneado conserva.
+- Cuota real de `localStorage` con un historial grande, en Safari y en Chrome.
+- Drive contra Google: bloqueado por el client id vacío.
+- Modalidades sociales una a una (Chaos, Rey, Back Nine, Last Call, No Bogey, Creativo). `tests/scoring.mjs` fija hándicap, reparto y Stableford, no cada modo social.
+- Árbitro: la suite cubre un conjunto de frases (agua, árbol, divot, búnker, injugable). No es una cobertura de las Reglas completas.
+- Migración IndexedDB: no hay implementación que probar.
+- Que un dispatch de los workflows que siguen activos no pueda pisar `index.html` o `sw.js`. Solo el de V3 queda desactivado en este cambio.
+
+## Orden recomendado para las fases 2–7
+
+El orden sale de lo que está demostrado arriba, no de reescribir la app en abstracto.
+
+1. **Fase 2 — contrato de datos, luego módulos.** Congelar el esquema 3 documentado aquí como contrato de lectura. Tests de migración (round-trip, JSON corrupto, cuota, interrupción) antes de mover nada a IndexedDB. No borrar claves viejas. El corte de `index.html` viene después de ese límite, porque un extract regex roto deja la suite ciega. Antes de editar el HTML a lo grande, desactivar o acotar `apply-fairway-multicourse.yml`: es el otro camino que pisa `sw.js` y hace push.
+2. **Fase 3 — Drive y service worker, sin credenciales inventadas.** El client id sigue vacío y documentado como único requisito externo. Se puede endurecer el versionado del `SHELL` ligado al release y la espera de reload con ronda activa; no se puede dar por probado el sync real. Conflictos: el plan ya existe en tests; falta el caso de perfil (`host`) que hoy se pisa.
+3. **Fase 4 — puntuación, stats, caddie.** No cambiar `courseHandicapFor` ni `strokesOnHole` sin un test que fije el número anterior. Separar CH y PH solo si hay una regla nueva y tests; hoy son el mismo valor a propósito. El caddie nuevo no sustituye el `tel:` de La Herrería ni al árbitro.
+4. **Fase 5 — cartografía y UX.** Partir de `holes/` (404 imágenes) y de PNOA. No recolocar los `approx: true`. La piel 4.0.1–4.0.11 es reciente y esta fase no la rediseña.
+5. **Fase 6 — tests y seguridad.** El hueco real es el runner de GitHub, no una aserción roja en local. Revisar que ningún workflow con `contents: write` pueda publicar otro `index.html`. El saneado de importación ya quita `<>` y está testeado; no relajarlo al partir el archivo.
+6. **Fase 7 — 4.1.0.** Subir la versión de producto, el texto del manifiesto y el nombre de caché del shell juntos. Dejar `version: 3` del JSON salvo que la migración tenga tests y un lector de las copias viejas. No marcar estable mientras el check de tests no pueda arrancar, o mientras un workflow pueda sustituir `index.html` por V3.
+
+## Fuera de esta fase, a propósito
+
+No se ha partido `index.html`, no hay IndexedDB, no hay client id nuevo, no hay cambios de fórmula, de mapas ni de modalidades. El único cambio de comportamiento del repositorio es impedir que `publish-fairway-v3.yml` descargue y empuje un `index.html` de V3.
