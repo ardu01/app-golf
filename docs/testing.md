@@ -6,7 +6,7 @@ La puerta de la app sigue siendo:
 node tests/run.mjs
 ```
 
-No hace falta npm para jugar ni para esa suite. Node 22 sirve. El orden es scoring, backup, maps, referee, drive, persist, migration, pwa, stats, security.
+No hace falta npm para jugar ni para esa suite. Node 22 sirve. El orden es scoring, backup, maps, referee, drive, persist, migration, pwa, stats, security, nav, carousel, shared.
 
 `tests/persist.mjs` imprime un `QuotaExceededError` a propósito: el almacenamiento de mentira lanza cuota y la suite comprueba el aviso. El proceso sigue y termina en `persist ok`.
 
@@ -24,6 +24,9 @@ No hace falta npm para jugar ni para esa suite. Node 22 sirve. El orden es scori
 | `pwa.mjs` | No hay `SKIP_WAITING` en install. No recarga con ronda, cierre o pantallas de juego |
 | `stats.mjs` | Gross de 9 y de 18 no se promedian juntos |
 | `security.mjs` | `clipStr` y `escapeHtml`, backup hostil, solo `test-fairway.yml` (`contents: read`, sin `git push`). El `tel:` de La Herrería sigue. No hay bolsa ni `caddie.js`. La ficha Mapa sigue en el hoyo |
+| `nav.mjs` | El gesto atrás vuelve dentro de la app y en Inicio no sale |
+| `carousel.mjs` | Deslizar la ficha del hoyo selecciona a ese jugador |
+| `shared.mjs` | Cola y fusión de la partida compartida: gana la marca más nueva, un hueco remoto vacío no borra el golpe local, sin red la cola se queda |
 
 ## Navegador
 

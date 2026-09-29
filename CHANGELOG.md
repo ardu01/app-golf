@@ -1,5 +1,18 @@
 # Changelog
 
+## 4.2.5
+
+Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 4.2.4 siguen entrando.
+
+- Partida compartida, opcional. Sin código, la ronda sigue solo en este móvil, con o sin cobertura.
+- Crear o unirse con un código de 6 caracteres. Cada golpe se encola aquí y sale cuando algún móvil tiene red.
+- La fusión es por marca de tiempo de cada hoyo y jugador. Un campo que no llega no borra lo anotado.
+- El buzón por defecto es un MQTT público sin credenciales. Si falla y Drive ya está conectado, se usa un archivo aparte en la misma carpeta Fairway. WebRTC es un atajo opcional, no hace falta para jugar.
+- La cola vive en `fairway.sharedRound.v1`. No entra en `fairway-data.json`.
+- En Inicio, el toque del borde cancela el swipe antes de crear historia. Si el `popstate` entra igual, `history.go(1)` devuelve la misma pantalla. El velo de la 4.2.2 sigue. Perfil, el alta y la hoja de hoyos siguen un paso. Deslizar la ficha del hoyo sigue seleccionando al jugador, como en la 4.2.4.
+- El service worker pasa a `fairway-v4-425` y no recarga con una ronda abierta.
+- No vuelven los workflows que hacían `git push`. Los planos de `holes/` siguen.
+
 ## 4.2.4
 
 Esquema del JSON de copia: 3. Las copias de la 4.0.11, de la 4.1.x, de la 4.2.1, de la 4.2.2 y de la 4.2.3 siguen entrando.
