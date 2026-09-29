@@ -2567,7 +2567,7 @@
     transform: translate(-50%, -50%);
   }
   #screen-hole .hole-access-chip[hidden] { display: none !important; }
-  /* 4.0.8 — el carrusel flex:1 llena el hueco bajo las fichas de acceso. */
+  /* 4.0.10 — el pane y el main siguen flex:1 para que el carrusel se centre en el hueco. */
   #screen-hole #holePlayPane.active {
     display: flex;
     flex-direction: column;
@@ -2584,42 +2584,39 @@
     overflow-x: hidden;
     overflow-y: auto;
   }
-  /* 4.0.8 — la ficha llena el hueco entre las fichas de acceso y el pie.
-     4.0.9 — sin margin auto. El aire sobrante vive dentro de Golpes. */
+  /* 4.0.10 — la ficha no llena el alto. El carrusel se centra en el hueco que queda. */
   #screen-hole .carousel {
-    flex: 1 1 auto;
-    min-height: 0;
-    margin: 0;
+    flex: 0 0 auto;
+    margin-top: auto;
+    margin-bottom: auto;
     height: auto;
     display: flex;
     flex-direction: column;
   }
   #screen-hole .carousel-track {
-    flex: 1 1 auto;
-    min-height: 0;
-    height: 100%;
-    align-items: stretch;
-    padding: 4px 10px 8px;
-    gap: 8px;
+    flex: 0 0 auto;
+    align-items: flex-start;
+    height: auto;
+    padding: 4px 16px 8px;
+    gap: 12px;
     overflow-x: auto;
-    overflow-y: hidden;
+    overflow-y: visible;
   }
-  /* ~10px de asomo por lado: calc(100% - 20px). overflow auto, no hidden: en el SE se puede desplazar. */
+  /* 16px de asomo por lado: calc(100% - 32px). */
   #screen-hole .carousel-track .player-card {
-    flex: 0 0 calc(100% - 20px);
-    width: calc(100% - 20px);
-    height: 100%;
-    min-height: 100%;
-    max-height: 100%;
-    align-self: stretch;
+    flex: 0 0 calc(100% - 32px);
+    width: calc(100% - 32px);
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    align-self: flex-start;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
     gap: 0;
     margin: 0;
     padding: 16px;
-    overflow: auto;
-    -webkit-overflow-scrolling: touch;
+    overflow: visible;
     background: rgba(255,255,255,0.82);
     border: 0.5px solid rgba(60,60,67,0.18);
     border-radius: 16px;
@@ -2627,15 +2624,15 @@
     backdrop-filter: saturate(160%) blur(18px);
     -webkit-backdrop-filter: saturate(160%) blur(18px);
   }
-  /* Un jugador: ancho completo, sin asomo. */
+  /* Un jugador: 12px de margen a cada lado, sin asomo. */
   #screen-hole .carousel-track.solo {
-    padding-left: 8px;
-    padding-right: 8px;
+    padding-left: 0;
+    padding-right: 0;
+    justify-content: center;
   }
   #screen-hole .carousel-track.solo .player-card {
-    width: 100%;
-    flex-basis: 100%;
-    flex: 0 0 100%;
+    width: calc(100% - 24px);
+    flex-basis: calc(100% - 24px);
   }
   #screen-hole .player-card.active {
     border: 0.5px solid rgba(60,60,67,0.22);
@@ -2647,14 +2644,10 @@
     font-weight: 600;
     color: #000;
   }
-  /* 4.0.9 — el aire sobrante queda dentro de Golpes. Entre secciones, 12px fijos. */
+  /* 4.0.10 — Golpes no se estira. Putts a 12px, sin margin-top auto. */
   #screen-hole .entry-section.golpes {
     order: 1;
-    flex: 1 1 auto;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+    flex: 0 0 auto;
     width: 100%;
     margin: 0;
     padding: 0;
@@ -2662,9 +2655,10 @@
   }
   #screen-hole .entry-section.putts {
     order: 2;
-    flex: 0 0 auto;
+    flex: 0;
+    min-height: auto;
     width: 100%;
-    margin: 12px 0 0;
+    margin-top: 12px;
     padding: 0;
     border: 0;
   }
@@ -2681,19 +2675,19 @@
     margin-bottom: 6px;
   }
   #screen-hole .entry-section.golpes .entry-label { font-size: 13px; }
-  /* 4.0.9 cristal B — número 64px. − y + cristal, los dos 56×56. Negro solo en Siguiente. */
+  /* 4.0.10 cristal B — número 56px. − y + cristal, los dos 48×48. Negro solo en Siguiente. */
   #screen-hole .entry-section.golpes .stepper-row {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 16px;
+    gap: 14px;
     margin: 0 0 10px;
     min-height: 0;
     width: 100%;
   }
   #screen-hole .entry-section.golpes .step-val {
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
-    font-size: 64px;
+    font-size: 56px;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     letter-spacing: -1px;
@@ -2705,16 +2699,16 @@
   #screen-hole .entry-section.golpes .step-val.empty {
     color: rgba(60,60,67,0.32);
     font-weight: 600;
-    font-size: 64px;
+    font-size: 56px;
   }
   #screen-hole .entry-section.golpes .step-btn,
   #screen-hole .entry-section.golpes .stepper-row .step-btn:last-of-type {
-    width: 56px;
-    height: 56px;
-    min-width: 56px;
-    min-height: 56px;
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    min-height: 48px;
     justify-self: auto;
-    border-radius: 16px;
+    border-radius: 14px;
     border: 0.5px solid rgba(60,60,67,0.28);
     background: rgba(255,255,255,0.92);
     color: #000000;
@@ -2733,12 +2727,12 @@
   }
   #screen-hole .entry-section.golpes .chip-row-entry { justify-content: center; }
   #screen-hole .entry-section.golpes .chip-row-entry .qs {
-    flex: 0 1 64px;
-    width: 64px;
-    max-width: 64px;
+    flex: 0 1 56px;
+    width: 56px;
+    max-width: 56px;
     min-width: 44px;
-    height: 40px;
-    line-height: 40px;
+    height: 36px;
+    line-height: 36px;
     font-size: 15px;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
@@ -2923,7 +2917,7 @@
         <div class="fit">
           <div class="home-hero">
             <div class="home-top">
-              <span class="app-version" aria-label="Versión">4.0.9</span>
+              <span class="app-version" aria-label="Versión">4.0.10</span>
               <button type="button" class="topnav-action" onclick="go('perfil')" aria-label="Perfil">Perfil</button>
             </div>
             <div class="greeting">Buenos días</div>
@@ -8697,7 +8691,7 @@ function collectFairwayBackup() {
   return {
     version: 3,
     app: "Fairway",
-    appVersion: "4.0.9",
+    appVersion: "4.0.10",
     exportedAt: new Date().toISOString(),
     updatedAt: (typeof getDataUpdatedAt === "function" ? getDataUpdatedAt() : "") || "",
     includes: ["rounds", "players.scores", "players.putts", "players.fir", "players.gir", "players.ball", "players.withdrawn", "roster", "host", "activeRound", "winners", "standings"],
@@ -9711,7 +9705,7 @@ function renderPerfil() {
     <div class="profile-hero">
       <div class="avatar-lg">${escapeHtml(initials)}</div>
       <p class="muted" style="margin-top:8px;">Tu perfil en este dispositivo</p>
-      <p class="micro">Fairway 4.0.9</p>
+      <p class="micro">Fairway 4.0.10</p>
     </div>
     <div class="card mb-16">
       <div class="eyebrow">Nombre</div>
