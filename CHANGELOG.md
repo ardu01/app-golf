@@ -1,5 +1,13 @@
 # Changelog
 
+## 4.1.3
+
+Esquema del JSON de copia: 3. Las copias de la 4.0.11, de la 4.1.0, de la 4.1.1 y de la 4.1.2 siguen entrando.
+
+- El gesto de volver del iPhone y el botón Atrás del navegador cierran la hoja de hoyos o vuelven a la pantalla anterior. Si todavía hay una pantalla dentro, Fairway no se cierra.
+- Con una ronda en curso, el último paso que descargaría la app no hace nada. Los golpes se quedan.
+- El service worker pasa a `fairway-v4-413` y no recarga con una ronda abierta.
+
 ## 4.1.2
 
 Esquema del JSON de copia: 3. Las copias de la 4.0.11, de la 4.1.0 y de la 4.1.1 siguen entrando.
