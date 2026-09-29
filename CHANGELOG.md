@@ -1,5 +1,12 @@
 # Changelog
 
+## 4.1.2
+
+Esquema del JSON de copia: 3. Las copias de la 4.0.11, de la 4.1.0 y de la 4.1.1 siguen entrando.
+
+- Google Drive usa el client id público de OAuth web registrado para `https://ardu01.github.io` y `https://ardu01.github.io/app-golf/`. No hay secreto de cliente en el repositorio. El token sigue solo en memoria. El alcance sigue siendo `drive.file`. El archivo sigue siendo `Fairway/fairway-data.json`.
+- El service worker pasa a `fairway-v4-412` y no recarga con una ronda abierta.
+
 ## 4.1.1
 
 Esquema del JSON de copia: 3. Las copias de la 4.0.11 y de la 4.1.0 siguen entrando.

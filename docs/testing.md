@@ -18,7 +18,7 @@ No hace falta npm para jugar ni para esa suite. Node 22 sirve. El orden es scori
 | `backup.mjs` | Esquema 3, saneado de HTML hostil, tope de historial |
 | `maps.mjs` | 54 campos, 26 carpetas, 404 webp, manifiestos cuyos `file` existen. El Robledal y RSHECC no llevan nombre inventado |
 | `referee.mjs` | Frases del árbitro ya cubiertas |
-| `drive.mjs` | Plan de sync, merge, etiquetas, client id vacío |
+| `drive.mjs` | Plan de sync, merge, etiquetas, client id público de la 4.1.2, sin secreto |
 | `persist.mjs` | Ronda activa, `.bak`, cuota, no pisar una ronda protegida |
 | `migration.mjs` | Round-trip a IndexedDB, JSON corrupto, cuota, interrupción, no borrar `localStorage` |
 | `pwa.mjs` | No hay `SKIP_WAITING` en install. No recarga con ronda, cierre o pantallas de juego |

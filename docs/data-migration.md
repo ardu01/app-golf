@@ -2,7 +2,7 @@
 
 El marcador sigue leyendo `localStorage`. IndexedDB (`fairway`, versión 1, almacén `kv`) es una copia verificada de las mismas claves. No es un segundo marcador.
 
-El JSON de copia sigue en **esquema 3**. `appVersion` dentro de ese JSON es el texto de producto (`4.1.1`). Una copia de la 4.0.11, que también era esquema 3, entra por `validateFairwayBackup`.
+El JSON de copia sigue en **esquema 3**. `appVersion` dentro de ese JSON es el texto de producto (`4.1.2`). Una copia de la 4.0.11, de la 4.1.0 o de la 4.1.1, que también eran esquema 3, entra por `validateFairwayBackup`.
 
 ## Claves que se copian
 
