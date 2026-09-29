@@ -45,7 +45,16 @@ assert.strictEqual(d.screen, "home");
 assert.strictEqual(d.repush, true);
 
 d = api.fairwayNavDecide(home, { fairwayNav: 1, root: true, screen: "home" }, { trap: false, keepsPlay: false });
+assert.strictEqual(d.type, "trap");
+
+d = api.fairwayNavDecide(perfil, { fairwayNav: 1, root: true, screen: "home" }, { trap: false, keepsPlay: false });
 assert.strictEqual(d.type, "apply");
+assert.strictEqual(d.screen, "home");
+assert.strictEqual(d.repush, true);
+
+d = api.fairwayNavDecide(hole, { fairwayNav: 1, root: true, screen: "hole" }, { trap: false, keepsPlay: true });
+assert.strictEqual(d.type, "apply");
+assert.strictEqual(d.screen, "hole");
 assert.strictEqual(d.repush, false);
 
 d = api.fairwayNavDecide(close, { fairwayNav: 1, screen: "hole" }, { trap: false, keepsPlay: false });
@@ -70,7 +79,8 @@ assert.strictEqual(d.screen, "setup");
 assert.strictEqual(d.setupStep, 1);
 
 assert.strictEqual(api.fairwayNavDecide(home, null, { trap: true, keepsPlay: true }).type, "trap");
-assert.strictEqual(api.fairwayNavDecide(home, null, { trap: false, keepsPlay: false }).type, "stay");
+assert.strictEqual(api.fairwayNavDecide(home, null, { trap: false, keepsPlay: false }).type, "trap");
+assert.strictEqual(api.fairwayNavDecide(hole, null, { trap: false, keepsPlay: false }).type, "stay");
 assert.strictEqual(api.fairwayNavDecide(hole, { fairwayNav: 0 }, { trap: true, keepsPlay: true }).type, "trap");
 
 const homeHref = api.fairwayNavHref({ screen: "home" });
@@ -109,6 +119,11 @@ assert.ok(html.includes('addEventListener("popstate", fairwayOnPopState)'));
 assert.ok(html.includes("history.pushState"));
 assert.ok(html.includes("history.replaceState"));
 assert.ok(html.includes("fairwayNavBoot()"));
+assert.ok(extractFunction(html, "fairwayNavShouldTrap").includes('state.screen === "home"'));
+assert.ok(extractFunction(html, "fairwayNavBoot").includes("fairwayNavShouldTrap()"));
+assert.ok(extractFunction(html, "fairwayNavArmTrap").includes("fairwayNavShouldTrap()"));
+const homeTrap = loadFunctions(html, ["fairwayNavShouldTrap"], { state: { screen: "home" } });
+assert.strictEqual(homeTrap.fairwayNavShouldTrap(), true);
 assert.ok(html.includes('const FAIRWAY_DRIVE_CLIENT_ID = "429682128465-06rq4tc60pmo6r0808a8b27itcp9v9dv.apps.googleusercontent.com"'));
 assert.ok(html.includes("version: 3"));
 
