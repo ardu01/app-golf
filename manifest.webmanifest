@@ -1,7 +1,7 @@
 {
   "name": "Fairway",
   "short_name": "Fairway",
-  "description": "Marcador de golf personal · 4.2.5",
+  "description": "Marcador de golf personal · 4.2.6",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

@@ -210,8 +210,9 @@ function adoptRoom(doc) {
 }
 
 function ensureRemotePlayers(doc) {
-  if (!doc || !doc.meta || !Array.isArray(doc.meta.players) || !Array.isArray(root.PLAYERS)) return;
+  if (!doc || !doc.meta || !Array.isArray(doc.meta.players) || !Array.isArray(root.PLAYERS)) return false;
   const state = root.state;
+  let added = false;
   doc.meta.players.forEach((p) => {
     if (!p || !p.id || root.PLAYERS.some((x) => x && x.id === p.id)) return;
     if (root.PLAYERS.length >= 8) return;
@@ -239,7 +240,26 @@ function ensureRemotePlayers(doc) {
       creativeLog: []
     });
     if (state && state.setup && Array.isArray(state.setup.players)) state.setup.players.push(true);
+    added = true;
   });
+  return added;
+}
+
+function laterStamps(primary, extra) {
+  const out = Object.assign({}, primary || {});
+  Object.keys(extra || {}).forEach((key) => {
+    const at = Number(extra[key]) || 0;
+    if (at && (!out[key] || at > out[key])) out[key] = at;
+  });
+  return out;
+}
+
+function refreshSurfaces() {
+  try { if (typeof root.renderHole === "function" && root.state && root.state.screen === "hole") root.renderHole(); } catch (e) {}
+  try { if (typeof root.updateHomeThru === "function") root.updateHomeThru(); } catch (e) {}
+  try { if (typeof root.renderScorecard === "function" && root.state && root.state.screen === "scorecard") root.renderScorecard(); } catch (e) {}
+  try { if (typeof root.renderLeader === "function" && root.state && root.state.screen === "leader") root.renderLeader(); } catch (e) {}
+  try { if (typeof root.renderAjustes === "function" && root.state && root.state.screen === "ajustes") root.renderAjustes(); } catch (e) {}
 }
 
 async function flush() {
@@ -253,6 +273,7 @@ async function flush() {
     let attempts = 0;
     while (attempts < 4) {
       attempts++;
+      const stampSnap = Object.assign({}, shared.stamps);
       const result = await syncShared({
         shared: shared,
         players: players(),
@@ -273,7 +294,27 @@ async function flush() {
       }
       shared = result.shared;
       if (box.transport) shared.transport = box.transport;
-      if (result.changed && !shared.seal) paintScores(result.players, true);
+      if (!shared.seal && result.doc) {
+        if (!localHasMarks() && shared.joinedForeign) adoptRoom(result.doc);
+        if (result.changed) paintScores(result.players, true);
+        const added = ensureRemotePlayers(result.doc);
+        const applied = applyFieldsToPlayers(players(), result.doc.fields || {}, stampSnap);
+        if (applied.changed) {
+          shared.stamps = laterStamps(shared.stamps, applied.stamps);
+          paintScores(applied.players, true);
+        } else if (added) {
+          shadow = clonePlayers(players());
+          root.__fairwaySharedApplying = true;
+          try {
+            if (typeof root.persistActiveRound === "function") root.persistActiveRound();
+          } finally {
+            root.__fairwaySharedApplying = false;
+          }
+          refreshSurfaces();
+        }
+      } else if (result.changed && !shared.seal) {
+        paintScores(result.players, true);
+      }
       save();
       if (result.doc) armFast(result.doc);
       break;
@@ -305,13 +346,20 @@ function schedule() {
 
 function ingest(doc) {
   if (!doc || shared.seal || !shared.code || doc.code !== shared.code) return;
-  ensureRemotePlayers(doc);
-  const stamped = loadShared(shared, shared.deviceId);
-  const applied = applyFieldsToPlayers(players(), doc.fields || {}, stamped.stamps);
+  const hadMarks = localHasMarks();
+  if (!hadMarks && shared.joinedForeign) adoptRoom(doc);
+  if (hadMarks) shared.stamps = stampExisting(players(), shared.stamps, now()).stamps;
+  const added = ensureRemotePlayers(doc);
+  const applied = applyFieldsToPlayers(players(), doc.fields || {}, shared.stamps);
   if (applied.changed) {
-    shared.stamps = applied.stamps;
+    shared.stamps = laterStamps(shared.stamps, applied.stamps);
     paintScores(applied.players, true);
     save();
+    render();
+  } else if (added) {
+    shadow = clonePlayers(players());
+    save();
+    refreshSurfaces();
     render();
   }
   armFast(doc);
@@ -487,12 +535,19 @@ async function joinRoom(raw) {
   const hadMarks = localHasMarks();
   adoptRoom(remote);
   ensureRemotePlayers(remote);
+  if (hadMarks) shared.stamps = stampExisting(players(), shared.stamps, now()).stamps;
+  const applied = applyFieldsToPlayers(players(), remote.fields || {}, shared.stamps);
+  if (applied.changed) {
+    shared.stamps = laterStamps(shared.stamps, applied.stamps);
+    paintScores(applied.players, true);
+  }
+  shared.stamps = stampExisting(players(), shared.stamps, hadMarks ? now() : 1).stamps;
+  if (applied.changed) shared.stamps = laterStamps(shared.stamps, applied.stamps);
   shared.code = code;
   shared.role = "join";
   shared.createdBy = remote.createdBy || "";
   shared.joinedForeign = true;
   shared.seal = false;
-  shared.stamps = stampExisting(players(), shared.stamps, now()).stamps;
   shadow = clonePlayers(players());
   save();
   toast(hadMarks

@@ -456,10 +456,59 @@ export function rosterFromPlayers(players) {
   }).filter(Boolean);
 }
 
+/** Local roster first. Remote ids the local card does not have are appended. */
+export function mergeRosters(primary, extra) {
+  const out = [];
+  const seen = {};
+  function take(list) {
+    rosterFromPlayers(list).forEach((p) => {
+      if (seen[p.id] || out.length >= 8) return;
+      seen[p.id] = true;
+      out.push(p);
+    });
+  }
+  take(primary);
+  take(extra);
+  return out;
+}
+
+/**
+ * Same card on two phones: keep local players and add any remote id
+ * the local list does not have, so their hole fields can be applied.
+ */
+export function mergeRoomPlayers(local, remotePlayers) {
+  const next = clonePlayers(local);
+  const seen = {};
+  next.forEach((p) => {
+    const id = safeId(p && p.id);
+    if (id) seen[id] = true;
+  });
+  mergeRosters([], remotePlayers).forEach((p) => {
+    if (seen[p.id] || next.length >= 8) return;
+    seen[p.id] = true;
+    next.push({
+      id: p.id,
+      name: p.name || "",
+      short: p.short || "",
+      initials: p.initials || "",
+      hcp: p.hcp,
+      guest: !!p.guest,
+      ball: "",
+      withdrawn: false,
+      scores: {},
+      putts: {},
+      fir: {},
+      gir: {}
+    });
+  });
+  return next;
+}
+
 export function buildRoomDoc(opts) {
   const shared = opts.shared;
   const fields = opts.fields || {};
   const meta = opts.meta || {};
+  const remoteMeta = opts.remote && opts.remote.meta;
   const now = finiteAt(opts.now) || 0;
   const presence = {};
   const remotePresence = (opts.remote && opts.remote.presence) || {};
@@ -480,7 +529,7 @@ export function buildRoomDoc(opts) {
       club: clipText(meta.club, 80),
       tee: clipText(meta.tee, 40),
       holes: meta.holes === 9 ? 9 : 18,
-      players: rosterFromPlayers(meta.players || opts.players || [])
+      players: mergeRosters(meta.players || opts.players || [], remoteMeta && remoteMeta.players)
     },
     fields: fields,
     presence: presence,
@@ -562,7 +611,7 @@ export function sharedStatus(shared, online) {
 
 export function transportLabel(transport) {
   if (transport === "drive") return "Drive";
-  if (transport === "http") return "buzón HTTP";
+  if (transport === "http") return "sala pública";
   if (transport === "mqtt") return "buzón";
   return "";
 }
@@ -617,7 +666,7 @@ export async function syncShared(opts) {
     doc = buildRoomDoc({
       shared: shared,
       players: players,
-      fields: mergeFields(playersToFields(players, shared.stamps, shared.deviceId), pendingToFields(shared.pending)),
+      fields: merged,
       meta: opts.meta,
       now: now,
       remote: remote,

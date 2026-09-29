@@ -1,10 +1,10 @@
 # Fairway — arquitectura
 
-Producto **4.2.5**. Esquema del JSON de copia: **3**. No es un rediseño de la app.
+Producto **4.2.6**. Esquema del JSON de copia: **3**. No es un rediseño de la app.
 
 ## Qué sigue siendo la fuente de la partida
 
-La ronda en memoria (`state`, `PLAYERS`) y `localStorage` siguen siendo la copia que lee el marcador. Las fórmulas de hándicap no se han movido de `index.html`. `collectFairwayBackup` escribe `version: 3` y `appVersion: "4.2.5"`.
+La ronda en memoria (`state`, `PLAYERS`) y `localStorage` siguen siendo la copia que lee el marcador. Las fórmulas de hándicap no se han movido de `index.html`. `collectFairwayBackup` escribe `version: 3` y `appVersion: "4.2.6"`.
 
 IndexedDB es una copia verificada de esas claves, no un segundo marcador. Importar un JSON o aplicar Drive sigue pasando por `mergeFairwayBackup` y `driveApplyResolved`, que ya no pisan una ronda local protegida. La migración no es un import remoto: copia lo que ya está en este dispositivo.
 
@@ -21,7 +21,7 @@ Sin bundler. GitHub Pages sirve los archivos tal cual. `index.html` carga al fin
 | `fairway/js/idb.js` | `indexedDB.open("fairway", 1)`, almacén `kv` |
 | `fairway/js/persist-boot.js` | Arranque en el navegador |
 
-El service worker precachea esos archivos y los trata como shell (`/fairway/js/`). El nombre de caché del shell es `fairway-v4-425` (4.2.5). El CSS no se ha partido. La puntuación sigue en `index.html`.
+El service worker precachea esos archivos y los trata como shell (`/fairway/js/`). El nombre de caché del shell es `fairway-v4-426` (4.2.6). El CSS no se ha partido. La puntuación sigue en `index.html`.
 
 ## Migración
 
@@ -47,7 +47,7 @@ Desde la 4.2.3 el único workflow del repo es `test-fairway.yml`: lanza `node te
 
 `FAIRWAY_DRIVE_CLIENT_ID` es el client id público de OAuth web para `https://ardu01.github.io` y `https://ardu01.github.io/app-golf/`. El detalle está en `docs/drive-sync.md`. El panel dice «Sin configurar» cuando el id no está. Un conflicto sigue mostrando «Conflicto» y no sustituye la ronda en curso hasta que el jugador elige.
 
-El nombre de caché del shell es `fairway-v4-425`. `fairwayShouldHoldUpdate` impide `SKIP_WAITING` y el reload mientras la pantalla es de juego, de cierre, o hay ronda armada. `tests/pwa.mjs` lo fija. El colchón de Inicio de la 4.2.1 sigue.
+El nombre de caché del shell es `fairway-v4-426`. `fairwayShouldHoldUpdate` impide `SKIP_WAITING` y el reload mientras la pantalla es de juego, de cierre, o hay ronda armada. `tests/pwa.mjs` lo fija. El colchón de Inicio de la 4.2.1 sigue.
 
 ## Stats
 
@@ -63,4 +63,4 @@ No hay bolsa de palos ni recomendación de juego. El enlace `tel:` del caddie de
 
 El detalle está en `docs/shared-round.md`. El marcador no la necesita: sin código, la ronda sigue solo en este móvil. Con código, cada cambio de golpe, putt, FIR, GIR, bola o retirado se encola en `fairway.sharedRound.v1` y sale cuando hay red. La fusión es por marca de tiempo de cada campo. Un hoyo que el otro móvil no manda no se borra.
 
-Esa cola no entra en el JSON de esquema 3. Las copias de la 4.0.11 a la 4.2.4 siguen entrando. El shell es `fairway-v4-425`. El velo de Inicio de la 4.2.2 sigue, y el toque del borde no crea historia antes de cancelarse. Deslizar la ficha del hoyo sigue seleccionando al jugador, como en la 4.2.4. Drive de la 4.1.2 sigue siendo la copia personal `Fairway/fairway-data.json`. No hay bolsa ni caddie. Los workflows que hacían `git push` no vuelven.
+Esa cola no entra en el JSON de esquema 3. Las copias de la 4.0.11 a la 4.2.5 siguen entrando. El documento común es `https://mantledb.sh/v2/{código}/card`, sin clave. El MQTT público es solo un aviso si el socket abre; en Safari a menudo no abre, y Drive no sirve para dos cuentas distintas. El shell es `fairway-v4-426`. El velo de Inicio de la 4.2.2 sigue, y el toque del borde no crea historia antes de cancelarse. Deslizar la ficha del hoyo sigue seleccionando al jugador, como en la 4.2.4. Drive de la 4.1.2 sigue siendo la copia personal `Fairway/fairway-data.json`. No hay bolsa ni caddie. Los workflows que hacían `git push` no vuelven.

@@ -26,7 +26,7 @@ No hace falta npm para jugar ni para esa suite. Node 22 sirve. El orden es scori
 | `security.mjs` | `clipStr` y `escapeHtml`, backup hostil, solo `test-fairway.yml` (`contents: read`, sin `git push`). El `tel:` de La Herrería sigue. No hay bolsa ni `caddie.js`. La ficha Mapa sigue en el hoyo |
 | `nav.mjs` | El gesto atrás vuelve dentro de la app y en Inicio no sale |
 | `carousel.mjs` | Deslizar la ficha del hoyo selecciona a ese jugador |
-| `shared.mjs` | Cola y fusión de la partida compartida: gana la marca más nueva, un hueco remoto vacío no borra el golpe local, sin red la cola se queda |
+| `shared.mjs` | Cola y fusión de la partida compartida: gana la marca más nueva, un hueco remoto vacío no borra el golpe local, sin red la cola se queda. Dos ids distintos siguen en el mismo documento. La sala HTTPS se prueba con un `fetch` de mentira, sin red |
 
 ## Navegador
 
