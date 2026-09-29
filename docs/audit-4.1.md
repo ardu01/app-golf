@@ -1,16 +1,18 @@
 # Fairway 4.1 — Fase 1: auditoría e inventario
 
 Fecha de la auditoría: 2026-09-29.
-Árbol auditado: `main` en `7bbfee7474dbc11b1874b1c707cd98763a63965e` (fast-forward desde el checkout local, que estaba en `e709f1322058480fb8755ac9d180e0b8063e4afd`, tres commits por detrás).
+
+**Versión de partida y de producción: Fairway 4.0.11.** Confirmada como baseline. No es una 4.0.x anterior. El árbol auditado es `main` en `7bbfee7474dbc11b1874b1c707cd98763a63965e`, mensaje `Fairway 4.0.11 — top fino y ficha arriba del hueco (#44)`. Cualquier mención de 4.0.1–4.0.10 en este documento es historia dentro de ese README o un run antiguo, no la versión desde la que sale esta fase.
+
 Esta fase no modulariza `index.html`, no introduce IndexedDB y no cambia fórmulas, mapas ni datos.
 
 ## Identidad de partida
 
 | Dato | Valor | Dónde se ve |
 | --- | --- | --- |
-| Versión de producto | **4.0.11** | `index.html` (`appVersion: "4.0.11"` en `collectFairwayBackup`), `manifest.webmanifest` (`description`), `README.md` (párrafo 4.0.11), `sw.js` (`SHELL = "fairway-v4-411"`) |
-| Esquema de la copia | **3** | `collectFairwayBackup` escribe `version: 3`. `validateFairwayBackup` marca `newer` si `version > 3` y sigue importando las partidas que reconoce |
-| Commit de partida | `7bbfee7474dbc11b1874b1c707cd98763a63965e` | `Fairway 4.0.11 — top fino y ficha arriba del hueco (#44)` |
+| Versión de producto (baseline) | **4.0.11** | `index.html` (`appVersion: "4.0.11"` en `collectFairwayBackup`), `manifest.webmanifest` (`description`), `README.md` (párrafo de la 4.0.11), `sw.js` (`SHELL = "fairway-v4-411"`) |
+| Esquema de la copia | **3** | Número de esquema, no de producto. `collectFairwayBackup` escribe `version: 3` y `appVersion: "4.0.11"`. `validateFairwayBackup` marca `newer` si `version > 3` y sigue importando las partidas que reconoce |
+| Commit de partida | `7bbfee7474dbc11b1874b1c707cd98763a63965e` | El de la 4.0.11 en `main`. La fase no parte de un commit anterior |
 | Rama de trabajo | `release/fairway-4.1` | Creada desde ese commit. No se ha empujado a `main` |
 | Runtime de la app | Un solo `index.html` (10419 líneas, 543366 bytes, 316 `function` y 13 `async function`) más `sw.js` y `manifest.webmanifest` | Sin `package.json` y sin bundler |
 | Node usado para tests | v22.14.0 | Solo la suite. Jugar no usa npm |
@@ -157,7 +159,7 @@ Bloqueo externo, no inventado aquí: sin un client id de OAuth registrado para e
 
 Historial consultado con `gh` (solo lectura):
 
-- `test-fairway`: los runs recientes, incluido el del commit de partida `36531238573`, están en failure. La anotación del check es «The job was not started because your account is locked due to a billing issue.» La consulta de runs con `status=success` de ese workflow devuelve total 0. No es un fallo de aserción: el job no arranca. El mismo texto aparece en un run del 4.0.2 (`36463852053`).
+- `test-fairway`: los runs recientes, incluido el del commit de partida `36531238573`, están en failure. La anotación del check es «The job was not started because your account is locked due to a billing issue.» La consulta de runs con `status=success` de ese workflow devuelve total 0. No es un fallo de aserción: el job no arranca. El mismo texto de facturación aparece en un run anterior, de cuando el producto era 4.0.2 (`36463852053`). Ese run no es el baseline. El baseline sigue siendo la 4.0.11.
 - `Publish Fairway V3`: dos `workflow_dispatch` sobre `main` el 2026-09-23 (runs `35834656865` y `35834594078`). Los dos en failure con la misma anotación de facturación. No hay evidencia de que llegaran a escribir `index.html`. En `main` el YAML sigue activo (`workflow_dispatch` y `contents: write`). El cambio que quita el botón está solo en `release/fairway-4.1`. GitHub ofrece `workflow_dispatch` desde la rama por defecto, así que el botón de producción sigue ahí hasta fusionar. No se fusiona en esta fase.
 - El apply multi-course, el de tees y el decode también tienen runs en failure con esa anotación. Assemble no tiene runs en el listado pedido.
 
@@ -228,7 +230,7 @@ No son bugs confirmados en un dispositivo. Son capacidades o huecos leídos en e
 5. **El perfil (`host`) del JSON remoto pisa el local** en `mergeFairwayBackup` y en `driveApplyResolved` sin comparar fechas, aunque la ronda en curso se conserve.
 6. **`setup` de primer nivel se exporta y se tira al validar.** La ronda viva va en `activeRound`. Quien dependa del `setup` suelto del JSON no lo recupera.
 7. **Historial hasta 99999 partidas contra la cuota de `localStorage`.** El código responde a `QuotaExceededError` (test de memoria) y no migra a IndexedDB. No se ha medido el tamaño real en Safari ni en Chrome.
-8. **Service worker cache-first del shell.** `fairwayShouldHoldUpdate` evita `SKIP_WAITING` y el reload con ronda, cierre o pantallas de juego, y `fairway.swReload` corta recargas a menos de 10 s. Un `index.html` nuevo con el mismo `sw.js` se sirve primero desde caché y se actualiza en segundo plano. El README de la 4.0.7 dice que a veces hace falta borrar datos del sitio para coger el worker nuevo. No se ha medido en un teléfono en esta fase.
+8. **Service worker cache-first del shell.** `fairwayShouldHoldUpdate` evita `SKIP_WAITING` y el reload con ronda, cierre o pantallas de juego, y `fairway.swReload` corta recargas a menos de 10 s. Un `index.html` nuevo con el mismo `sw.js` se sirve primero desde caché y se actualiza en segundo plano. El README de esta 4.0.11, en el párrafo que cuenta la 4.0.7, dice que a veces hace falta borrar datos del sitio para coger el worker nuevo. No se ha medido en un teléfono en esta fase.
 9. **Drive de punta a punta no es comprobable** mientras `FAIRWAY_DRIVE_CLIENT_ID` esté vacío. El plan de conflicto está testeado con dobles, no contra Google. No se inventan credenciales.
 10. **Centros `COURSE_GEO` con `approx: true`** son aproximados por marca del propio código. Tratarlos como levantamiento no está justificado. Esta fase no los mueve.
 11. **El parche de tee por jugador no entra en el `index.html` actual.** Si más adelante el contexto vuelve a coincidir, el workflow lo aplicaría y haría push. Hoy `git apply --check` falla.
@@ -274,7 +276,7 @@ El orden sale de lo que está demostrado arriba, no de reescribir la app en abst
 1. **Fase 2 — contrato de datos, luego módulos.** Congelar el esquema 3 documentado aquí como contrato de lectura. Tests de migración (round-trip, JSON corrupto, cuota, interrupción) antes de mover nada a IndexedDB. No borrar claves viejas. El corte de `index.html` viene después de ese límite, porque un extract regex roto deja la suite ciega. Antes de editar el HTML a lo grande, desactivar o acotar `apply-fairway-multicourse.yml`: es el otro camino que pisa `sw.js` y hace push.
 2. **Fase 3 — Drive y service worker, sin credenciales inventadas.** El client id sigue vacío y documentado como único requisito externo. Se puede endurecer el versionado del `SHELL` ligado al release y la espera de reload con ronda activa; no se puede dar por probado el sync real. Conflictos: el plan ya existe en tests; falta el caso de perfil (`host`) que hoy se pisa.
 3. **Fase 4 — puntuación, stats, caddie.** No cambiar `courseHandicapFor` ni `strokesOnHole` sin un test que fije el número anterior. Separar CH y PH solo si hay una regla nueva y tests; hoy son el mismo valor a propósito. El caddie nuevo no sustituye el `tel:` de La Herrería ni al árbitro.
-4. **Fase 5 — cartografía y UX.** Partir de `holes/` (404 imágenes) y de PNOA. No recolocar los `approx: true`. La piel 4.0.1–4.0.11 es reciente y esta fase no la rediseña.
+4. **Fase 5 — cartografía y UX.** Partir de `holes/` (404 imágenes) y de PNOA. No recolocar los `approx: true`. La piel de partida es la de la 4.0.11. Los párrafos 4.0.1–4.0.10 del README son el camino hasta esa piel, no otra versión de partida. Esta fase no la rediseña.
 5. **Fase 6 — tests y seguridad.** Dos huecos distintos: el runner no arranca (facturación) y, aunque arrancara, Pages legacy no lo espera. El cierre de publicación es el seguimiento de la sección de workflows (un solo publicador, `needs: test`), no un `deploy-pages` añadido al lado del legado. Revisar que ningún workflow con `contents: write` pueda publicar otro `index.html`. El saneado de importación ya quita `<>` y está testeado; no relajarlo al partir el archivo.
 6. **Fase 7 — 4.1.0.** Subir la versión de producto, el texto del manifiesto y el nombre de caché del shell juntos. Dejar `version: 3` del JSON salvo que la migración tenga tests y un lector de las copias viejas. No marcar estable mientras el check de tests no pueda arrancar, o mientras un workflow pueda sustituir `index.html` por V3.
 
