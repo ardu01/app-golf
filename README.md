@@ -109,9 +109,9 @@ History API: gesto atrás / botón Atrás cierra hoja de hoyo y pantallas dentro
 
 Ancla de historial en **Inicio** (intento inicial). Shell `fairway-v4-4131`. Media en [v4.1.3.1](https://github.com/ardu01/app-golf/releases/tag/v4.1.3.1).
 
-### 4.2.1 (en curso / PR)
+### 4.2.1
 
-Colchón de sentinels más robusto para iOS Safari/PWA en Inicio (`pushState` diferido), manteniendo un swipe = un paso en pantallas anidadas.
+Colchón de sentinels más robusto para iOS Safari/PWA en Inicio (`pushState` diferido; hashes `#b=…`). Un swipe = un paso en pantallas anidadas. Shell `fairway-v4-421`. Media: [v4.2.1](https://github.com/ardu01/app-golf/releases/tag/v4.2.1).
 
 ---
 
