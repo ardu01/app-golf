@@ -149,19 +149,35 @@ Bloqueo externo, no inventado aquí: sin un client id de OAuth registrado para e
 | Workflow | Disparo | Qué haría si un runner arranca | Estado en esta fase |
 | --- | --- | --- | --- |
 | `test-fairway.yml` | push a `main`, y todo pull request | `node tests/run.mjs` | Se deja. Hoy no llega a ejecutarse (ver defectos) |
-| `publish-fairway-v3.yml` | `workflow_dispatch` | Sustituía `index.html` por el de `ardu01/app-golf-v3` y hacía `git push` | **Desactivado** en este cambio: `if: false`, permiso `contents: read`, sin `curl` ni `push`. El archivo sigue, con el comportamiento antiguo comentado |
-| `apply-fairway-multicourse.yml` | `workflow_dispatch` y push que toque `ops/fairway-multicourse-patch/**` | Ejecuta `apply.py`, copia `ops/fairway-multicourse-patch/sw.js` encima de `sw.js` y hace push. Ese `sw.js` es caché `fairway-v159`, llama a `skipWaiting()` en install y borra cualquier caché que no sea esa (también `fairway-maps-v1`) | Sigue activo. No se ha disparado en esta fase |
-| `apply-player-tees.yml` | `workflow_dispatch` y push del parche o del propio YAML | Si `index.html` no contiene `function setPlayerTee`, aplica `patches/player-tees.patch` y hace push | Sigue activo. `git apply --check patches/player-tees.patch` **falla** hoy (`patch failed: index.html:1884`). En el árbol actual no existe `setPlayerTee`. Un dispatch con runner fallaría en `git apply` antes del commit, salvo que el parche vuelva a encajar |
-| `assemble-fairway-index.yml` | `workflow_dispatch` | Si existe `index.parts/`, concatena y **reemplaza** `index.html`. Decodifica `*.b64`, `git add -A` y push | Sigue activo. No hay `index.parts` ni `*.b64` en el árbol. Sin cambios, el paso de commit no crea commit |
-| `decode-fairway-binaries.yml` | `workflow_dispatch` | Decodifica todo `*.b64`, borra el sidecar, exige `count > 0`, luego `git add -A` y push | Sigue activo. Sin `*.b64` el job fallaría en `test "$count" -gt 0` antes del commit |
+| `publish-fairway-v3.yml` | En `main` sigue `workflow_dispatch` + `contents: write`. En esta rama ya no | En `main`: curl de `index.html` desde `ardu01/app-golf-v3` y `git push` de la rama elegida (el botón usa `main` por defecto) | **Neutralizado en esta rama.** Sin `workflow_dispatch`, sin `contents: write`, sin curl, sin commit y sin `git push`. El job lleva `if: false` y `contents: read`. El botón de Actions lo sigue sirviendo `main` hasta que este PR se fusione. Esta fase no fusiona |
+| `apply-fairway-multicourse.yml` | `workflow_dispatch` y push que toque `ops/fairway-multicourse-patch/**` | Ejecuta `apply.py`, copia `ops/fairway-multicourse-patch/sw.js` encima de `sw.js` y hace `git push` de la rama del checkout. Ese `sw.js` es caché `fairway-v159`, llama a `skipWaiting()` en install y borra cualquier caché que no sea esa (también `fairway-maps-v1`) | Sigue activo, incluido si el disparo es `main`. No se ha tocado en esta fase |
+| `apply-player-tees.yml` | `workflow_dispatch` y push del parche o del propio YAML. `permissions: contents: write` | Si `index.html` no contiene `function setPlayerTee`, aplica `patches/player-tees.patch`, commit y `git push` de la rama del checkout | Sigue activo. `git apply --check patches/player-tees.patch` **falla** hoy (`patch failed: index.html:1884`). En el árbol actual no existe `setPlayerTee`. Con runner, el job fallaría en `git apply` antes del commit, salvo que el parche vuelva a encajar |
+| `assemble-fairway-index.yml` | `workflow_dispatch`, `contents: write` en el job | Si existe `index.parts/`, concatena y **reemplaza** `index.html`. Decodifica `*.b64`, `git add -A` y `git push` si hay diff | Sigue activo. No hay `index.parts` ni `*.b64` en el árbol. Sin cambios, el paso de commit no crea commit |
+| `decode-fairway-binaries.yml` | `workflow_dispatch`, `contents: write` en el job | Decodifica todo `*.b64`, borra el sidecar, exige `count > 0`, luego `git add -A`, commit y `git push` | Sigue activo. Sin `*.b64` el job fallaría en `test "$count" -gt 0` antes del commit |
 
 Historial consultado con `gh` (solo lectura):
 
 - `test-fairway`: los runs recientes, incluido el del commit de partida `36531238573`, están en failure. La anotación del check es «The job was not started because your account is locked due to a billing issue.» La consulta de runs con `status=success` de ese workflow devuelve total 0. No es un fallo de aserción: el job no arranca. El mismo texto aparece en un run del 4.0.2 (`36463852053`).
-- `Publish Fairway V3`: dos `workflow_dispatch` sobre `main` el 2026-09-23 (runs `35834656865` y `35834594078`). Los dos en failure con la misma anotación de facturación. No hay evidencia de que llegaran a escribir `index.html`.
+- `Publish Fairway V3`: dos `workflow_dispatch` sobre `main` el 2026-09-23 (runs `35834656865` y `35834594078`). Los dos en failure con la misma anotación de facturación. No hay evidencia de que llegaran a escribir `index.html`. En `main` el YAML sigue activo (`workflow_dispatch` y `contents: write`). El cambio que quita el botón está solo en `release/fairway-4.1`. GitHub ofrece `workflow_dispatch` desde la rama por defecto, así que el botón de producción sigue ahí hasta fusionar. No se fusiona en esta fase.
 - El apply multi-course, el de tees y el decode también tienen runs en failure con esa anotación. Assemble no tiene runs en el listado pedido.
 
-Pages sí construye: el run `36531237675` del mismo push 4.0.11 terminó en success. El bloqueo de Actions no ha parado el despliegue estático en ese push.
+Pages sí construye: el run `36531237675` del mismo push 4.0.11 terminó en success. El bloqueo de Actions no ha parado el despliegue estático en ese push. Pages no hace `git push` de vuelta al repo; publica lo que ya está en la rama por defecto.
+
+### Workflows que empujan la rama del checkout (incluido `main`)
+
+Confirmado leyendo el YAML. Ninguno escribe `git push origin main` a mano. Todos hacen `git push` sin refspec después de `actions/checkout@v4`, que deja la rama del evento. En `workflow_dispatch` la UI elige rama y el valor por defecto es la rama por defecto (`main`). En un `push` a `main` que cumpla el filtro de paths, el checkout también es `main`. Con `contents: write`, el `GITHUB_TOKEN` puede actualizar esa rama si el remoto lo acepta. La protección de rama de `main` no se pudo leer (la API respondió 403), así que no se afirma que no haya protección.
+
+| Workflow | ¿`git push`? | ¿Puede ser `main`? |
+| --- | --- | --- |
+| `publish-fairway-v3.yml` en `main` | Sí, tras sustituir `index.html` | Sí. Es el caso de los dos dispatch ya registrados, que no llegaron a ejecutar pasos |
+| `publish-fairway-v3.yml` en esta rama | No. El paso no hace push y el permiso es `contents: read` | El archivo de esta rama no ofrece dispatch |
+| `apply-fairway-multicourse.yml` | Sí, `index.html` y `sw.js`, si hay diff | Sí, por dispatch o por un push a `main` dentro de `ops/fairway-multicourse-patch/**` |
+| `apply-player-tees.yml` | Sí, `index.html`, si el parche se aplica | Sí, por dispatch o por un push a `main` de `patches/player-tees.patch` o del propio YAML. Hoy el parche no aplica |
+| `assemble-fairway-index.yml` | Sí, `git add -A`, si hay diff | Sí, si se dispara eligiendo `main` |
+| `decode-fairway-binaries.yml` | Sí, `git add -A`, si hay `*.b64` | Sí, si se dispara eligiendo `main` |
+| `test-fairway.yml` | No | No escribe en el repo |
+
+No se han desactivado esos cuatro. El único camino de publicación que esta fase corta es el de V3.
 
 ## Defectos demostrados
 
@@ -173,7 +189,7 @@ Pages sí construye: el run `36531237675` del mismo push 4.0.11 terminó en succ
 
 No son bugs confirmados en un dispositivo. Son capacidades o huecos leídos en el código o en los workflows.
 
-1. **`publish-fairway-v3.yml` podía sustituir la app.** El YAML, antes de este cambio, hacía curl del `index.html` de `app-golf-v3` y `git push`. Sigue siendo el riesgo más grave si alguien revierte el guard y hay runners. Los dos dispatch de septiembre no llegaron a ejecutarse por la facturación.
+1. **`publish-fairway-v3.yml` en `main` sigue pudiendo sustituir la app.** Ese archivo, el que Actions usa hoy, tiene `workflow_dispatch`, `contents: write`, descarga `index.html` de `app-golf-v3` y hace `git push`. Los dos dispatch de septiembre no llegaron a ejecutarse por la facturación. En `release/fairway-4.1` ese camino ya no está: no hay botón en el YAML, no hay escritura ni curl. El botón real desaparece al fusionar el PR, no antes. Revertir este archivo lo devolvería.
 2. **`apply-fairway-multicourse.yml` sigue armado** y, si un push toca esa carpeta y el runner existe, pisa `sw.js` con la variante v159 (skipWaiting inmediato y borrado del resto de cachés, mapas incluidos) y empuja `index.html`.
 3. **Al desbloquearse la facturación se reactivan a la vez** el test y todos los workflows con `contents: write`, no solo el test.
 4. **Presets creativos (`fairway.creativePresets.v1`) no viajan** en el JSON ni en Drive. Un cambio de teléfono los deja atrás. No hay constancia en el repo de que un usuario los esté usando.
@@ -217,7 +233,7 @@ Previstas por la misión 4.1 y **no empezadas** aquí. No son defectos demostrad
 - Modalidades sociales una a una (Chaos, Rey, Back Nine, Last Call, No Bogey, Creativo). `tests/scoring.mjs` fija hándicap, reparto y Stableford, no cada modo social.
 - Árbitro: la suite cubre un conjunto de frases (agua, árbol, divot, búnker, injugable). No es una cobertura de las Reglas completas.
 - Migración IndexedDB: no hay implementación que probar.
-- Que un dispatch de los workflows que siguen activos no pueda pisar `index.html` o `sw.js`. Solo el de V3 queda desactivado en este cambio.
+- Que un dispatch de los workflows que siguen activos no pueda pisar `index.html` o `sw.js`. En esta rama el de V3 ya no tiene dispatch ni push. En `main` ese botón sigue hasta la fusión. Los otros cuatro con `git push` no se han tocado.
 
 ## Orden recomendado para las fases 2–7
 
@@ -232,4 +248,4 @@ El orden sale de lo que está demostrado arriba, no de reescribir la app en abst
 
 ## Fuera de esta fase, a propósito
 
-No se ha partido `index.html`, no hay IndexedDB, no hay client id nuevo, no hay cambios de fórmula, de mapas ni de modalidades. El único cambio de comportamiento del repositorio es impedir que `publish-fairway-v3.yml` descargue y empuje un `index.html` de V3.
+No se ha partido `index.html`, no hay IndexedDB, no hay client id nuevo, no hay cambios de fórmula, de mapas ni de modalidades. El único cambio de comportamiento del repositorio, y solo en esta rama, es dejar `publish-fairway-v3.yml` sin dispatch, sin descarga y sin push. `main` no se ha fusionado ni se ha hecho force-push.
