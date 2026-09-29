@@ -1,7 +1,5 @@
-/* Shell cache: product version with the extra minor zero collapsed. 4.0.11 → 411, 4.1.0 → 410, 4.1.1 → 411, 4.1.2 → 412, 4.1.3 → 413, 4.1.3.1 → 4131. */
-const SHELL = "fairway-v4-4131";
-const MAPS = "fairway-maps-v1";
-const MAPS_MAX = 120;
+/* Shell cache: product version with the extra minor zero collapsed. 4.0.11 → 411, 4.1.0 → 410, 4.1.1 → 411, 4.1.2 → 412, 4.1.3 → 413, 4.1.3.1 → 4131, 4.1.4 → 414. */
+const SHELL = "fairway-v4-414";
 const ASSETS = [
   "./",
   "./index.html",
@@ -16,10 +14,6 @@ const ASSETS = [
   "./fairway/js/persist-boot.js"
 ];
 
-function isMapUrl(url) {
-  return url.origin === self.location.origin && url.pathname.indexOf("/holes/") !== -1;
-}
-
 function isShellUrl(url) {
   if (url.origin !== self.location.origin) return false;
   const file = url.pathname.split("/").pop();
@@ -33,39 +27,14 @@ function isShellUrl(url) {
     || file === "escorial-monasterio.png";
 }
 
-async function trimMaps(cache) {
-  const keys = await cache.keys();
-  if (keys.length <= MAPS_MAX) return;
-  await Promise.all(keys.slice(0, keys.length - MAPS_MAX).map((req) => cache.delete(req)));
-}
-
-async function migrateHoleMaps() {
-  const names = await caches.keys();
-  const maps = await caches.open(MAPS);
-  for (const name of names) {
-    if (name === SHELL || name === MAPS) continue;
-    const old = await caches.open(name);
-    const keys = await old.keys();
-    for (const req of keys) {
-      let url;
-      try { url = new URL(req.url); } catch (e) { continue; }
-      if (!isMapUrl(url)) continue;
-      const res = await old.match(req);
-      if (res) await maps.put(req, res);
-    }
-  }
-  await trimMaps(maps);
-}
-
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(SHELL).then((cache) => cache.addAll(ASSETS)));
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil((async () => {
-    await migrateHoleMaps();
     const keys = await caches.keys();
-    await Promise.all(keys.filter((k) => k !== SHELL && k !== MAPS).map((k) => caches.delete(k)));
+    await Promise.all(keys.filter((k) => k !== SHELL).map((k) => caches.delete(k)));
     await self.clients.claim();
   })());
 });
@@ -81,18 +50,12 @@ self.addEventListener("fetch", (event) => {
   try { url = new URL(req.url); } catch (e) { return; }
   const host = url.hostname;
   if (host === "accounts.google.com" || host === "oauth2.googleapis.com" || host.endsWith(".googleapis.com") || host.endsWith(".google.com") || host === "google.com") return;
-  const map = isMapUrl(url);
-  const shell = !map && isShellUrl(url);
-  if (!map && !shell) return;
+  if (!isShellUrl(url)) return;
   event.respondWith((async () => {
-    const cache = await caches.open(map ? MAPS : SHELL);
+    const cache = await caches.open(SHELL);
     const cached = await cache.match(req);
     const network = fetch(req).then(async (res) => {
-      if (res && res.ok) {
-        if (map) await cache.delete(req);
-        await cache.put(req, res.clone());
-        if (map) await trimMaps(cache);
-      }
+      if (res && res.ok) await cache.put(req, res.clone());
       return res;
     }).catch(() => cached || Response.error());
     return cached || network;

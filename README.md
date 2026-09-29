@@ -49,52 +49,7 @@ Stats filtra las últimas 5, 10 o 20 vueltas, la temporada (desde enero), el úl
 
 ## Planos de hoyo
 
-Hay 54 campos. 25 son de 18 hoyos, 7 de 9, 18 de pitch & putt y 4 de pares 3. 22 traen plano de cada hoyo y 4 solo una vista del campo. Son 404 webp, en `holes/`. Se piden al abrir ese hoyo, no al instalar la app.
-
-Las Rozas, El Encín y La Herrería, el 1:
-
-<img src="docs/recorrido/mapas/las-rozas-hoyo-1.webp" alt="Las Rozas, hoyo 1" width="200">
-<img src="docs/recorrido/mapas/el-encin-hoyo-1.webp" alt="El Encín, hoyo 1" width="200">
-<img src="docs/recorrido/mapas/la-herreria-hoyo-1.webp" alt="La Herrería, hoyo 1" width="200">
-
-[Mapas en Las Rozas](docs/recorrido/videos/mapas-las-rozas.mp4)
-
-Aranjuez, dentro de la app y el plano del que salió. La Finca, igual.
-
-<img src="docs/recorrido/mapas/aranjuez-hoyo-1.webp" alt="Aranjuez en el marcador" width="200">
-<img src="docs/recorrido/mapas/aranjuez-hoyo-1-plano.webp" alt="Plano de Aranjuez" width="200">
-<img src="docs/recorrido/mapas/la-finca-hoyo-1.webp" alt="La Finca en el marcador" width="200">
-<img src="docs/recorrido/mapas/la-finca-hoyo-1-plano.webp" alt="Plano de La Finca" width="200">
-
-El Robledal: el marcador, el hoyo y el plano.
-
-<img src="docs/recorrido/mapas/robledal-en-la-app.webp" alt="Robledal en la app" width="200">
-<img src="docs/recorrido/mapas/robledal-hoyo-1.webp" alt="Robledal, hoyo 1" width="200">
-<img src="docs/recorrido/mapas/robledal-plano.png" alt="Plano del Robledal" width="280">
-
-RSHECC Norte, lo mismo.
-
-<img src="docs/recorrido/mapas/rshecc-norte-en-la-app.webp" alt="RSHECC Norte en la app" width="200">
-<img src="docs/recorrido/mapas/rshecc-norte-hoyo-1.webp" alt="RSHECC Norte, hoyo 1" width="200">
-<img src="docs/recorrido/mapas/rshecc-norte-plano.png" alt="Plano de RSHECC Norte" width="280">
-
-RSHECC Sur, el hoyo y una vista más ancha.
-
-<img src="docs/recorrido/mapas/rshecc-sur-hoyo-1.webp" alt="RSHECC Sur, hoyo 1" width="200">
-<img src="docs/recorrido/mapas/rshecc-sur-vista.png" alt="Vista de RSHECC Sur" width="320">
-
-Torrejón y Golf Santander, en la app y el plano.
-
-<img src="docs/recorrido/mapas/torrejon-en-la-app.webp" alt="Torrejón en la app" width="200">
-<img src="docs/recorrido/mapas/torrejon-vista.webp" alt="Vista de Torrejón" width="260">
-<img src="docs/recorrido/mapas/golf-santander-en-la-app.webp" alt="Golf Santander en la app" width="200">
-<img src="docs/recorrido/mapas/golf-santander-satelite.webp" alt="Vista de Golf Santander" width="260">
-
-La Moraleja, Olivar de la Hinojosa y Torrejón, juntos. Debajo, La Dehesa y Villa de El Escorial.
-
-<img src="docs/recorrido/mapas/moraleja-olivar-torrejon.png" alt="Moraleja, Olivar y Torrejón" width="480">
-
-<img src="docs/recorrido/mapas/dehesa-escorial.png" alt="La Dehesa y Villa de El Escorial" width="480">
+Esta versión no trae planos de hoyo ni vistas del campo. Siguen los 54 campos para anotar: 25 de 18 hoyos, 7 de 9, 18 de pitch & putt y 4 de pares 3. En el marcador quedan Hoyos, Árbitro y, si el campo tiene teléfono, Caddie y Restaurante. No hay un hueco que pida una imagen que ya no está.
 
 ## Hándicap
 
@@ -180,6 +135,10 @@ La 4.1.0 deja esa piel. El texto de versión del JSON, del manifiesto y de la ca
 La 4.1.1 quita la bolsa de palos. No hay lista de palos, loft, distancias, dispersión ni notas, ni un panel que recomiende palo o un juego conservador o agresivo. Eso no es de Fairway. Siguen el teléfono del caddie y del restaurante de La Herrería, el árbitro, el marcador, los mapas, las estadísticas y Drive. El esquema de la copia sigue en 3. El texto de versión pasa a 4.1.1. El service worker de esa versión se llama `fairway-v4-411`; con una ronda abierta no recarga el teléfono.
 
 La 4.1.2 deja el marcador igual y pone el client id público de Google Drive para `https://ardu01.github.io` y `https://ardu01.github.io/app-golf/`. No hay secreto de cliente. El token sigue solo en memoria. El alcance sigue siendo `drive.file` y el archivo `Fairway/fairway-data.json`. El esquema de la copia sigue en 3. El texto de versión pasa a 4.1.2. El service worker nuevo se llama `fairway-v4-412`; con una ronda abierta no recarga el teléfono.
+
+La 4.1.3 hace que el gesto de volver cierre la hoja de hoyos o vuelva a la pantalla anterior, y que no descargue la app si aún hay una pantalla dentro. La 4.1.3.1 deja ese gesto quieto en Inicio: Fairway no se cierra ni se descarga. En el resto de pantallas el gesto sigue igual.
+
+La 4.1.4 quita los planos. No hay carpeta `holes/`, ni botón Mapa, ni satélite. El marcador, la tarjeta, Drive, el gesto atrás y la invitación (sigue sin estar disponible) se quedan. El esquema de la copia sigue en 3. El texto de versión pasa a 4.1.4. El service worker nuevo se llama `fairway-v4-414`; con una ronda abierta no recarga el teléfono, y al activarse suelta las cachés viejas, planos incluidos. Los workflows que descargaban otra app o empujaban la rama ya no están en el repo. El de tests sigue. Pages publica `main` como hasta ahora.
 
 Google Drive, si se conecta, es el Drive de cada uno: una carpeta Fairway y un solo `fairway-data.json`. La partida se apunta siempre primero en el teléfono. Drive es la copia entre aparatos, no un servidor de Fairway. Sin red se sigue jugando y, al volver la cobertura, se manda lo pendiente. El identificador OAuth de la web va en el código (`FAIRWAY_DRIVE_CLIENT_ID`); no hay secreto de cliente ni token de refresco guardado. Una sesión silenciosa de varias semanas haría falta un backend, y esta copia no lo finge. La exportación manual del JSON sigue donde estaba.
 

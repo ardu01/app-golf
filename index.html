@@ -658,8 +658,7 @@
     padding: 0 var(--pad-x) 8px;
   }
   .hole-tools-gap { flex: 1; min-width: 8px; }
-  #screen-hole .hole-tools .hole-jump-btn,
-  #screen-hole .hole-tools .hole-foto-link { margin-left: 0; }
+  #screen-hole .hole-tools .hole-jump-btn { margin-left: 0; }
   #screen-arbitro .ref-log {
     flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
     padding: 8px var(--pad-x) 12px; display: flex; flex-direction: column; gap: 8px;
@@ -905,7 +904,6 @@
     display: flex; flex-direction: column;
   }
   .hole-header { padding: 0 var(--pad-x) 4px; flex-shrink: 0; }
-  /* Foto: acceso discreto — no compite con el marcador */
   /* Golpes de ventaja — compacto, sin romper layout */
 
   #socialPills:empty { display: none; }
@@ -942,50 +940,10 @@
   }
   .sc-pending { opacity: 0.5; }
 
-  .hole-foto-link {
-    margin-left: auto;
-    border: 0; background: transparent; padding: 4px 2px;
-    font: inherit; font-size: 13px; font-weight: 500;
-    color: rgba(60,60,67,.45); letter-spacing: -0.08px;
-    cursor: pointer; -webkit-tap-highlight-color: transparent;
-  }
-  .hole-foto-link:active { color: rgba(60,60,67,.7); }
-  .hole-foto-link[hidden] { display: none; }
   .hole-tab-pane { display: none; }
   .hole-tab-pane.active {
     display: flex; flex: 1; min-height: 0; flex-direction: column;
   }
-  .hole-foto-pane {
-    overflow-y: auto; overflow-x: hidden; padding: 0 var(--pad-x) 20px;
-    -webkit-overflow-scrolling: touch;
-  }
-  .hole-foto-toolbar {
-    display: flex; align-items: center; justify-content: space-between;
-    gap: 8px; margin-bottom: 8px;
-  }
-  .hole-foto-back {
-    border: 0; background: transparent; padding: 6px 0;
-    font: inherit; font-size: 15px; font-weight: 500; color: #1C1C1E;
-    cursor: pointer;
-  }
-  .hole-foto-card {
-    display: flex; flex: 1; min-height: 0; flex-direction: column; gap: 8px; width: 100%;
-  }
-  .hole-foto-img {
-    display: block; width: 100%; height: auto; max-height: none;
-    border-radius: 12px; object-fit: contain; background: #fff;
-    box-shadow: 0 0 0 0.5px rgba(0,0,0,0.08);
-  }
-  .hole-foto-caption {
-    color: var(--ink-secondary); font-size: 13px; font-weight: 500;
-    text-align: center;
-  }
-  .hole-foto-empty {
-    display: flex; flex: 1; min-height: 120px; align-items: center; justify-content: center;
-    padding: 20px; border-radius: 12px; background: transparent;
-    color: var(--ink-secondary); font-size: 14px; text-align: center;
-  }
-  .hole-foto-img[hidden], .hole-foto-caption[hidden], .hole-foto-empty[hidden] { display: none; }
   .hole-meta { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 4px; }
   .hole-num { display: flex; align-items: baseline; gap: 8px; }
   .hole-num .n {
@@ -2500,8 +2458,7 @@
     position: relative;
   }
   #screen-hole .hole-tools .topnav-action,
-  #screen-hole .hole-jump-btn,
-  #screen-hole .hole-foto-link {
+  #screen-hole .hole-jump-btn {
     height: 28px;
     min-height: 28px;
     padding: 0 8px;
@@ -2859,11 +2816,6 @@
     color: #FFFFFF;
   }
   #screen-hole .hole-nav .btn-primary:active { background: #3A3A3C; }
-  #screen-hole .hole-foto-empty {
-    color: rgba(60,60,67,0.55);
-    background: rgba(255,255,255,0.72);
-    border: 0.5px solid rgba(60,60,67,0.18);
-  }
   #screen-hole .stroke-badge,
   #screen-hole .stroke-badge.two,
   #screen-hole .stroke-badge.give {
@@ -2924,7 +2876,7 @@
         <div class="fit">
           <div class="home-hero">
             <div class="home-top">
-              <span class="app-version" aria-label="Versión">4.1.3.1</span>
+              <span class="app-version" aria-label="Versión">4.1.4</span>
               <button type="button" class="topnav-action" onclick="go('perfil')" aria-label="Perfil">Perfil</button>
             </div>
             <div class="greeting">Buenos días</div>
@@ -3015,7 +2967,6 @@
         <div class="hole-access" id="holeAccess" aria-label="Accesos del hoyo">
           <button type="button" class="hole-access-chip" id="holeJumpBtn" onclick="openHoleSheet()">Hoyos</button>
           <button type="button" class="hole-access-chip" onclick="openReferee()">Árbitro</button>
-          <button type="button" class="hole-access-chip hole-foto-link" id="holeFotoLink" hidden onclick="setHoleTab('foto')">Mapa</button>
           <a class="hole-access-chip" id="holeCallCaddie" href="tel:+34918905111" hidden>Caddie</a>
           <a class="hole-access-chip" id="holeCallRest" href="tel:+34918905630" hidden>Restaurante</a>
         </div>
@@ -3061,16 +3012,6 @@
           <div class="hole-nav">
             <button class="btn btn-ghost" onclick="changeHole(-1)">‹ Hoyo ant.</button>
             <button class="btn btn-primary" id="holeNextBtn" onclick="changeHole(1)">Siguiente ›</button>
-          </div>
-        </div>
-        <div id="holeFotoPane" class="hole-tab-pane hole-foto-pane" role="tabpanel" aria-hidden="true">
-          <div class="hole-foto-toolbar">
-            <button type="button" class="hole-foto-back" onclick="setHoleTab('play')">‹ Marcador</button>
-            <span class="micro" id="holeFotoCaption" hidden></span>
-          </div>
-          <div class="hole-foto-card">
-            <img id="holeFotoImg" class="hole-foto-img" alt="" hidden>
-            <div id="holeFotoEmpty" class="hole-foto-empty">Sin mapa de este hoyo</div>
           </div>
         </div>
       </section>
@@ -3303,7 +3244,6 @@ let HOLES = FX.holes.map(h => ({ n: h.n, par: h.par, m: h.m, hcp: h.hcp }));
 let state = {
   screen: "home",
   hole: 1,
-  holeTab: "play",
   activePlayer: 0,
   offline: true,
   dataTier: "score",
@@ -4590,12 +4530,6 @@ function applyCourseData(course, teeName, clearScores) {
     badge.className = "badge " + (course.official ? "badge-oficial" : "badge-demo");
   }
   updateHomeThru();
-  if (typeof requestCourseHoleManifest === "function") requestCourseHoleManifest(course.id);
-  if (typeof courseHasHoleMaps === "function" && !courseHasHoleMaps(course.id) && state.holeTab === "foto") {
-    state.holeTab = "play";
-  }
-  if (typeof updateHoleFoto === "function") updateHoleFoto();
-  if (typeof setHoleTab === "function") setHoleTab(state.holeTab || "play");
 }
 
 function selectCourse(courseId) {
@@ -4604,7 +4538,6 @@ function selectCourse(courseId) {
   applyCourseData(course, null, true);
   refreshPlayerHandicaps();
   if (typeof updateClubCalls === "function") updateClubCalls();
-  if (typeof setHoleTab === "function") setHoleTab(state.holeTab || "play");
   renderSetup();
 }
 
@@ -6257,289 +6190,6 @@ function holeDone(p) {
   return p.scores[state.hole] != null && p.putts[state.hole] != null;
 }
 
-const HOLE_NAMES_HERRERIA = Object.freeze({
-  1: "El Descenso", 2: "El Bosque", 3: "La Ermita", 4: "El Lago",
-  5: "La Romería", 6: "El Cerro", 7: "El Puente", 8: "El Monasterio",
-  9: "La Tapia", 10: "La Encina", 11: "El Monte Abantos", 12: "El Mirador",
-  13: "El Tenedor", 14: "Los Robles", 15: "La Presa", 16: "El San Benito",
-  17: "El Jabalí", 18: "La Parrilla",
-});
-let COURSE_HOLE_MANIFESTS = {};
-const COURSE_HOLE_MANIFEST_REQ = {};
-
-/** Campos con mapas por hoyo en /holes/<id>/ (La Herrería también tiene embeds). */
-const HOLE_MAP_COURSES = Object.freeze({
-  "la-herreria": { dir: "holes/la-herreria" },
-  "centro-nacional-de-golf": { dir: "holes/centro-nacional-de-golf" },
-  "olivar-de-la-hinojosa": { dir: "holes/olivar-de-la-hinojosa" },
-  "real-club-de-campo-villa-de-madrid": { dir: "holes/real-club-de-campo-villa-de-madrid" },
-  "real-club-la-moraleja": { dir: "holes/real-club-la-moraleja" },
-  "las-rozas": { dir: "holes/las-rozas" },
-  "lomas-bosque": { dir: "holes/lomas-bosque" },
-  "retamares": { dir: "holes/retamares" },
-  "el-encin": { dir: "holes/el-encin" },
-  "olivar-hinojosa-pitch-putt": { dir: "holes/olivar-hinojosa-pitch-putt" },
-  "villa-de-madrid-amarillo": { dir: "holes/villa-de-madrid-amarillo" },
-  "forus-las-rejas-pares-3": { dir: "holes/forus-las-rejas-pares-3", overviewOnly: true },
-  "forus-las-rejas-pitch-putt": { dir: "holes/forus-las-rejas-pitch-putt", overviewOnly: true },
-  "centro-tecnificacion-golf-madrid": { dir: "holes/centro-tecnificacion-golf-madrid", overviewOnly: true },
-  "centro-tecnificacion-pitch-putt": { dir: "holes/centro-tecnificacion-pitch-putt", overviewOnly: true },
-  "aranjuez": { dir: "holes/aranjuez" },
-  "lafinca-golf": { dir: "holes/lafinca-golf" },
-  "torrejon": { dir: "holes/torrejon" },
-  "rshecc-norte": { dir: "holes/rshecc-norte" },
-  "rshecc-sur": { dir: "holes/rshecc-sur" },
-  "el-robledal": { dir: "holes/el-robledal" },
-  "moraleja-campo-2": { dir: "holes/moraleja-campo-2" },
-  "moraleja-campo-3": { dir: "holes/moraleja-campo-3" },
-  "moraleja-campo-4": { dir: "holes/moraleja-campo-4" },
-  "moraleja-pitch-putt": { dir: "holes/moraleja-pitch-putt" },
-  "olivar-hinojosa-rec-2": { dir: "holes/olivar-hinojosa-rec-2" }
-});
-
-/** Centros GPS para ortofoto IGN PNOA (vista satélite real, sin inventar esquemas). */
-const COURSE_GEO = Object.freeze({
-  "real-club-puerta-de-hierro": { lat: 40.46580, lon: -3.74070, span: 0.013, approx: true },
-  "puerta-de-hierro-abajo": { lat: 40.46250, lon: -3.73800, span: 0.013, approx: true },
-  "puerta-de-hierro-buenavista": { lat: 40.47050, lon: -3.73550, span: 0.009, approx: true },
-  "puerta-de-hierro-buenavista-rci": { lat: 40.47050, lon: -3.73550, span: 0.006, approx: true },
-  "puerta-de-hierro-buenavista-pp": { lat: 40.47050, lon: -3.73550, span: 0.006, approx: true },
-  "villa-de-madrid-pitch-putt": { lat: 40.44745, lon: -3.74540, span: 0.006 },
-  "barberan-y-collar": { lat: 40.49600, lon: -3.45800, span: 0.009, approx: true },
-  "race-jarama": { lat: 40.62470, lon: -3.59940, span: 0.013, approx: true },
-  "race-pares-3": { lat: 40.62470, lon: -3.59940, span: 0.006, approx: true },
-  "race-pitch-putt": { lat: 40.61933, lon: -3.59011, span: 0.006 },
-  "lomas-bosque-pares-3": { lat: 40.38033, lon: -3.94520, span: 0.006 },
-  "lomas-bosque-pitch-putt": { lat: 40.36750, lon: -3.92200, span: 0.006, approx: true },
-  "el-robledal": { lat: 40.44193, lon: -3.27300, span: 0.013 },
-  "encinas-boadilla-pitch-putt": { lat: 40.40500, lon: -3.87500, span: 0.006, approx: true },
-  "rshecc-pitch-putt": { lat: 40.44740, lon: -3.74540, span: 0.006, approx: true },
-  "rshecc-sur": { lat: 40.44745, lon: -3.74540, span: 0.013 },
-  "rshecc-norte": { lat: 40.60748, lon: -3.59066, span: 0.013 },
-  "green-paddock": { lat: 40.54000, lon: -3.64000, span: 0.006, approx: true },
-  "golf-park": { lat: 40.51633, lon: -3.65921, span: 0.006 },
-  "forus-las-rejas": { lat: 40.44502, lon: -3.86947, span: 0.009 },
-  "negralejo-pitch-putt": { lat: 40.40566, lon: -3.51794, span: 0.006 },
-  "negralejo": { lat: 40.40770, lon: -3.51361, span: 0.009 },
-  "moraleja-campo-4": { lat: 40.59850, lon: -3.52200, span: 0.013, approx: true },
-  "moraleja-campo-3": { lat: 40.60232, lon: -3.56911, span: 0.013 },
-  "moraleja-pitch-putt": { lat: 40.51450, lon: -3.63500, span: 0.006, approx: true },
-  "moraleja-campo-2": { lat: 40.51850, lon: -3.60569, span: 0.013 },
-  "la-dehesa": { lat: 40.45448, lon: -3.97857, span: 0.013 },
-  "aranjuez-pitch-putt": { lat: 40.04053, lon: -3.56919, span: 0.006 },
-  "pozuelo": { lat: 40.44247, lon: -3.77729, span: 0.013 },
-  "villa-el-escorial-pitch-putt": { lat: 40.58900, lon: -4.14700, span: 0.006, approx: true },
-  "villa-el-escorial": { lat: 40.55258, lon: -4.11723, span: 0.009 },
-  "olivar-hinojosa-rec-2": { lat: 40.46200, lon: -3.61000, span: 0.009, approx: true },
-  "cdscm-la-dehesa": { lat: 40.45450, lon: -3.97860, span: 0.013, approx: true },
-  "golf-santander": { lat: 40.39168, lon: -3.87103, span: 0.013 },
-  "el-encin-pitch-putt": { lat: 40.52250, lon: -3.31197, span: 0.006 },
-  "mistral-samaranch": { lat: 40.41000, lon: -3.73000, span: 0.006, approx: true }
-});
-
-function courseGeo(courseId) {
-  return (courseId && COURSE_GEO[courseId]) || null;
-}
-
-/** Ortofoto oficial IGN PNOA (CORS abierto). BBOX en EPSG:4326 lat,lon. */
-function pnoaOrthoUrl(lat, lon, span) {
-  const s = Number(span) > 0 ? Number(span) : 0.012;
-  const south = Number(lat) - s / 2;
-  const north = Number(lat) + s / 2;
-  const west = Number(lon) - s / 2;
-  const east = Number(lon) + s / 2;
-  const q = [
-    "SERVICE=WMS",
-    "VERSION=1.3.0",
-    "REQUEST=GetMap",
-    "LAYERS=OI.OrthoimageCoverage",
-    "CRS=EPSG:4326",
-    "BBOX=" + south.toFixed(6) + "," + west.toFixed(6) + "," + north.toFixed(6) + "," + east.toFixed(6),
-    "WIDTH=900",
-    "HEIGHT=900",
-    "FORMAT=image/jpeg",
-    "STYLES="
-  ].join("&");
-  return "https://www.ign.es/wms-inspire/pnoa-ma?" + q;
-}
-
-function holeMapConfig(courseId) {
-  return (courseId && HOLE_MAP_COURSES[courseId]) || null;
-}
-
-function courseHasHoleMaps(courseId) {
-  return !!(holeMapConfig(courseId) || courseGeo(courseId));
-}
-
-function courseManifestHole(courseId, n) {
-  const bag = COURSE_HOLE_MANIFESTS[courseId];
-  return bag ? (bag[String(n)] || null) : null;
-}
-
-function parseHoleManifestPayload(data) {
-  let list = [];
-  if (Array.isArray(data)) list = data;
-  else if (data && Array.isArray(data.holes)) list = data.holes;
-  else if (data && data.n != null) list = [data];
-  else if (data && typeof data === "object") {
-    list = Object.keys(data).map(n => Object.assign({ n: n }, data[n]));
-  }
-  const bag = {};
-  list.forEach(item => {
-    if (item && item.n != null) bag[String(item.n)] = item;
-  });
-  return bag;
-}
-
-function requestCourseHoleManifest(courseId) {
-  const cfg = holeMapConfig(courseId);
-  if (!cfg || cfg.overviewOnly || typeof fetch !== "function") return;
-  if (COURSE_HOLE_MANIFEST_REQ[courseId]) return;
-  COURSE_HOLE_MANIFEST_REQ[courseId] = true;
-  fetch(cfg.dir + "/manifest.json", { cache: "no-store" })
-    .then(res => { if (!res.ok) throw new Error("manifest unavailable"); return res.json(); })
-    .then(data => {
-      COURSE_HOLE_MANIFESTS[courseId] = parseHoleManifestPayload(data);
-      if (state.setup && state.setup.courseId === courseId) updateHoleFoto();
-    })
-    .catch(() => { COURSE_HOLE_MANIFEST_REQ[courseId] = false; });
-}
-
-function normalizeCoursePhotoFile(courseId, file) {
-  if (!file) return null;
-  const cfg = holeMapConfig(courseId);
-  if (!cfg) return null;
-  let name = String(file).trim().replace(/^\.\//, "");
-  if (!name || /^(?:https?:|data:|blob:)/i.test(name)) return null;
-  if (name.indexOf("holes/") === 0) return name;
-  return cfg.dir + "/" + name.replace(/^\/+/, "");
-}
-
-function setHoleTab(tab) {
-  state.holeTab = tab === "foto" ? "foto" : "play";
-  const isFoto = state.holeTab === "foto";
-  const playPane = document.getElementById("holePlayPane");
-  const fotoPane = document.getElementById("holeFotoPane");
-  const link = document.getElementById("holeFotoLink");
-  const courseId = state.setup && state.setup.courseId;
-  const hasMaps = courseHasHoleMaps(courseId);
-  if (link) {
-    // Solo visible en marcador, y solo si hay mapas — nunca invade
-    link.hidden = isFoto || !hasMaps;
-  }
-  if (playPane) {
-    playPane.classList.toggle("active", !isFoto);
-    playPane.setAttribute("aria-hidden", String(isFoto));
-  }
-  if (fotoPane) {
-    fotoPane.classList.toggle("active", isFoto);
-    fotoPane.setAttribute("aria-hidden", String(!isFoto));
-  }
-  if (isFoto) updateHoleFoto();
-}
-
-function showHoleFotoSuccess(img, caption, empty, token, label) {
-  if (token !== updateHoleFoto._token) return;
-  img.hidden = false;
-  if (label) {
-    caption.textContent = label;
-    caption.hidden = false;
-  } else {
-    caption.hidden = true;
-  }
-  empty.hidden = true;
-}
-
-function showHoleFotoEmpty(img, caption, empty, token, msg) {
-  if (token !== updateHoleFoto._token) return;
-  img.hidden = true;
-  caption.hidden = true;
-  empty.hidden = false;
-  if (msg) empty.textContent = msg;
-}
-
-function tryHoleFotoCandidates(img, caption, empty, token, label, candidates) {
-  let candidate = 0;
-  const tryNext = () => {
-    if (token !== updateHoleFoto._token) return;
-    if (candidate >= candidates.length) {
-      showHoleFotoEmpty(img, caption, empty, token, "Sin mapa de este hoyo");
-      return;
-    }
-    img.hidden = true;
-    const next = candidates[candidate++];
-    img.src = next + (next.indexOf("?") >= 0 || next.indexOf("data:") === 0 ? "" : "?v=3");
-  };
-  img.onload = () => showHoleFotoSuccess(img, caption, empty, token, label);
-  img.onerror = tryNext;
-  tryNext();
-}
-
-function updateHoleFoto() {
-  const img = document.getElementById("holeFotoImg");
-  const caption = document.getElementById("holeFotoCaption");
-  const empty = document.getElementById("holeFotoEmpty");
-  if (!img || !caption || !empty) return;
-
-  const courseId = state.setup && state.setup.courseId;
-  const cfg = holeMapConfig(courseId);
-  const n = Number(state.hole) || 1;
-  const token = (updateHoleFoto._token || 0) + 1;
-  updateHoleFoto._token = token;
-  img.hidden = true;
-  caption.hidden = true;
-  empty.hidden = false;
-  img.onload = null;
-  img.onerror = null;
-
-  if (!cfg) {
-    const geo = typeof courseGeo === "function" ? courseGeo(courseId) : null;
-    if (geo) {
-      const label = "Satélite IGN · vista del campo";
-      caption.textContent = label;
-      tryHoleFotoCandidates(img, caption, empty, token, label, [
-        pnoaOrthoUrl(geo.lat, geo.lon, geo.span)
-      ]);
-      return;
-    }
-    empty.textContent = "Sin mapa de este hoyo";
-    img.removeAttribute("src");
-    return;
-  }
-
-  empty.textContent = "Sin mapa de este hoyo";
-
-  // Overview-only courses (mapa general del campo)
-  if (cfg.overviewOnly) {
-    caption.textContent = "Mapa del campo";
-    tryHoleFotoCandidates(img, caption, empty, token, "Mapa del campo", [
-      cfg.dir + "/overview.webp",
-      cfg.dir + "/overview.jpg",
-      cfg.dir + "/overview.png"
-    ]);
-    return;
-  }
-
-  const manifestHole = courseManifestHole(courseId, n);
-  const name = (manifestHole && manifestHole.name)
-    || (courseId === "la-herreria" ? HOLE_NAMES_HERRERIA[n] : null)
-    || ("Hoyo " + n);
-  caption.textContent = name;
-
-  const base = cfg.dir + "/" + String(n).padStart(2, "0");
-  const candidates = [];
-  const manifestFile = normalizeCoursePhotoFile(courseId, manifestHole && manifestHole.file);
-  if (manifestFile) candidates.push(manifestFile);
-  const fallbackFile = normalizeCoursePhotoFile(courseId, manifestHole && manifestHole.fallback);
-  if (fallbackFile && !candidates.includes(fallbackFile)) candidates.push(fallbackFile);
-  [base + ".webp", base + ".jpg", base + ".png"].forEach(file => {
-    if (!candidates.includes(file)) candidates.push(file);
-  });
-
-  tryHoleFotoCandidates(img, caption, empty, token, name, candidates);
-  requestCourseHoleManifest(courseId);
-}
-
 function renderHole(opts) {
   opts = opts || {};
   if (typeof updateClubCalls === "function") updateClubCalls();
@@ -6549,9 +6199,7 @@ function renderHole(opts) {
   if (_sc) _sc.classList.remove("open");
   ensureHoleDefaults();
   const h = HOLES[state.hole - 1];
-  updateHoleFoto();
   if (typeof renderCreativePad === "function") renderCreativePad();
-  setHoleTab(state.holeTab);
   document.getElementById("holeNum").textContent = h.n;
   document.getElementById("holePar").textContent = h.par;
   document.getElementById("holeYards").textContent = h.m + " m";
@@ -8929,7 +8577,7 @@ function collectFairwayBackup() {
   return {
     version: 3,
     app: "Fairway",
-    appVersion: "4.1.3.1",
+    appVersion: "4.1.4",
     exportedAt: new Date().toISOString(),
     updatedAt: (typeof getDataUpdatedAt === "function" ? getDataUpdatedAt() : "") || "",
     includes: ["rounds", "players.scores", "players.putts", "players.fir", "players.gir", "players.ball", "players.withdrawn", "roster", "host", "activeRound", "winners", "standings"],
@@ -9944,7 +9592,7 @@ function renderPerfil() {
     <div class="profile-hero">
       <div class="avatar-lg">${escapeHtml(initials)}</div>
       <p class="muted" style="margin-top:8px;">Tu perfil en este dispositivo</p>
-      <p class="micro">Fairway 4.1.3.1</p>
+      <p class="micro">Fairway 4.1.4</p>
     </div>
     <div class="card mb-16">
       <div class="eyebrow">Nombre</div>

@@ -1,5 +1,9 @@
 # Fairway 4.1 — Fase 1: auditoría e inventario
 
+> La 4.1.4 ya no publica planos y ya no lleva los cinco workflows de push. Este archivo es la auditoría de la 4.0.11 y de la rama 4.1. El estado actual está en `docs/rearme-4.1.4.md`.
+
+
+
 Fecha de la auditoría: 2026-09-29.
 
 **Versión de partida y de producción: Fairway 4.0.11.** Confirmada como baseline. No es una 4.0.x anterior. El árbol auditado es `main` en `7bbfee7474dbc11b1874b1c707cd98763a63965e`, mensaje `Fairway 4.0.11 — top fino y ficha arriba del hueco (#44)`. Cualquier mención de 4.0.1–4.0.10 en este documento es historia dentro de ese README o un run antiguo, no la versión desde la que sale esta fase.

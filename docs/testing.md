@@ -16,7 +16,7 @@ No hace falta npm para jugar ni para esa suite. Node 22 sirve. El orden es scori
 | --- | --- |
 | `scoring.mjs` | Hándicap: HI 10, slope 125, CR 71.5, par 72 → CH 11. La fórmula sigue `hi * (Number(tee.slope) / 113)` |
 | `backup.mjs` | Esquema 3, saneado de HTML hostil, tope de historial |
-| `maps.mjs` | 54 campos, 26 carpetas, 404 webp, manifiestos cuyos `file` existen. El Robledal y RSHECC no llevan nombre inventado |
+| `maps.mjs` | 54 campos y los mismos largos. Cero planos: no hay `holes/`, ni botón Mapa, ni caché `fairway-maps`. El único workflow es `test-fairway.yml` |
 | `referee.mjs` | Frases del árbitro ya cubiertas |
 | `drive.mjs` | Plan de sync, merge, etiquetas, client id público de la 4.1.2, sin secreto |
 | `persist.mjs` | Ronda activa, `.bak`, cuota, no pisar una ronda protegida |
@@ -42,8 +42,8 @@ En esta máquina (Chrome del sistema, viewport 390×844) salió `e2e ok` con el 
 
 ## CI
 
-`.github/workflows/test-fairway.yml` lanza `node tests/run.mjs` en push a `main` y en cada pull request. No instala Playwright y no despliega.
+`.github/workflows/test-fairway.yml` es el único workflow del repo. Lanza `node tests/run.mjs` en push a `main` y en cada pull request, con `contents: read`. No instala Playwright y no despliega.
 
-Ese job no arranca en GitHub: la cuenta está bloqueada por facturación («The job was not started because your account is locked due to a billing issue.»). El verde local no se refleja en el check.
+Ese job no arranca en GitHub mientras la cuenta siga bloqueada por facturación («The job was not started because your account is locked due to a billing issue.»). El verde local no se refleja en el check.
 
-Pages sigue en modo legacy (`build_type: legacy`, rama `main`, path `/`). Publica aunque el test esté rojo. No se añade `deploy-pages` al lado. El cambio de origen, cuando Miguel o Bob lo hagan, está descrito en `docs/audit-4.1.md` y en `docs/release-4.1.md`.
+Pages sigue en modo legacy (`build_type: legacy`, rama `main`, path `/`). Publica aunque el test esté rojo. No se añade `deploy-pages` al lado: publicaría dos veces. El rearme está en `docs/rearme-4.1.4.md`.

@@ -233,11 +233,11 @@ assert.ok(html.includes("DRIVE_DEBOUNCE_MS = 4000"));
 assert.ok(html.includes('method: safeFile ? "PATCH" : "POST"'));
 assert.ok(!html.includes("driveClientIdInput"));
 
-assert.ok(sw.includes('const SHELL = "fairway-v4-4131"'));
+assert.ok(sw.includes('const SHELL = "fairway-v4-414"'));
 assert.ok(sw.includes("accounts.google.com"));
 assert.ok(sw.includes(".googleapis.com"));
-assert.ok(sw.includes("fairway-maps-v1"));
-assert.ok(sw.includes("MAPS_MAX = 120"));
+assert.ok(!sw.includes("fairway-maps"));
+assert.ok(!sw.includes("MAPS_MAX"));
 const installPart = sw.split("activate")[0];
 assert.ok(!installPart.includes("skipWaiting"));
 

@@ -1,5 +1,22 @@
 # Changelog
 
+## 4.1.4
+
+Esquema del JSON de copia: 3. Las copias de la 4.0.11, de la 4.1.0, de la 4.1.1, de la 4.1.2, de la 4.1.3 y de la 4.1.3.1 siguen entrando.
+
+- Salen los planos de hoyo, las vistas de campo y el satélite. No hay carpeta `holes/`, ni manifiestos, ni botón Mapa, ni petición a `ign.es`. El marcador sigue con Hoyos, Árbitro y, en La Herrería, el teléfono del caddie y del restaurante.
+- El service worker pasa a `fairway-v4-414`. Al activarse borra las cachés anteriores, incluida la de planos. No recarga con una ronda abierta.
+- En el repositorio solo queda el workflow `test-fairway`. Pages sigue publicando la rama `main` por el camino que ya tenía, sin un segundo publicador. El detalle está en `docs/rearme-4.1.4.md`.
+
+### Medios para la release
+
+Las capturas y los vídeos de GitHub Releases los adjunta Bob después de fusionar. No van en este commit. La tabla vacía está en `docs/release-4.1.4.md`.
+
+| Tipo | Archivo | Estado |
+| --- | --- | --- |
+| Captura | _(pendiente)_ | La añade el coordinador |
+| Vídeo | _(pendiente)_ | La añade el coordinador |
+
 ## 4.1.3.1
 
 Esquema del JSON de copia: 3. Las copias de la 4.0.11, de la 4.1.0, de la 4.1.1, de la 4.1.2 y de la 4.1.3 siguen entrando.

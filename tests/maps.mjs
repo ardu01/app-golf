@@ -1,16 +1,12 @@
 import assert from "assert";
-import { readFileSync, readdirSync, existsSync, statSync } from "fs";
-import { join } from "path";
+import { readFileSync, existsSync, readdirSync } from "fs";
 import { readApp } from "./extract.mjs";
 
 const root = new URL("..", import.meta.url);
 const html = readApp();
 const courses = JSON.parse(html.match(/let COURSES = (\[.*?\]);/)[1]);
-const block = html.match(/const HOLE_MAP_COURSES = Object\.freeze\(\{([\s\S]*?)\}\);/)[1];
-const entries = [...block.matchAll(/"([^"]+)": \{ dir: "([^"]+)"(,\s*overviewOnly:\s*true)?/g)];
 
 assert.strictEqual(courses.length, 54);
-assert.strictEqual(entries.length, 26);
 
 const byLayout = {};
 for (const c of courses) byLayout[c.layout] = (byLayout[c.layout] || 0) + 1;
@@ -19,74 +15,36 @@ assert.strictEqual(byLayout["9 hoyos"], 7);
 assert.strictEqual(byLayout["Pitch & Putt"], 18);
 assert.strictEqual(byLayout["Pares 3"], 4);
 
-const registered = new Set();
-let perHole = 0;
-let overview = 0;
-let images = 0;
-const noManifestOk = new Set();
-const fileOnlyManifest = new Set(["rshecc-norte", "rshecc-sur", "el-robledal"]);
-
-for (const [, id, dir, ovFlag] of entries) {
-  assert.ok(courses.some(c => c.id === id), "campo sin ficha " + id);
-  assert.ok(existsSync(new URL(dir, root)), "falta carpeta " + dir);
-  registered.add(dir.split("/").pop());
-  const folder = new URL(dir + "/", root);
-  const files = readdirSync(folder);
-  const pics = files.filter(f => /\.(webp|png|jpe?g)$/i.test(f));
-  images += pics.length;
-  if (ovFlag) {
-    overview++;
-    assert.ok(pics.some(f => /^overview\.(webp|png|jpe?g)$/i.test(f)), "sin overview " + id);
-  } else {
-    perHole++;
-    const numbered = pics.filter(f => /^\d{2}\.(webp|png|jpe?g)$/i.test(f)).map(f => f.slice(0, 2));
-    if (files.includes("manifest.json")) {
-      const raw = JSON.parse(readFileSync(new URL(dir + "/manifest.json", root), "utf8"));
-      const holes = Array.isArray(raw) ? raw : (Array.isArray(raw.holes) ? raw.holes : (raw.n ? [raw] : Object.values(raw)));
-      assert.ok(holes.length >= 9, "manifest corto " + id);
-      if (fileOnlyManifest.has(id)) {
-        assert.strictEqual(holes.length, 18, id);
-        for (const h of holes) {
-          assert.ok(!("name" in h), id + " no inventa nombre");
-          assert.ok(!/overview/i.test(String(h.file || "")), id + " no lista overview como hoyo");
-        }
-      }
-      for (const h of holes) {
-        const src = h.src || h.file || h.img || h.path;
-        if (!src) continue;
-        const rel = src.startsWith("holes/") ? src : dir + "/" + src.replace(/^\.\//, "");
-        assert.ok(existsSync(new URL(rel, root)), id + " apunta a " + src);
-      }
-    } else {
-      assert.ok(noManifestOk.has(id), "manifest ausente " + id);
-      for (let n = 1; n <= 18; n++) {
-        const name = String(n).padStart(2, "0");
-        assert.ok(numbered.includes(name), id + " sin " + name);
-      }
-    }
-  }
-}
-
-assert.strictEqual(perHole, 22);
-assert.strictEqual(overview, 4);
-assert.strictEqual(images, 404);
-
-const folders = readdirSync(new URL("holes/", root)).filter(name => {
-  return statSync(new URL("holes/" + name, root)).isDirectory();
-});
-const orphans = folders.filter(name => !registered.has(name));
-assert.deepStrictEqual(orphans, []);
-assert.ok(!folders.includes("forus-golf-las-rejas-pares-3"));
-assert.ok(existsSync(new URL("holes/forus-las-rejas-pares-3/overview.webp", root)));
+assert.ok(!existsSync(new URL("holes", root)), "la carpeta holes/ no debe publicarse");
+assert.ok(!existsSync(new URL("docs/recorrido/mapas", root)));
+assert.ok(!existsSync(new URL("docs/recorrido/videos/mapas-las-rozas.mp4", root)));
+assert.ok(!html.includes("HOLE_MAP_COURSES"));
+assert.ok(!html.includes("COURSE_GEO"));
+assert.ok(!html.includes("holeFoto"));
+assert.ok(!html.includes("setHoleTab"));
+assert.ok(!html.includes(">Mapa<"));
+assert.ok(!html.includes("ign.es"));
+assert.ok(!html.includes("holes/"));
+assert.ok(html.includes('id="holePlayPane"'));
+assert.ok(html.includes('id="holeJumpBtn"'));
+assert.ok(html.includes('id="holeCallCaddie"'));
+assert.ok(html.includes("tel:+34918905111"));
 
 const sw = readFileSync(new URL("../sw.js", import.meta.url), "utf8");
-assert.ok(sw.includes('const SHELL = "fairway-v4-4131"'));
+assert.ok(sw.includes('const SHELL = "fairway-v4-414"'));
 assert.ok(sw.includes("escorial-monasterio.png"));
 assert.ok(existsSync(new URL("icons/escorial-monasterio.png", root)));
-assert.ok(sw.includes('const MAPS = "fairway-maps-v1"'));
-assert.ok(sw.includes("MAPS_MAX = 120"));
+assert.ok(!sw.includes("fairway-maps"));
+assert.ok(!sw.includes("/holes/"));
+assert.ok(!sw.includes("migrateHoleMaps"));
 const installPart = sw.split("activate")[0];
 assert.ok(!installPart.includes("skipWaiting"));
-assert.ok(sw.includes("migrateHoleMaps"));
 
-console.log("maps ok", { courses: courses.length, perHole, overview, images });
+const readme = readFileSync(new URL("../README.md", import.meta.url), "utf8");
+assert.ok(!readme.includes("docs/recorrido/mapas/"));
+assert.ok(!readme.includes("mapas-las-rozas.mp4"));
+
+const workflows = readdirSync(new URL("../.github/workflows/", import.meta.url));
+assert.deepStrictEqual(workflows, ["test-fairway.yml"]);
+
+console.log("maps ok", { courses: courses.length, perHole: 0, overview: 0, images: 0 });

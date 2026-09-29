@@ -1,5 +1,7 @@
 # Fairway 4.1.2
 
+> Notas de la 4.1.2. La release de esta limpieza es `docs/release-4.1.4.md`.
+
 Producto **4.1.2**. Esquema del JSON **3**. Partida de la rama: 4.0.11 en `7bbfee7474dbc11b1874b1c707cd98763a63965e`. La fusión a `main` la hacen Miguel o Bob. Esta rama no se fusiona sola.
 
 La 4.1.1 quitó la bolsa de palos y `fairway/js/caddie.js`. No hay recomendación de palo ni de juego. El `tel:` de La Herrería y el árbitro siguen. La 4.1.2 deja eso y pone el client id público de Drive para `https://ardu01.github.io` y `https://ardu01.github.io/app-golf/`. El shell es `fairway-v4-412`.

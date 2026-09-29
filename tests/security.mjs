@@ -35,13 +35,13 @@ assert.strictEqual(hostile.ok, true);
 assert.ok(!JSON.stringify(hostile.data).includes("<"));
 assert.ok(!JSON.stringify(hostile.data).includes(">"));
 
-assert.ok(html.includes('aria-label="Versión">4.1.3.1</span>'));
-assert.ok(html.includes('appVersion: "4.1.3.1"'));
+assert.ok(html.includes('aria-label="Versión">4.1.4</span>'));
+assert.ok(html.includes('appVersion: "4.1.4"'));
 assert.ok(html.includes("version: 3"));
 const manifest = readFileSync(new URL("../manifest.webmanifest", import.meta.url), "utf8");
 const sw = readFileSync(new URL("../sw.js", import.meta.url), "utf8");
-assert.ok(manifest.includes("4.1.3.1"));
-assert.ok(sw.includes('const SHELL = "fairway-v4-4131"'));
+assert.ok(manifest.includes("4.1.4"));
+assert.ok(sw.includes('const SHELL = "fairway-v4-414"'));
 assert.ok(html.includes('const FAIRWAY_DRIVE_CLIENT_ID = "429682128465-06rq4tc60pmo6r0808a8b27itcp9v9dv.apps.googleusercontent.com"'));
 assert.ok(!html.includes("client_secret"));
 assert.ok(!html.includes("refresh_token"));
@@ -51,16 +51,20 @@ assert.ok(!html.includes('id="holeBagBtn"'));
 assert.ok(!html.includes("fairway.bag.v1"));
 assert.ok(!html.includes("fairway/js/caddie.js"));
 assert.ok(!sw.includes("caddie.js"));
+assert.ok(!html.includes("HOLE_MAP_COURSES"));
+assert.ok(!html.includes('id="holeFotoLink"'));
+assert.ok(!sw.includes("fairway-maps"));
 
 const workflows = readdirSync(new URL("../.github/workflows/", import.meta.url));
+assert.deepStrictEqual(workflows, ["test-fairway.yml"]);
 for (const name of workflows) {
   const text = readFileSync(new URL("../.github/workflows/" + name, import.meta.url), "utf8");
   const code = text.split("\n").filter((line) => !line.trim().startsWith("#")).join("\n");
   assert.ok(!/\bgit push\b/.test(code), name + " todavía empuja");
-  if (name !== "test-fairway.yml") {
-    assert.ok(code.includes("if: false"), name);
-    assert.ok(!code.includes("workflow_dispatch"), name);
-  }
+  assert.ok(!code.includes("workflow_dispatch"), name);
+  assert.ok(!code.includes("app-golf-v3"), name);
+  assert.ok(!/\bcurl\b/.test(code), name);
+  assert.ok(code.includes("contents: read"), name);
 }
 
 console.log("security ok");

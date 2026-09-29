@@ -1,6 +1,6 @@
 # Fairway — arquitectura
 
-Partida de esta rama: **4.0.11**. Producto en esta rama: **4.1.2**. Esquema del JSON de copia: **3**. No es un rediseño de la app.
+Partida documentada abajo: **4.0.11**. El producto de `main` tras la 4.1.4 es **4.1.4**. Esquema del JSON de copia: **3**. Workflows y mapas de esa versión: `docs/rearme-4.1.4.md`. Lo que sigue describe la migración y Drive; el nombre de caché vigente es `fairway-v4-414`.
 
 ## Qué sigue siendo la fuente de la partida
 
@@ -21,7 +21,7 @@ Sin bundler. GitHub Pages sirve los archivos tal cual. `index.html` carga al fin
 | `fairway/js/idb.js` | `indexedDB.open("fairway", 1)`, almacén `kv` |
 | `fairway/js/persist-boot.js` | Arranque en el navegador |
 
-El service worker precachea esos archivos y los trata como shell (`/fairway/js/`). El nombre de caché del shell es `fairway-v4-412` (4.1.2). El CSS no se ha partido. La puntuación sigue en `index.html`.
+El service worker precachea esos archivos y los trata como shell (`/fairway/js/`). El nombre de caché del shell en la 4.1.4 es `fairway-v4-414`. El CSS no se ha partido. La puntuación sigue en `index.html`.
 
 ## Migración
 
@@ -41,21 +41,13 @@ Si `localStorage` llega vacío y IndexedDB ya tiene datos verificados (o queda l
 
 ## Workflows que escribían en la rama
 
-En esta rama no tienen `workflow_dispatch` ni `git push`, el permiso es `contents: read` y el job lleva `if: false`:
-
-- `publish-fairway-v3.yml`
-- `apply-fairway-multicourse.yml` (antes copiaba un `sw.js` viejo encima del actual)
-- `apply-player-tees.yml`
-- `assemble-fairway-index.yml`
-- `decode-fairway-binaries.yml`
-
-`test-fairway.yml` solo lanza `node tests/run.mjs`. En `main`, hasta que esto se fusione, los cinco archivos viejos siguen pudiendo empujar la rama del checkout. No se fusiona desde esta fase.
+Desde la 4.1.4 esos cinco archivos no están en el repositorio. El único workflow versionado es `test-fairway.yml` (`node tests/run.mjs`, `contents: read`). Pages sigue en el publicador legacy de `main`. El detalle y lo que se borró (`ops/`, `patches/`) está en `docs/rearme-4.1.4.md`.
 
 ## Drive y el service worker
 
 `FAIRWAY_DRIVE_CLIENT_ID` es el client id público de OAuth web para `https://ardu01.github.io` y `https://ardu01.github.io/app-golf/`. El detalle está en `docs/drive-sync.md`. El panel dice «Sin configurar» cuando el id no está. Un conflicto sigue mostrando «Conflicto» y no sustituye la ronda en curso hasta que el jugador elige.
 
-El nombre de caché del shell es `fairway-v4-412`. `fairwayShouldHoldUpdate` impide `SKIP_WAITING` y el reload mientras la pantalla es de juego, de cierre, o hay ronda armada. `tests/pwa.mjs` lo fija.
+El nombre de caché del shell es `fairway-v4-414`. `fairwayShouldHoldUpdate` impide `SKIP_WAITING` y el reload mientras la pantalla es de juego, de cierre, o hay ronda armada. `tests/pwa.mjs` lo fija. No hay caché de planos.
 
 ## Stats
 
@@ -65,4 +57,4 @@ No hay bolsa de palos ni recomendación de juego. El enlace `tel:` del caddie de
 
 ## Cartografía
 
-`el-robledal`, `rshecc-norte` y `rshecc-sur` tienen manifiesto de los `01.webp`–`18.webp` que ya estaban. Sin nombres de hoyo. No se han creado planos ni se han movido coordenadas `approx: true`. Los 28 campos sin carpeta, Puerta de Hierro incluida, siguen sin carpeta.
+La 4.1.4 no publica planos. No hay `holes/`, ni `HOLE_MAP_COURSES`, ni centros para una ortofoto. El marcador no pide imágenes de hoyo.
