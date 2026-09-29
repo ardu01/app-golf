@@ -1,6 +1,6 @@
 import assert from "assert";
 import { readdirSync, readFileSync } from "fs";
-import { extractFunction, loadFunctions, readApp } from "./extract.mjs";
+import { loadFunctions, readApp } from "./extract.mjs";
 
 const html = readApp();
 const api = loadFunctions(html, [
@@ -35,19 +35,22 @@ assert.strictEqual(hostile.ok, true);
 assert.ok(!JSON.stringify(hostile.data).includes("<"));
 assert.ok(!JSON.stringify(hostile.data).includes(">"));
 
-assert.ok(html.includes('aria-label="Versión">4.1.0</span>'));
-assert.ok(html.includes('appVersion: "4.1.0"'));
+assert.ok(html.includes('aria-label="Versión">4.1.1</span>'));
+assert.ok(html.includes('appVersion: "4.1.1"'));
 assert.ok(html.includes("version: 3"));
 const manifest = readFileSync(new URL("../manifest.webmanifest", import.meta.url), "utf8");
 const sw = readFileSync(new URL("../sw.js", import.meta.url), "utf8");
-assert.ok(manifest.includes("4.1.0"));
-assert.ok(sw.includes('const SHELL = "fairway-v4-410"'));
+assert.ok(manifest.includes("4.1.1"));
+assert.ok(sw.includes('const SHELL = "fairway-v4-411"'));
 assert.ok(html.includes('const FAIRWAY_DRIVE_CLIENT_ID = ""'));
 assert.ok(!html.includes("client_secret"));
 assert.ok(!html.includes("refresh_token"));
-
-const bagRender = extractFunction(html, "renderHoleBag");
-assert.ok(bagRender.includes("escapeHtml"));
+assert.ok(html.includes('id="holeCallCaddie"'));
+assert.ok(html.includes("tel:+34918905111"));
+assert.ok(!html.includes('id="holeBagBtn"'));
+assert.ok(!html.includes("fairway.bag.v1"));
+assert.ok(!html.includes("fairway/js/caddie.js"));
+assert.ok(!sw.includes("caddie.js"));
 
 const workflows = readdirSync(new URL("../.github/workflows/", import.meta.url));
 for (const name of workflows) {

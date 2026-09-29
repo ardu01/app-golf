@@ -1,5 +1,5 @@
-/* Shell cache: product version with the extra minor zero collapsed. 4.0.11 → 411, 4.1.0 → 410. */
-const SHELL = "fairway-v4-410";
+/* Shell cache: product version with the extra minor zero collapsed. 4.0.11 → 411, 4.1.0 → 410, 4.1.1 → 411. */
+const SHELL = "fairway-v4-411";
 const MAPS = "fairway-maps-v1";
 const MAPS_MAX = 120;
 const ASSETS = [
@@ -13,8 +13,7 @@ const ASSETS = [
   "./fairway/js/keys.js",
   "./fairway/js/persistence.js",
   "./fairway/js/idb.js",
-  "./fairway/js/persist-boot.js",
-  "./fairway/js/caddie.js"
+  "./fairway/js/persist-boot.js"
 ];
 
 function isMapUrl(url) {

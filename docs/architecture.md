@@ -1,10 +1,10 @@
 # Fairway — arquitectura
 
-Partida de esta rama: **4.0.11**. Producto en esta rama: **4.1.0**. Esquema del JSON de copia: **3**. No es un rediseño de la app.
+Partida de esta rama: **4.0.11**. Producto en esta rama: **4.1.1**. Esquema del JSON de copia: **3**. No es un rediseño de la app.
 
 ## Qué sigue siendo la fuente de la partida
 
-La ronda en memoria (`state`, `PLAYERS`) y `localStorage` siguen siendo la copia que lee el marcador. Las fórmulas de hándicap no se han movido de `index.html`. `collectFairwayBackup` escribe `version: 3` y `appVersion: "4.1.0"`.
+La ronda en memoria (`state`, `PLAYERS`) y `localStorage` siguen siendo la copia que lee el marcador. Las fórmulas de hándicap no se han movido de `index.html`. `collectFairwayBackup` escribe `version: 3` y `appVersion: "4.1.1"`.
 
 IndexedDB es una copia verificada de esas claves, no un segundo marcador. Importar un JSON o aplicar Drive sigue pasando por `mergeFairwayBackup` y `driveApplyResolved`, que ya no pisan una ronda local protegida. La migración no es un import remoto: copia lo que ya está en este dispositivo.
 
@@ -12,7 +12,7 @@ IndexedDB es una copia verificada de esas claves, no un segundo marcador. Import
 
 Sin bundler. GitHub Pages sirve los archivos tal cual. `index.html` carga al final:
 
-`fairway/js/persist-boot.js` → `persistence.js` + `idb.js` + `keys.js`. `fairway/js/caddie.js` se carga aparte.
+`fairway/js/persist-boot.js` → `persistence.js` + `idb.js` + `keys.js`.
 
 | Archivo | Rol |
 | --- | --- |
@@ -20,13 +20,14 @@ Sin bundler. GitHub Pages sirve los archivos tal cual. `index.html` carga al fin
 | `fairway/js/persistence.js` | Migración, verificación, recuperación, espejo. Funciones puras sobre un adaptador |
 | `fairway/js/idb.js` | `indexedDB.open("fairway", 1)`, almacén `kv` |
 | `fairway/js/persist-boot.js` | Arranque en el navegador |
-| `fairway/js/caddie.js` | Ficha del hoyo y nombres de la bolsa. Sin distancias inventadas |
 
-El service worker precachea esos archivos y los trata como shell (`/fairway/js/`). El nombre de caché del shell es `fairway-v4-410` (4.1.0). El CSS no se ha partido. La puntuación sigue en `index.html`.
+El service worker precachea esos archivos y los trata como shell (`/fairway/js/`). El nombre de caché del shell es `fairway-v4-411` (4.1.1). El CSS no se ha partido. La puntuación sigue en `index.html`.
 
 ## Migración
 
-1. Lee las claves vivas de `localStorage` (historial, `.bak`, ronda activa y su `.bak`, roster, host, sello, creativo, presets, bolsa, `drive.fileId`, `drive.folderId`, `drive.meta`).
+Antes de copiar, el arranque borra `fairway.bag.v1` de `localStorage` y de IndexedDB si queda de una versión anterior. Esa clave no entra en la lista.
+
+1. Lee las claves vivas de `localStorage` (historial, `.bak`, ronda activa y su `.bak`, roster, host, sello, creativo, presets, `drive.fileId`, `drive.folderId`, `drive.meta`).
 2. Guarda esa foto en IndexedDB (`fairway.migration.backup`) **antes** de escribir los datos.
 3. Marca `fairway.migration.v1` como `in_progress`. Si la pestaña se cierra, Safari suspende la página o falla una escritura, el siguiente arranque ve esa marca y reanuda. Los originales no se han borrado.
 4. El JSON ilegible no se escribe encima de un valor bueno que ya estuviera en IndexedDB. Se anota en `skipped`.
@@ -54,13 +55,13 @@ En esta rama no tienen `workflow_dispatch` ni `git push`, el permiso es `content
 
 `FAIRWAY_DRIVE_CLIENT_ID` sigue vacío. El alta del cliente OAuth está en `docs/drive-sync.md`. El panel dice «Sin configurar» cuando el id no está. Un conflicto sigue mostrando «Conflicto» y no sustituye la ronda en curso hasta que el jugador elige.
 
-El nombre de caché del shell es `fairway-v4-410`. `fairwayShouldHoldUpdate` impide `SKIP_WAITING` y el reload mientras la pantalla es de juego, de cierre, o hay ronda armada. `tests/pwa.mjs` lo fija.
+El nombre de caché del shell es `fairway-v4-411`. `fairwayShouldHoldUpdate` impide `SKIP_WAITING` y el reload mientras la pantalla es de juego, de cierre, o hay ronda armada. `tests/pwa.mjs` lo fija.
 
-## Stats y bolsa
+## Stats
 
 `statsGrossByLayout` separa el gross de 9 y el de 18. No los promedia juntos. La media dentro de cada largo es la misma media aritmética de `me.gross` que ya había. `courseHandicapFor` sigue en `index.html` (`hi * slope / 113`). No se ha extraído la puntuación: la suite la saca por texto y un traslado que no sea idéntico cambiaría el número.
 
-`fairway/js/caddie.js` lee par, SI y metros de la ficha del hoyo. La bolsa (`fairway.bag.v1`) guarda solo nombres que escribe el jugador, como máximo 14, sin metros. Esa clave entra en la migración. El enlace `tel:` del caddie de La Herrería sigue en el hoyo. El área de toque de las fichas de acceso pasa a 48×48.
+No hay bolsa de palos ni recomendación de juego. El enlace `tel:` del caddie de La Herrería sigue en el hoyo. El área de toque de las fichas de acceso pasa a 48×48.
 
 ## Cartografía
 

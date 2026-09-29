@@ -7,7 +7,8 @@ import {
   JSON_KEYS,
   MIGRATION_BACKUP_KEY,
   MIGRATION_STATE_KEY,
-  MIRRORED_KEYS
+  MIRRORED_KEYS,
+  RETIRED_KEYS
 } from "./keys.js";
 
 export function stable(value) {
@@ -293,6 +294,16 @@ export async function recoverMissingLocal(localStorage, idb) {
 
 export function shouldMirrorKey(key) {
   return MIRRORED_KEYS.indexOf(key) >= 0;
+}
+
+/** Remove storage that no longer belongs to Fairway. Scoring keys are not in this list. */
+export async function dropRetiredKeys(localStorage, idb) {
+  for (let i = 0; i < RETIRED_KEYS.length; i++) {
+    const key = RETIRED_KEYS[i];
+    try { localStorage.removeItem(key); } catch (e) {}
+    if (!idb || typeof idb.del !== "function") continue;
+    try { await idb.del(key); } catch (e) {}
+  }
 }
 
 export function attachLocalMirror(localStorage, idb) {
