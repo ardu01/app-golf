@@ -1,6 +1,6 @@
-/** Storage keys from the 4.0.11 audit. Schema of the JSON backup stays 3. */
+/** Storage keys. JSON backup schema stays 3. */
 
-export const APP_VERSION = "4.0.11";
+export const APP_VERSION = "4.1.0";
 export const BACKUP_SCHEMA = 3;
 
 export const DB_NAME = "fairway";

@@ -1,5 +1,5 @@
-/* Shell cache name tracks the product version (4.0.11 → 411). Bump only with the release. */
-const SHELL = "fairway-v4-411";
+/* Shell cache: product version with the extra minor zero collapsed. 4.0.11 → 411, 4.1.0 → 410. */
+const SHELL = "fairway-v4-410";
 const MAPS = "fairway-maps-v1";
 const MAPS_MAX = 120;
 const ASSETS = [
