@@ -52,7 +52,7 @@ Todo vive en `index.html` salvo el service worker. No hay módulos `fairway/js/*
 - Partida en un solo teléfono: campo, tee, 9 o 18 hoyos, varios jugadores, golpes, putts, FIR, GIR, bruto, neto, Stableford, cierre con ganadores y placas (La Herrería usa `icons/escorial-monasterio.png`).
 - Modalidades oficiales: Stroke Play, Stableford. Sociales: Putting King, GIR King, Birdie Hunt, Chaos Golf, Rey del Hoyo, Back Nine Brawl, Last Call, No Bogey Club, Creativo (reglas y puntos definidos en la partida; presets locales).
 - Árbitro: chat en el dispositivo, Reglas de Golf 2023 (R&A / USGA), sin red. Pantalla `arbitro` y catálogo de reglas.
-- Mapas: 26 carpetas en `holes/`, todas registradas en `HOLE_MAP_COURSES`. 22 con plano por hoyo, 4 solo `overview`. 404 imágenes. Tres campos sin `manifest.json` y aceptados por el test: `rshecc-norte`, `rshecc-sur`, `el-robledal`. Ortofoto IGN PNOA (`pnoaOrthoUrl` → `https://www.ign.es/wms-inspire/pnoa-ma`) para los ids de `COURSE_GEO`. Varios centros van marcados `approx: true` en el propio objeto. No se ha inventado cartografía en esta fase.
+- Mapas: inventario contado en la sección Cartografía. No se ha inventado cartografía en esta fase.
 - Caddie y restaurante, hoy: enlaces `tel:` solo para `la-herreria` (`CLUB_CONTACTS`). No hay un caddie de palos o de estrategia. El árbitro menciona al caddie en las reglas 10.2a y 10.2b(4).
 - Stats: últimas 5, 10 o 20, temporada (desde enero), último año, o todo. La media de golpes brutos no mezcla largos distintos (el README lo describe; esta auditoría no ha reejecutado esa rama en un navegador).
 - Perfil (nombre e Handicap Index), roster de jugadores guardados, historial, reabrir una vuelta, ajustes a mitad de ronda.
@@ -64,6 +64,38 @@ Todo vive en `index.html` salvo el service worker. No hay módulos `fairway/js/*
 Pantallas: `home`, `setup`, `lobby`, `hole`, `scorecard`, `leader`, `reglas`, `arbitro`, `close`, `perfil`, `historial`, `detalle`, `ajustes`, `stats`.
 
 Hándicap, sin cambiarlo: `courseHandicapFor` hace `round(HI * slope/113 + (CR − par))` cuando el tee trae slope y CR; si no, redondea el HI. Nueve hoyos de un campo de dieciocho usan `round(CH18 / 2)` (`scaleHandicapForRound`). `refreshPlayerHandicaps` copia ese CH a `ph` («playing handicap = CH, 100% allowance»). Los tests de `tests/scoring.mjs` fijan el caso HI 10, slope 125, CR 71.5, par 72 → CH 11, y el reparto de golpes incluidos los plus. `clampHcp` recorta a −10…54 (el test lo comprueba).
+
+## Cartografía
+
+Contado en el árbol de la 4.0.11 (`COURSES` en `index.html`, `HOLE_MAP_COURSES`, directorios bajo `holes/`). Los mismos totales salen en `node tests/run.mjs`: `maps ok { courses: 54, perHole: 22, overview: 4, images: 404 }`. Las 404 imágenes son archivos `.webp`. En `holes/` no hay png ni jpeg; los otros 19 archivos de esas carpetas son `manifest.json`. Ninguna carpeta de `holes/` queda fuera de `HOLE_MAP_COURSES`.
+
+| Hecho | Número |
+| --- | --- |
+| Campos en `COURSES` | 54 |
+| Carpetas `holes/` | 26 |
+| `.webp` bajo `holes/` | 404 |
+| Con `manifest.json` (18 hoyos en el manifiesto, archivos citados presentes) | 19 |
+| Carpeta de hoyos sin `manifest.json` | 3 |
+| `overviewOnly: true` | 4 |
+| Campos sin carpeta en `holes/` | 28 |
+
+19 + 3 + 4 = 26 carpetas. 54 − 26 = 28 sin carpeta.
+
+**Referencia: La Herrería** (`la-herreria`). Es el campo por defecto de la app. `holes/la-herreria/manifest.json` lista 18 hoyos y `01.webp`–`18.webp` están en la carpeta. `COURSES` también tiene 18 hoyos para ese id. El comentario de `HOLE_MAP_COURSES` dice que La Herrería además tiene embeds. No se ha añadido ningún plano.
+
+Los otros 18 con manifiesto, mismos criterios (manifiesto de 18, `course.holes` de 18, ningún archivo citado ausente): `centro-nacional-de-golf`, `olivar-de-la-hinojosa`, `real-club-de-campo-villa-de-madrid`, `real-club-la-moraleja`, `las-rozas`, `lomas-bosque`, `retamares`, `el-encin`, `olivar-hinojosa-pitch-putt`, `villa-de-madrid-amarillo`, `aranjuez`, `lafinca-golf`, `torrejon`, `moraleja-campo-2`, `moraleja-campo-3`, `moraleja-campo-4`, `moraleja-pitch-putt`, `olivar-hinojosa-rec-2`.
+
+**Sin manifiesto**, y el test los acepta así: `el-robledal`, `rshecc-norte`, `rshecc-sur`. No les faltan los planos numerados: los tres tienen `01.webp`–`18.webp`. `rshecc-norte` y `rshecc-sur` tienen además `overview.webp`. `el-robledal` no.
+
+**`overviewOnly`**, un solo `overview.webp` cada uno: `forus-las-rejas-pares-3`, `forus-las-rejas-pitch-putt`, `centro-tecnificacion-golf-madrid`, `centro-tecnificacion-pitch-putt`.
+
+La suma de los 404 webp es: 342 numerados de los 19 con manifiesto, más `overview.webp` en La Moraleja y en Torrejón (344), más 56 en los tres sin manifiesto (18 + 19 + 19), más 4 overview (404).
+
+**28 sin carpeta**, incluida Puerta de Hierro. No están en `HOLE_MAP_COURSES`. Sí están ya como claves de `COURSE_GEO` (ortofoto PNOA). Esta fase no crea carpetas ni mueve coordenadas. Los que el objeto marca `approx: true` siguen marcados así.
+
+Puerta de Hierro: `real-club-puerta-de-hierro`, `puerta-de-hierro-abajo`, `puerta-de-hierro-buenavista`, `puerta-de-hierro-buenavista-rci`, `puerta-de-hierro-buenavista-pp`.
+
+El resto sin carpeta: `villa-de-madrid-pitch-putt`, `barberan-y-collar`, `race-jarama`, `race-pares-3`, `race-pitch-putt`, `lomas-bosque-pares-3`, `lomas-bosque-pitch-putt`, `encinas-boadilla-pitch-putt`, `rshecc-pitch-putt`, `green-paddock`, `golf-park`, `forus-las-rejas`, `negralejo-pitch-putt`, `negralejo`, `la-dehesa`, `aranjuez-pitch-putt`, `pozuelo`, `villa-el-escorial-pitch-putt`, `villa-el-escorial`, `cdscm-la-dehesa`, `golf-santander`, `el-encin-pitch-putt`, `mistral-samaranch`.
 
 ## Dependencias
 
@@ -276,7 +308,7 @@ El orden sale de lo que está demostrado arriba, no de reescribir la app en abst
 1. **Fase 2 — contrato de datos, luego módulos.** Congelar el esquema 3 documentado aquí como contrato de lectura. Tests de migración (round-trip, JSON corrupto, cuota, interrupción) antes de mover nada a IndexedDB. No borrar claves viejas. El corte de `index.html` viene después de ese límite, porque un extract regex roto deja la suite ciega. Antes de editar el HTML a lo grande, desactivar o acotar `apply-fairway-multicourse.yml`: es el otro camino que pisa `sw.js` y hace push.
 2. **Fase 3 — Drive y service worker, sin credenciales inventadas.** El client id sigue vacío y documentado como único requisito externo. Se puede endurecer el versionado del `SHELL` ligado al release y la espera de reload con ronda activa; no se puede dar por probado el sync real. Conflictos: el plan ya existe en tests; falta el caso de perfil (`host`) que hoy se pisa.
 3. **Fase 4 — puntuación, stats, caddie.** No cambiar `courseHandicapFor` ni `strokesOnHole` sin un test que fije el número anterior. Separar CH y PH solo si hay una regla nueva y tests; hoy son el mismo valor a propósito. El caddie nuevo no sustituye el `tel:` de La Herrería ni al árbitro.
-4. **Fase 5 — cartografía y UX.** Partir de `holes/` (404 imágenes) y de PNOA. No recolocar los `approx: true`. La piel de partida es la de la 4.0.11. Los párrafos 4.0.1–4.0.10 del README son el camino hasta esa piel, no otra versión de partida. Esta fase no la rediseña.
+4. **Fase 5 — cartografía y UX.** Partir del inventario contado: 54 campos, 26 carpetas, 404 webp, 19 con manifiesto (referencia La Herrería), 3 sin manifiesto, 4 `overviewOnly`, 28 sin carpeta (Puerta de Hierro incluida, ya en `COURSE_GEO`). No crear planos ni recolocar los `approx: true`. La piel de partida es la de la 4.0.11. Los párrafos 4.0.1–4.0.10 del README son el camino hasta esa piel, no otra versión de partida. Esta fase no la rediseña.
 5. **Fase 6 — tests y seguridad.** Dos huecos distintos: el runner no arranca (facturación) y, aunque arrancara, Pages legacy no lo espera. El cierre de publicación es el seguimiento de la sección de workflows (un solo publicador, `needs: test`), no un `deploy-pages` añadido al lado del legado. Revisar que ningún workflow con `contents: write` pueda publicar otro `index.html`. El saneado de importación ya quita `<>` y está testeado; no relajarlo al partir el archivo.
 6. **Fase 7 — 4.1.0.** Subir la versión de producto, el texto del manifiesto y el nombre de caché del shell juntos. Dejar `version: 3` del JSON salvo que la migración tenga tests y un lector de las copias viejas. No marcar estable mientras el check de tests no pueda arrancar, o mientras un workflow pueda sustituir `index.html` por V3.
 
