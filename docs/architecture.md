@@ -48,3 +48,9 @@ En esta rama no tienen `workflow_dispatch` ni `git push`, el permiso es `content
 - `decode-fairway-binaries.yml`
 
 `test-fairway.yml` solo lanza `node tests/run.mjs`. En `main`, hasta que esto se fusione, los cinco archivos viejos siguen pudiendo empujar la rama del checkout. No se fusiona desde esta fase.
+
+## Drive y el service worker
+
+`FAIRWAY_DRIVE_CLIENT_ID` sigue vacío. El alta del cliente OAuth está en `docs/drive-sync.md`. El panel dice «Sin configurar» cuando el id no está. Un conflicto sigue mostrando «Conflicto» y no sustituye la ronda en curso hasta que el jugador elige.
+
+El nombre de caché del shell sigue `fairway-v4-411` hasta el commit de la 4.1.0. `fairwayShouldHoldUpdate` impide `SKIP_WAITING` y el reload mientras la pantalla es de juego, de cierre, o hay ronda armada. `tests/pwa.mjs` lo fija.

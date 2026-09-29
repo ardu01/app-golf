@@ -212,6 +212,8 @@ assert.ok(mergedStamp > "2000-01-02T00:00:00.000Z");
 assert.strictEqual(api.driveResultStamp(localNewer, base, "upload"), localNewer);
 
 assert.strictEqual(api.driveUiState({ connected: false }).label, "No conectado");
+assert.strictEqual(api.driveUiState({ configured: false, connected: false }).label, "Sin configurar");
+assert.strictEqual(api.driveUiState({ configured: false, connected: false, conflict: true }).label, "Conflicto");
 assert.strictEqual(api.driveUiState({ connected: false, status: "connecting" }).label, "Conectando…");
 assert.strictEqual(api.driveUiState({ connected: true, status: "syncing", online: true }).label, "Sincronizando…");
 assert.strictEqual(api.driveUiState({ connected: true, online: true }).label, "Sincronizado");
@@ -222,6 +224,8 @@ assert.ok(html.includes("Sincronizar ahora"));
 assert.ok(html.includes("Desconectar Google Drive"));
 assert.ok(html.includes("Usar este dispositivo"));
 assert.ok(html.includes("Usar Google Drive"));
+assert.ok(html.includes("no se sustituye hasta que elijas"));
+assert.ok(html.includes('const FAIRWAY_DRIVE_CLIENT_ID = "";'));
 assert.ok(html.includes("Fairway guarda tus datos en tu propio Google Drive."));
 assert.ok(html.includes("function importFairwayBackup("));
 assert.ok(html.includes("function shareFairwayBackup("));

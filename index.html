@@ -8652,6 +8652,7 @@ function driveUiState(input) {
   if (i.conflict) return { status: "conflict", label: "Conflicto" };
   if (i.needsReconnect) return { status: "reconnect", label: "Necesita reconexión" };
   if (!i.connected && i.status === "connecting") return { status: "connecting", label: "Conectando…" };
+  if (i.configured === false && !i.connected) return { status: "unconfigured", label: "Sin configurar" };
   if (!i.connected) return { status: "disconnected", label: "No conectado" };
   if (i.status === "connecting") return { status: "connecting", label: "Conectando…" };
   if (i.status === "syncing") return { status: "syncing", label: "Sincronizando…" };
@@ -9569,6 +9570,7 @@ function driveBoot() {
 
 function driveConflictHtml() {
   return `<p class="drive-status warn">Hay datos distintos en este dispositivo y en Google Drive.</p>
+    <p class="micro mt-8">La ronda en curso de este dispositivo no se sustituye hasta que elijas.</p>
     <div class="btn-row mt-8">
       <button class="btn btn-primary" type="button" onclick="driveUseThisDevice()">Usar este dispositivo</button>
       <button class="btn btn-ghost" type="button" onclick="driveUseCloud()">Usar Google Drive</button>

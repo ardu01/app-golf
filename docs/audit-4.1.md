@@ -323,3 +323,7 @@ La fase 1 no partió `index.html`, no cambió fórmulas ni mapas, no inventó un
 ## Fase 2 en esta rama
 
 IndexedDB guarda una copia verificada de las claves de la auditoría (historial, ronda activa y `.bak`, roster, host, creativo, presets, punteros de Drive). No guarda el token OAuth ni `fairway.drive.clientId`. `localStorage` sigue siendo la copia que lee el marcador y no se borra al verificar. El esquema del JSON sigue en 3. Los módulos nuevos están en `fairway/js/`. El CSS y la puntuación no se han extraído. Los cinco workflows que hacían `git push` (V3, multi-curso, tees, ensamblado, decode) quedan sin dispatch y sin push en esta rama. `main` no se ha fusionado.
+
+## Fase 3 en esta rama
+
+El client id de Drive sigue vacío. Está documentado en `docs/drive-sync.md` (cliente OAuth web, origen `https://ardu01.github.io`, alcance `drive.file`, sin secreto y sin refresh token). Si no hay id, la etiqueta es «Sin configurar»; un conflicto sigue siendo «Conflicto». El aviso de conflicto dice que la ronda en curso no se sustituye hasta elegir. El perfil sigue escribiéndose con la copia aplicada: no se ha cambiado `mergeFairwayBackup`. El shell sigue en `fairway-v4-411` hasta la 4.1.0. `tests/pwa.mjs` cubre que no hay reload a mitad de ronda. No se ha añadido `deploy-pages` al lado del Pages legado.
