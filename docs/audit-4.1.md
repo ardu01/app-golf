@@ -332,7 +332,7 @@ El client id de Drive sigue vacío. Está documentado en `docs/drive-sync.md` (c
 
 ## Fase 4 en esta rama
 
-Stats muestra Gross · 9 y Gross · 18 por separado. Una vuelta de 9 y otra de 18 ya no se quedan sin media de gross: cada largo tiene la suya y no se mezclan. La fórmula de hándicap no se ha movido ni extraído. El caddie de juego es la ficha (par, SI, metros si la ficha los trae) más nombres de palos en `fairway.bag.v1`. No hay distancias inventadas. El `tel:` de La Herrería sigue. `PH` sigue igual que `CH`.
+Stats muestra Gross · 9 y Gross · 18 por separado. Una vuelta de 9 y otra de 18 ya no se quedan sin media de gross: cada largo tiene la suya y no se mezclan. La fórmula de hándicap no se ha movido ni extraído. La 4.1.1 quita la bolsa de palos y cualquier recomendación de juego. El `tel:` de La Herrería sigue. `PH` sigue igual que `CH`.
 
 ## Fase 5 en esta rama
 
@@ -340,8 +340,8 @@ Manifiestos nuevos, sin nombres, para `el-robledal`, `rshecc-norte` y `rshecc-su
 
 ## Fase 6 en esta rama
 
-`tests/security.mjs` cubre `clipStr`, `escapeHtml`, un backup con etiquetas, el client id vacío y que ningún workflow de esta rama (fuera de comentarios) hace `git push`. `tests/e2e.mjs` recorre la bolsa en Chrome con Playwright: el nombre `<b>Driver</b>` no se inyecta como HTML y el pie del hoyo mide 50px en un viewport de 390×844. Esa prueba no está dentro de `node tests/run.mjs` y GitHub no la corre: el job de tests no arranca por facturación y la suite unitaria no depende de npm. El detalle está en `docs/testing.md`.
+`tests/security.mjs` cubre `clipStr`, `escapeHtml`, un backup con etiquetas, el client id vacío y que ningún workflow de esta rama (fuera de comentarios) hace `git push`. `tests/e2e.mjs` abre el hoyo en Chrome con Playwright, comprueba que no hay bolsa, que el `tel:` de La Herrería sigue y que el pie del hoyo mide 50px en un viewport de 390×844. Esa prueba no está dentro de `node tests/run.mjs` y GitHub no la corre: el job de tests no arranca por facturación y la suite unitaria no depende de npm. El detalle está en `docs/testing.md`.
 
 ## Fase 7 en esta rama
 
-El producto de esta rama es **4.1.0**: cabecera, perfil, `appVersion` del JSON, `manifest.webmanifest` y `APP_VERSION` en `fairway/js/keys.js`. El shell es `fairway-v4-410`. El esquema del JSON sigue en 3. La partida documentada arriba sigue siendo la 4.0.11 de `main`. Documentos: `docs/architecture.md`, `docs/data-migration.md`, `docs/drive-sync.md`, `docs/testing.md`, `docs/release-4.1.md`, `CHANGELOG.md`. `test-fairway.yml` sigue siendo el check del PR y no publica. No se ha fusionado `main`.
+El producto de esta rama es **4.1.1**: cabecera, perfil, `appVersion` del JSON, `manifest.webmanifest` y `APP_VERSION` en `fairway/js/keys.js`. El shell es `fairway-v4-411`. El esquema del JSON sigue en 3. La partida documentada arriba sigue siendo la 4.0.11 de `main`. Documentos: `docs/architecture.md`, `docs/data-migration.md`, `docs/drive-sync.md`, `docs/testing.md`, `docs/release-4.1.md`, `CHANGELOG.md`. `test-fairway.yml` sigue siendo el check del PR y no publica. No se ha fusionado `main`.

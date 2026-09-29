@@ -1,6 +1,6 @@
 import { ACTIVE_KEY } from "./keys.js";
 import { openFairwayDb } from "./idb.js";
-import { attachLocalMirror, migrateLocalToIdb, recoverMissingLocal } from "./persistence.js";
+import { attachLocalMirror, dropRetiredKeys, migrateLocalToIdb, recoverMissingLocal } from "./persistence.js";
 
 async function boot() {
   if (typeof indexedDB === "undefined") return;
@@ -12,6 +12,7 @@ async function boot() {
     return;
   }
   const local = window.localStorage;
+  try { await dropRetiredKeys(local, db); } catch (e) {}
   let result;
   try {
     result = await migrateLocalToIdb(local, db);

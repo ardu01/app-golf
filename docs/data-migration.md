@@ -2,7 +2,7 @@
 
 El marcador sigue leyendo `localStorage`. IndexedDB (`fairway`, versión 1, almacén `kv`) es una copia verificada de las mismas claves. No es un segundo marcador.
 
-El JSON de copia sigue en **esquema 3**. `appVersion` dentro de ese JSON es el texto de producto (`4.1.0`). Una copia de la 4.0.11, que también era esquema 3, entra por `validateFairwayBackup`.
+El JSON de copia sigue en **esquema 3**. `appVersion` dentro de ese JSON es el texto de producto (`4.1.1`). Una copia de la 4.0.11, que también era esquema 3, entra por `validateFairwayBackup`.
 
 ## Claves que se copian
 
@@ -12,10 +12,11 @@ El JSON de copia sigue en **esquema 3**. `appVersion` dentro de ese JSON es el t
 - `fairway.host.v1`
 - `fairway.dataUpdatedAt`
 - `fairway.creative.v1` y `fairway.creativePresets.v1`
-- `fairway.bag.v1` (nombres de palos, sin distancias)
 - `fairway.drive.fileId`, `fairway.drive.folderId`, `fairway.drive.meta`
 
 No se copian `fairway.drive.clientId` ni el access token. `drive.meta` se guarda sin `access_token`, `refresh_token`, `id_token` ni `token`.
+
+`fairway.bag.v1` ya no se copia. Si todavía estaba en el teléfono, el arranque la borra. La ronda activa no entra en ese borrado.
 
 ## Pasos
 

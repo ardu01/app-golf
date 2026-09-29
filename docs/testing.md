@@ -6,7 +6,7 @@ La puerta de la app sigue siendo:
 node tests/run.mjs
 ```
 
-No hace falta npm para jugar ni para esa suite. Node 22 sirve. El orden es scoring, backup, maps, referee, drive, persist, migration, pwa, stats, caddie, security.
+No hace falta npm para jugar ni para esa suite. Node 22 sirve. El orden es scoring, backup, maps, referee, drive, persist, migration, pwa, stats, security.
 
 `tests/persist.mjs` imprime un `QuotaExceededError` a propósito: el almacenamiento de mentira lanza cuota y la suite comprueba el aviso. El proceso sigue y termina en `persist ok`.
 
@@ -23,12 +23,11 @@ No hace falta npm para jugar ni para esa suite. Node 22 sirve. El orden es scori
 | `migration.mjs` | Round-trip a IndexedDB, JSON corrupto, cuota, interrupción, no borrar `localStorage` |
 | `pwa.mjs` | No hay `SKIP_WAITING` en install. No recarga con ronda, cierre o pantallas de juego |
 | `stats.mjs` | Gross de 9 y de 18 no se promedian juntos |
-| `caddie.mjs` | Metros solo si la ficha los trae. Nombres sin `<>`. El `tel:` de La Herrería sigue |
-| `security.mjs` | `clipStr` y `escapeHtml`, backup hostil, ningún workflow de esta rama hace `git push` |
+| `security.mjs` | `clipStr` y `escapeHtml`, backup hostil, ningún workflow de esta rama hace `git push`. El `tel:` de La Herrería sigue. No hay bolsa ni `caddie.js` |
 
 ## Navegador
 
-`node tests/e2e.mjs` abre el hoyo en Chrome con Playwright, abre la bolsa, escribe un nombre con etiquetas y comprueba que el HTML sale escapado y que el pie del hoyo mide al menos 48px. No entra en `node tests/run.mjs`.
+`node tests/e2e.mjs` abre el hoyo en Chrome con Playwright, comprueba que no hay bolsa, que el `tel:` del caddie de La Herrería sigue y que el pie del hoyo mide al menos 48px. No entra en `node tests/run.mjs`.
 
 Hace falta el paquete y un Chrome:
 
