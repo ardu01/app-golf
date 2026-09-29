@@ -2924,7 +2924,7 @@
         <div class="fit">
           <div class="home-hero">
             <div class="home-top">
-              <span class="app-version" aria-label="Versión">4.1.3.1</span>
+              <span class="app-version" aria-label="Versión">4.2.1</span>
               <button type="button" class="topnav-action" onclick="go('perfil')" aria-label="Perfil">Perfil</button>
             </div>
             <div class="greeting">Buenos días</div>
@@ -4178,10 +4178,18 @@ function renderRules() {
 }
 
 /* In-app screens share one document. pushState lets Safari’s edge swipe and the
-   browser Back button pop a sheet or a screen. Home always keeps a sentinel so
-   that gesture does not leave the PWA. A live round traps the same last step
-   on any screen, and scores are left alone. */
+   browser Back button pop a sheet or a screen. Home keeps several sentinels so
+   the gesture cannot reach the session edge and unload the PWA. iOS Safari
+   ignores pushState in the popstate turn, so a home back refills on a later
+   turn — and the first touch on Inicio pushes one sentinel inside a user
+   gesture, which is the entry standalone mode actually honors. Perfil, setup
+   and the hole sheet stay real history entries above that cushion. A live
+   round still traps the last step on any screen. Scores are left alone. */
 let _fairwayNavLock = false;
+let _fairwayNavTrapSerial = 0;
+let _fairwayNavSentinelToken = 0;
+let _fairwayNavFilling = false;
+let _fairwayNavSentinelRedo = false;
 
 function fairwayNavKnownScreen(name) {
   return name === "home" || name === "setup" || name === "lobby" || name === "hole"
@@ -4227,6 +4235,9 @@ function fairwayNavDecide(app, frame, flags) {
   }
   const target = fairwayNavTarget(frame, keepsPlay);
   const homeTarget = target.screen === "home" && !target.sheet;
+  const frameScreen = fairwayNavKnownScreen(frame.screen) ? frame.screen : "home";
+  /* Already on Inicio and the entry underneath is Inicio: another sentinel, not a screen change. */
+  if (homeView && frameScreen === "home" && frame.sheet !== "hole") return { type: "trap" };
   if (frame.root && fairwayNavSameView(view, target) && (trap || homeView)) return { type: "trap" };
   return {
     type: "apply",
@@ -4245,7 +4256,7 @@ function fairwayNavHref(frame) {
   if (f.screen && f.screen !== "home") parts.push("s=" + encodeURIComponent(f.screen));
   if (f.sheet) parts.push("o=" + encodeURIComponent(f.sheet));
   if (f.screen === "setup" && Number(f.setupStep) > 0) parts.push("p=" + String(Number(f.setupStep) || 0));
-  if (f.trap) parts.push("b=1");
+  if (f.trap) parts.push("b=" + String(Math.max(1, Number(f.trap) || 1)));
   return parts.length ? path + "#" + parts.join("&") : path;
 }
 
@@ -4314,10 +4325,86 @@ function fairwayNavReplace() {
   try { history.replaceState(frame, "", fairwayNavHref(frame)); } catch (e) {}
 }
 
-function fairwayNavRepush() {
-  if (typeof history === "undefined" || !history.pushState) return;
-  const frame = Object.assign({}, fairwayNavCapture(), { trap: 1 });
-  try { history.pushState(frame, "", fairwayNavHref(frame)); } catch (e) {}
+function fairwayNavHomeSentinelDepth() {
+  return 3;
+}
+
+function fairwayNavRepush(extra) {
+  if (typeof history === "undefined" || !history.pushState) return 0;
+  const n = _fairwayNavTrapSerial + 1;
+  const frame = Object.assign({}, fairwayNavCapture(), { trap: n }, extra || {});
+  try { history.pushState(frame, "", fairwayNavHref(frame)); }
+  catch (e) { return 0; }
+  _fairwayNavTrapSerial = n;
+  return n;
+}
+
+function fairwayNavSentinelPlan(cur, view, flags) {
+  const v = view || { screen: "home", sheet: "", setupStep: 0 };
+  const home = (v.screen || "home") === "home" && !v.sheet;
+  const trap = !!(flags && flags.trap);
+  if (cur && cur.fairwayNav && !fairwayNavSameView(cur, v)) return { push: 0, defer: false };
+  if (cur && cur.fairwayNav && !cur.trap && !home) return { push: 0, defer: false };
+  if (!home && !trap) return { push: 0, defer: false };
+  const thin = !cur || !cur.fairwayNav || !!cur.root || !cur.trap;
+  const depth = fairwayNavHomeSentinelDepth();
+  if (home && thin) return { push: depth, defer: true };
+  if (home) return { push: 1, defer: true };
+  if (thin) return { push: 1, defer: true };
+  return { push: 0, defer: false };
+}
+
+function fairwayNavFillSentinel() {
+  if (_fairwayNavFilling) return;
+  let plan;
+  try {
+    plan = fairwayNavSentinelPlan(
+      (typeof history !== "undefined" && history.state) || null,
+      fairwayNavView(),
+      { trap: fairwayNavShouldTrap() }
+    );
+  } catch (e) { return; }
+  if (!plan || !plan.push) return;
+  _fairwayNavFilling = true;
+  try {
+    for (let i = 0; i < plan.push; i++) {
+      if (!fairwayNavRepush()) break;
+    }
+  } finally {
+    _fairwayNavFilling = false;
+    if (_fairwayNavSentinelRedo) {
+      _fairwayNavSentinelRedo = false;
+      fairwayNavScheduleHomeSentinel();
+    }
+  }
+}
+
+function fairwayNavScheduleHomeSentinel() {
+  const token = ++_fairwayNavSentinelToken;
+  const seen = _fairwayNavTrapSerial;
+  const run = function (retry) {
+    if (token !== _fairwayNavSentinelToken) return;
+    if (retry) {
+      let cur = null;
+      try { cur = history.state; } catch (e) { cur = null; }
+      const thin = !cur || !cur.fairwayNav || cur.root || !cur.trap;
+      if (!thin && _fairwayNavTrapSerial !== seen) return;
+    }
+    fairwayNavFillSentinel();
+  };
+  /* iOS Safari ignores pushState in the popstate turn. A later task sticks;
+     a second tick covers the case where the first deferred push is eaten. */
+  setTimeout(function () { run(false); }, 0);
+  setTimeout(function () { run(true); }, 50);
+}
+
+function fairwayNavOnPageShow() {
+  try {
+    const cur = history.state;
+    if (cur && cur.fairwayNav && cur.trap && !cur.root) return;
+    if (!fairwayNavShouldTrap()) return;
+    fairwayNavScheduleHomeSentinel();
+  } catch (e) {}
 }
 
 function fairwayNavView() {
@@ -4326,6 +4413,10 @@ function fairwayNavView() {
 }
 
 function fairwayOnPopState(ev) {
+  if (_fairwayNavFilling) {
+    _fairwayNavSentinelRedo = true;
+    return;
+  }
   let decision;
   try {
     decision = fairwayNavDecide(fairwayNavView(), ev && ev.state, {
@@ -4338,7 +4429,7 @@ function fairwayOnPopState(ev) {
     return;
   }
   if (decision.type === "trap") {
-    fairwayNavRepush();
+    fairwayNavScheduleHomeSentinel();
     return;
   }
   _fairwayNavLock = true;
@@ -4358,15 +4449,25 @@ function fairwayOnPopState(ev) {
     console.warn("fairwayOnPopState", e);
   }
   _fairwayNavLock = false;
-  if (decision.repush) fairwayNavRepush();
+  if (decision.repush) fairwayNavScheduleHomeSentinel();
 }
 
 function fairwayNavArmTrap() {
   try {
     if (!fairwayNavShouldTrap()) return;
-    const cur = history.state;
-    if (!cur || !cur.fairwayNav || !cur.root) return;
-    fairwayNavRepush();
+    if (!state || state.screen !== "home" || fairwayHoleSheetIsOpen()) return;
+    const cur = (typeof history !== "undefined" && history.state) || null;
+    const view = fairwayNavView();
+    if (cur && cur.fairwayNav && !fairwayNavSameView(cur, view)) return;
+    /* A load-time sentinel is not enough: iOS standalone honors the entry
+       created during a user gesture. One per cushion, not one per tap.
+       If the cushion is already gone, rebuild it inside this gesture. */
+    if (cur && cur.gesture) return;
+    const thin = !cur || !cur.fairwayNav || cur.root || !cur.trap;
+    const n = thin ? fairwayNavHomeSentinelDepth() : 1;
+    for (let i = 0; i < n; i++) {
+      if (!fairwayNavRepush(i === n - 1 ? { gesture: 1 } : null)) break;
+    }
   } catch (e) {}
 }
 
@@ -4377,11 +4478,15 @@ function fairwayNavBoot() {
   const frame = fairwayNavCapture();
   try {
     history.replaceState(Object.assign({ root: true }, frame), "", fairwayNavHref(frame));
-    if (fairwayNavShouldTrap()) fairwayNavRepush();
+    if (fairwayNavShouldTrap()) {
+      const n = fairwayNavHomeSentinelDepth();
+      for (let i = 0; i < n; i++) fairwayNavRepush();
+    }
   } catch (e) {}
   window.addEventListener("popstate", fairwayOnPopState);
-  document.addEventListener("touchstart", fairwayNavArmTrap, { passive: true });
-  document.addEventListener("pointerdown", fairwayNavArmTrap, { passive: true });
+  window.addEventListener("pageshow", fairwayNavOnPageShow);
+  document.addEventListener("touchstart", fairwayNavArmTrap, { passive: true, capture: true });
+  document.addEventListener("pointerdown", fairwayNavArmTrap, { passive: true, capture: true });
 }
 
 function go(name) {
@@ -8929,7 +9034,7 @@ function collectFairwayBackup() {
   return {
     version: 3,
     app: "Fairway",
-    appVersion: "4.1.3.1",
+    appVersion: "4.2.1",
     exportedAt: new Date().toISOString(),
     updatedAt: (typeof getDataUpdatedAt === "function" ? getDataUpdatedAt() : "") || "",
     includes: ["rounds", "players.scores", "players.putts", "players.fir", "players.gir", "players.ball", "players.withdrawn", "roster", "host", "activeRound", "winners", "standings"],
@@ -9944,7 +10049,7 @@ function renderPerfil() {
     <div class="profile-hero">
       <div class="avatar-lg">${escapeHtml(initials)}</div>
       <p class="muted" style="margin-top:8px;">Tu perfil en este dispositivo</p>
-      <p class="micro">Fairway 4.1.3.1</p>
+      <p class="micro">Fairway 4.2.1</p>
     </div>
     <div class="card mb-16">
       <div class="eyebrow">Nombre</div>
