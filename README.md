@@ -3,7 +3,7 @@
 PWA personal de golf para iPhone (Safari / pantalla de inicio): marcador offline, sin cuenta, WHS, varios jugadores en el mismo teléfono. Publicada en GitHub Pages.
 
 **App:** https://ardu01.github.io/app-golf/  
-**Copia de seguridad:** esquema JSON **3** (compatible a lo largo de 3.x / 4.0.x / 4.1.x)  
+**Copia de seguridad:** esquema JSON **3** (compatible a lo largo de 3.x / 4.x)  
 **Releases:** https://github.com/ardu01/app-golf/releases · [`CHANGELOG.md`](CHANGELOG.md)
 
 ---
@@ -83,7 +83,7 @@ Historial alimentado desde el dispositivo (localStorage + espejo IndexedDB):
 
 ---
 
-## Detalle por versión (4.0 y 4.1)
+## Detalle por versión (4.0 a 4.2)
 
 ### 4.0.x
 
@@ -108,6 +108,10 @@ History API: gesto atrás / botón Atrás cierra hoja de hoyo y pantallas dentro
 ### 4.1.3.1
 
 Ancla de historial en **Inicio** (intento inicial). Shell `fairway-v4-4131`. Media en [v4.1.3.1](https://github.com/ardu01/app-golf/releases/tag/v4.1.3.1).
+
+### 4.2.3
+
+Salen los workflows que descargaban otra app o hacían `git push` (`publish-fairway-v3`, multicourse, tees, assemble, decode). Queda `test-fairway.yml` con `contents: read`; Pages no se toca. Los mapas de `holes/` y la ficha Mapa siguen. Shell `fairway-v4-423`. Esquema 3.
 
 ### 4.2.2
 

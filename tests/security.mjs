@@ -35,13 +35,13 @@ assert.strictEqual(hostile.ok, true);
 assert.ok(!JSON.stringify(hostile.data).includes("<"));
 assert.ok(!JSON.stringify(hostile.data).includes(">"));
 
-assert.ok(html.includes('aria-label="Versión">4.2.2</span>'));
-assert.ok(html.includes('appVersion: "4.2.2"'));
+assert.ok(html.includes('aria-label="Versión">4.2.3</span>'));
+assert.ok(html.includes('appVersion: "4.2.3"'));
 assert.ok(html.includes("version: 3"));
 const manifest = readFileSync(new URL("../manifest.webmanifest", import.meta.url), "utf8");
 const sw = readFileSync(new URL("../sw.js", import.meta.url), "utf8");
-assert.ok(manifest.includes("4.2.2"));
-assert.ok(sw.includes('const SHELL = "fairway-v4-422"'));
+assert.ok(manifest.includes("4.2.3"));
+assert.ok(sw.includes('const SHELL = "fairway-v4-423"'));
 assert.ok(html.includes('const FAIRWAY_DRIVE_CLIENT_ID = "429682128465-06rq4tc60pmo6r0808a8b27itcp9v9dv.apps.googleusercontent.com"'));
 assert.ok(!html.includes("client_secret"));
 assert.ok(!html.includes("refresh_token"));
@@ -52,15 +52,27 @@ assert.ok(!html.includes("fairway.bag.v1"));
 assert.ok(!html.includes("fairway/js/caddie.js"));
 assert.ok(!sw.includes("caddie.js"));
 
+const banned = [
+  "publish-fairway-v3.yml",
+  "apply-fairway-multicourse.yml",
+  "apply-player-tees.yml",
+  "assemble-fairway-index.yml",
+  "decode-fairway-binaries.yml"
+];
 const workflows = readdirSync(new URL("../.github/workflows/", import.meta.url));
-for (const name of workflows) {
-  const text = readFileSync(new URL("../.github/workflows/" + name, import.meta.url), "utf8");
-  const code = text.split("\n").filter((line) => !line.trim().startsWith("#")).join("\n");
-  assert.ok(!/\bgit push\b/.test(code), name + " todavía empuja");
-  if (name !== "test-fairway.yml") {
-    assert.ok(code.includes("if: false"), name);
-    assert.ok(!code.includes("workflow_dispatch"), name);
-  }
+for (const name of banned) {
+  assert.ok(!workflows.includes(name), name + " sigue dado de alta");
 }
+assert.deepStrictEqual(workflows, ["test-fairway.yml"]);
+const testWf = readFileSync(new URL("../.github/workflows/test-fairway.yml", import.meta.url), "utf8");
+const testCode = testWf.split("\n").filter((line) => !line.trim().startsWith("#")).join("\n");
+assert.ok(!/\bgit push\b/.test(testCode), "test-fairway todavía empuja");
+assert.ok(!testCode.includes("workflow_dispatch"));
+assert.ok(!testCode.includes("deploy-pages"));
+assert.ok(!testCode.includes("contents: write"));
+assert.ok(testCode.includes("contents: read"));
+assert.ok(testCode.includes("node tests/run.mjs"));
+assert.ok(html.includes('id="holeFotoLink"'));
+assert.ok(html.includes(">Mapa</button>"));
 
 console.log("security ok");

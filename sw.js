@@ -1,5 +1,5 @@
-/* Shell cache: product version with the extra minor zero collapsed. 4.0.11 → 411, 4.1.0 → 410, 4.1.1 → 411, 4.1.2 → 412, 4.1.3 → 413, 4.1.3.1 → 4131, 4.2.1 → 421, 4.2.2 → 422. */
-const SHELL = "fairway-v4-422";
+/* Shell cache: product version with the extra minor zero collapsed. 4.0.11 → 411, 4.1.0 → 410, 4.1.1 → 411, 4.1.2 → 412, 4.1.3 → 413, 4.1.3.1 → 4131, 4.2.1 → 421, 4.2.2 → 422, 4.2.3 → 423. */
+const SHELL = "fairway-v4-423";
 const MAPS = "fairway-maps-v1";
 const MAPS_MAX = 120;
 const ASSETS = [

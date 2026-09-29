@@ -23,7 +23,7 @@ No hace falta npm para jugar ni para esa suite. Node 22 sirve. El orden es scori
 | `migration.mjs` | Round-trip a IndexedDB, JSON corrupto, cuota, interrupción, no borrar `localStorage` |
 | `pwa.mjs` | No hay `SKIP_WAITING` en install. No recarga con ronda, cierre o pantallas de juego |
 | `stats.mjs` | Gross de 9 y de 18 no se promedian juntos |
-| `security.mjs` | `clipStr` y `escapeHtml`, backup hostil, ningún workflow de esta rama hace `git push`. El `tel:` de La Herrería sigue. No hay bolsa ni `caddie.js` |
+| `security.mjs` | `clipStr` y `escapeHtml`, backup hostil, solo `test-fairway.yml` (`contents: read`, sin `git push`). El `tel:` de La Herrería sigue. No hay bolsa ni `caddie.js`. La ficha Mapa sigue en el hoyo |
 
 ## Navegador
 
@@ -42,7 +42,7 @@ En esta máquina (Chrome del sistema, viewport 390×844) salió `e2e ok` con el 
 
 ## CI
 
-`.github/workflows/test-fairway.yml` lanza `node tests/run.mjs` en push a `main` y en cada pull request. No instala Playwright y no despliega.
+`.github/workflows/test-fairway.yml` lanza `node tests/run.mjs` en push a `main` y en cada pull request, con `contents: read`. No instala Playwright y no despliega. Desde la 4.2.3 no hay otro workflow en el repo: los cinco que descargaban otra app o hacían `git push` ya no están.
 
 Ese job no arranca en GitHub: la cuenta está bloqueada por facturación («The job was not started because your account is locked due to a billing issue.»). El verde local no se refleja en el check.
 

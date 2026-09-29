@@ -1,5 +1,14 @@
 # Changelog
 
+## 4.2.3
+
+Esquema del JSON de copia: 3. Las copias de la 4.0.11, de la 4.1.x, de la 4.2.1 y de la 4.2.2 siguen entrando.
+
+- Salen del repositorio los workflows que descargaban otra app o hacían `git push`: `publish-fairway-v3`, `apply-fairway-multicourse`, `apply-player-tees`, `assemble-fairway-index` y `decode-fairway-binaries`. En la 4.2.2 ya estaban apagados (`if: false`); aquí dejan de estar dados de alta.
+- `test-fairway.yml` sigue lanzando `node tests/run.mjs` con `contents: read`. Pages sigue en el publicador legacy de `main`. No hay un segundo `deploy-pages`.
+- Los planos de `holes/` (404 webp), los manifiestos y la ficha Mapa del hoyo no cambian.
+- El service worker pasa a `fairway-v4-423` y no recarga con una ronda abierta.
+
 ## 4.2.2
 
 Esquema del JSON de copia: 3. Las copias de la 4.0.11, de la 4.1.0, de la 4.1.1, de la 4.1.2, de la 4.1.3, de la 4.1.3.1 y de la 4.2.1 siguen entrando.
