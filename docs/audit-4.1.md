@@ -148,7 +148,7 @@ Bloqueo externo, no inventado aquí: sin un client id de OAuth registrado para e
 
 | Workflow | Disparo | Qué haría si un runner arranca | Estado en esta fase |
 | --- | --- | --- | --- |
-| `test-fairway.yml` | push a `main`, y todo pull request | `node tests/run.mjs` | Se deja. Hoy no llega a ejecutarse (ver defectos) |
+| `test-fairway.yml` | push a `main`, y todo pull request | `node tests/run.mjs`. No despliega y no tiene `needs` que Pages pueda esperar | Se deja. Hoy no llega a ejecutarse (ver defectos). Un comentario en el YAML remite a esta página: no es la puerta de Pages |
 | `publish-fairway-v3.yml` | En `main` sigue `workflow_dispatch` + `contents: write`. En esta rama ya no | En `main`: curl de `index.html` desde `ardu01/app-golf-v3` y `git push` de la rama elegida (el botón usa `main` por defecto) | **Neutralizado en esta rama.** Sin `workflow_dispatch`, sin `contents: write`, sin curl, sin commit y sin `git push`. El job lleva `if: false` y `contents: read`. El botón de Actions lo sigue sirviendo `main` hasta que este PR se fusione. Esta fase no fusiona |
 | `apply-fairway-multicourse.yml` | `workflow_dispatch` y push que toque `ops/fairway-multicourse-patch/**` | Ejecuta `apply.py`, copia `ops/fairway-multicourse-patch/sw.js` encima de `sw.js` y hace `git push` de la rama del checkout. Ese `sw.js` es caché `fairway-v159`, llama a `skipWaiting()` en install y borra cualquier caché que no sea esa (también `fairway-maps-v1`) | Sigue activo, incluido si el disparo es `main`. No se ha tocado en esta fase |
 | `apply-player-tees.yml` | `workflow_dispatch` y push del parche o del propio YAML. `permissions: contents: write` | Si `index.html` no contiene `function setPlayerTee`, aplica `patches/player-tees.patch`, commit y `git push` de la rama del checkout | Sigue activo. `git apply --check patches/player-tees.patch` **falla** hoy (`patch failed: index.html:1884`). En el árbol actual no existe `setPlayerTee`. Con runner, el job fallaría en `git apply` antes del commit, salvo que el parche vuelva a encajar |
@@ -161,7 +161,37 @@ Historial consultado con `gh` (solo lectura):
 - `Publish Fairway V3`: dos `workflow_dispatch` sobre `main` el 2026-09-23 (runs `35834656865` y `35834594078`). Los dos en failure con la misma anotación de facturación. No hay evidencia de que llegaran a escribir `index.html`. En `main` el YAML sigue activo (`workflow_dispatch` y `contents: write`). El cambio que quita el botón está solo en `release/fairway-4.1`. GitHub ofrece `workflow_dispatch` desde la rama por defecto, así que el botón de producción sigue ahí hasta fusionar. No se fusiona en esta fase.
 - El apply multi-course, el de tees y el decode también tienen runs en failure con esa anotación. Assemble no tiene runs en el listado pedido.
 
-Pages sí construye: el run `36531237675` del mismo push 4.0.11 terminó en success. El bloqueo de Actions no ha parado el despliegue estático en ese push. Pages no hace `git push` de vuelta al repo; publica lo que ya está en la rama por defecto.
+### Pages publica sin mirar los tests
+
+Demostrado en el mismo commit de `main`, app 4.0.11, SHA `7bbfee7474dbc11b1874b1c707cd98763a63965e`:
+
+| | Pages | Tests |
+| --- | --- | --- |
+| Workflow | `pages-build-deployment` | `test-fairway` |
+| Ruta | `dynamic/pages/pages-build-deployment` (no está en el repo) | `.github/workflows/test-fairway.yml` |
+| Run | [`36531237675`](https://github.com/ardu01/app-golf/actions/runs/36531237675) | [`36531238573`](https://github.com/ardu01/app-golf/actions/runs/36531238573) |
+| Evento | `dynamic` | `push` |
+| Creado | 2026-09-29T06:28:26Z | 2026-09-29T06:28:27Z |
+| Conclusion | **success** (cerrado 06:28:52Z) | **failure** (cerrado 06:28:30Z) |
+| Id de workflow | 362688059 | 365529253 |
+
+La API del sitio (`GET /repos/ardu01/app-golf/pages`) devuelve `build_type: "legacy"`, `source.branch: "main"`, `source.path: "/"`, `status: "built"`, `https://ardu01.github.io/app-golf/`. Cada push a `main` despliega la raíz del repo por ese camino. `test-fairway.yml` solo lanza `node tests/run.mjs`. No hay `needs` entre los dos. Pages no hace `git push` de vuelta; publica el árbol que ya está en `main`.
+
+El fallo del test en ese run es el bloqueo de facturación (el job no arrancó), no una aserción rota. El defecto de CI es otro: **el éxito de Pages no depende del check de tests.** Con el test en rojo, la 4.0.11 quedó publicada.
+
+### Seguimiento para que los tests cierren la publicación
+
+No se puede añadir `needs: test` al workflow dinámico. Tampoco se añade en este PR un `actions/deploy-pages` con `on: push`. Mientras `build_type` siga en `legacy`, ese archivo no sustituye al despliegue de rama: o falla al margen, o publica **además** del legado. Cambiar el origen de Pages es un ajuste del repositorio, no un archivo, y hecho antes de que el workflow esté en `main` dejaría el sitio sin publicador. Esta fase no llama a la API de Pages y no fusiona.
+
+Hacerlo en una sola ventana, en este orden:
+
+1. Confirmar que se acepta una pausa de Pages mientras el runner no arranque. Hoy `test-fairway` no obtiene máquina (facturación). Un deploy que dependa de ese test **no publicará** hasta que el job pueda empezar y `node tests/run.mjs` salga 0. En local la suite ya sale 0; el rojo de GitHub no es una aserción.
+2. Poner en `main` un workflow nuevo, por ejemplo `.github/workflows/pages.yml`, cuyo job de deploy tenga `needs: test` y el test sea el mismo comando (`node tests/run.mjs`). Permisos: `contents: read`, `pages: write`, `id-token: write`. El artefacto es la raíz del repo (tiene que seguir incluyendo `holes/`, `icons/`, `index.html`, `sw.js`, `manifest.webmanifest` y `.nojekyll`). No activar el `on: push` de ese archivo mientras el legado siga desplegando.
+3. En la misma ventana, cambiar el origen de Pages de «Deploy from a branch» (`legacy`, rama `main`, path `/`) a «GitHub Actions» y elegir ese workflow. La API de hoy es `build_type: "legacy"` y `source: {branch: "main", path: "/"}`. El reemplazo es `build_type: "workflow"`.
+4. Comprobar en el push siguiente que `pages-build-deployment` ya no corre y que el job de deploy no empieza si el test no termina en success.
+5. No dejar los dos publicadores encendidos. No cambiar el ajuste antes de que el YAML esté en la rama por defecto.
+
+`test-fairway.yml` puede seguir como check de pull request. No basta una regla de rama: el caso demostrado es un commit que **ya está** en `main` y Pages lo publica igual.
 
 ### Workflows que empujan la rama del checkout (incluido `main`)
 
@@ -183,7 +213,9 @@ No se han desactivado esos cuatro. El único camino de publicación que esta fas
 
 1. **El check `test-fairway` está rojo en `main` y el job no llega a ejecutar tests.** En el commit `7bbfee7474dbc11b1874b1c707cd98763a63965e`, run `36531238573`, job `109285172078`: conclusion failure, steps vacíos, anotación de facturación citada arriba. La suite, en esta máquina, termina en `all tests ok`. No se presenta el rojo de GitHub como un fallo de hándicap, mapas o persistencia.
 
-2. **No se ha reproducido un defecto de lógica de la app** en las seis suites ni leyendo los caminos de guardado que esas suites extraen. La traza `QuotaExceededError` del log es el caso de prueba de cuota, y la suite la da por buena.
+2. **Pages publica con el check de tests en rojo.** En ese mismo SHA (app 4.0.11), `pages-build-deployment` run `36531237675` terminó en success a las 06:28:52Z, después de que `test-fairway` run `36531238573` ya hubiera fallado (06:28:30Z). El sitio es despliegue legacy de la rama `main` (`build_type: legacy`, path `/`). El workflow de Pages no está en el repositorio y no espera a `test-fairway.yml`. El defecto es de acoplamiento de CI, no una aserción de la suite. El seguimiento para cerrarlo está en la sección de workflows. Este PR no cambia el publicador: encender `deploy-pages` al lado del legado no lo apaga.
+
+3. **No se ha reproducido un defecto de lógica de la app** en las seis suites ni leyendo los caminos de guardado que esas suites extraen. La traza `QuotaExceededError` del log es el caso de prueba de cuota, y la suite la da por buena.
 
 ## Riesgos potenciales
 
@@ -243,9 +275,9 @@ El orden sale de lo que está demostrado arriba, no de reescribir la app en abst
 2. **Fase 3 — Drive y service worker, sin credenciales inventadas.** El client id sigue vacío y documentado como único requisito externo. Se puede endurecer el versionado del `SHELL` ligado al release y la espera de reload con ronda activa; no se puede dar por probado el sync real. Conflictos: el plan ya existe en tests; falta el caso de perfil (`host`) que hoy se pisa.
 3. **Fase 4 — puntuación, stats, caddie.** No cambiar `courseHandicapFor` ni `strokesOnHole` sin un test que fije el número anterior. Separar CH y PH solo si hay una regla nueva y tests; hoy son el mismo valor a propósito. El caddie nuevo no sustituye el `tel:` de La Herrería ni al árbitro.
 4. **Fase 5 — cartografía y UX.** Partir de `holes/` (404 imágenes) y de PNOA. No recolocar los `approx: true`. La piel 4.0.1–4.0.11 es reciente y esta fase no la rediseña.
-5. **Fase 6 — tests y seguridad.** El hueco real es el runner de GitHub, no una aserción roja en local. Revisar que ningún workflow con `contents: write` pueda publicar otro `index.html`. El saneado de importación ya quita `<>` y está testeado; no relajarlo al partir el archivo.
+5. **Fase 6 — tests y seguridad.** Dos huecos distintos: el runner no arranca (facturación) y, aunque arrancara, Pages legacy no lo espera. El cierre de publicación es el seguimiento de la sección de workflows (un solo publicador, `needs: test`), no un `deploy-pages` añadido al lado del legado. Revisar que ningún workflow con `contents: write` pueda publicar otro `index.html`. El saneado de importación ya quita `<>` y está testeado; no relajarlo al partir el archivo.
 6. **Fase 7 — 4.1.0.** Subir la versión de producto, el texto del manifiesto y el nombre de caché del shell juntos. Dejar `version: 3` del JSON salvo que la migración tenga tests y un lector de las copias viejas. No marcar estable mientras el check de tests no pueda arrancar, o mientras un workflow pueda sustituir `index.html` por V3.
 
 ## Fuera de esta fase, a propósito
 
-No se ha partido `index.html`, no hay IndexedDB, no hay client id nuevo, no hay cambios de fórmula, de mapas ni de modalidades. El único cambio de comportamiento del repositorio, y solo en esta rama, es dejar `publish-fairway-v3.yml` sin dispatch, sin descarga y sin push. `main` no se ha fusionado ni se ha hecho force-push.
+No se ha partido `index.html`, no hay IndexedDB, no hay client id nuevo, no hay cambios de fórmula, de mapas ni de modalidades. No se ha cambiado el origen de Pages ni se ha añadido un segundo despliegue. En esta rama, `publish-fairway-v3.yml` sigue sin dispatch, sin descarga y sin push. `main` no se ha fusionado ni se ha hecho force-push.
