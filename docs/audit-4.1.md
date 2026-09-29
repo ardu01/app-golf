@@ -99,14 +99,14 @@ El resto sin carpeta: `villa-de-madrid-pitch-putt`, `barberan-y-collar`, `race-j
 
 ## Dependencias
 
-- App en el navegador: APIs de plataforma (`localStorage`, `sessionStorage`, Cache / service worker, canvas, Web Share, `File`). Cero paquetes npm.
+- App en el navegador: APIs de plataforma (`localStorage`, `sessionStorage`, IndexedDB a partir de la fase 2, Cache / service worker, canvas, Web Share, `File`). Cero paquetes npm.
 - Red opcional: `https://accounts.google.com/gsi/client` (solo al conectar Drive), `https://www.googleapis.com/drive/v3/` y upload multipart, WMS del IGN. El service worker no intercepta esos hosts.
 - Tests: módulos nativos de Node (`assert`, `fs`, `child_process`, `url`, `path`). `tests/extract.mjs` recorta funciones del HTML por llaves.
 - CI: `actions/checkout@v4` en `test-fairway.yml`. Pages es el workflow dinámico de GitHub, no un YAML del repo.
 
 ## Claves de almacenamiento
 
-No hay `indexedDB` en el código. La persistencia es `localStorage`, más una clave de `sessionStorage`.
+En el árbol 4.0.11 de partida la persistencia era solo `localStorage`, más una clave de `sessionStorage`. La fase 2 de esta rama añade IndexedDB como copia verificada (`docs/architecture.md`). No borra estas claves.
 
 | Clave | Rol | ¿Entra en el JSON de copia? |
 | --- | --- | --- |
@@ -184,7 +184,7 @@ Bloqueo externo, no inventado aquí: sin un client id de OAuth registrado para e
 | --- | --- | --- | --- |
 | `test-fairway.yml` | push a `main`, y todo pull request | `node tests/run.mjs`. No despliega y no tiene `needs` que Pages pueda esperar | Se deja. Hoy no llega a ejecutarse (ver defectos). Un comentario en el YAML remite a esta página: no es la puerta de Pages |
 | `publish-fairway-v3.yml` | En `main` sigue `workflow_dispatch` + `contents: write`. En esta rama ya no | En `main`: curl de `index.html` desde `ardu01/app-golf-v3` y `git push` de la rama elegida (el botón usa `main` por defecto) | **Neutralizado en esta rama.** Sin `workflow_dispatch`, sin `contents: write`, sin curl, sin commit y sin `git push`. El job lleva `if: false` y `contents: read`. El botón de Actions lo sigue sirviendo `main` hasta que este PR se fusione. Esta fase no fusiona |
-| `apply-fairway-multicourse.yml` | `workflow_dispatch` y push que toque `ops/fairway-multicourse-patch/**` | Ejecuta `apply.py`, copia `ops/fairway-multicourse-patch/sw.js` encima de `sw.js` y hace `git push` de la rama del checkout. Ese `sw.js` es caché `fairway-v159`, llama a `skipWaiting()` en install y borra cualquier caché que no sea esa (también `fairway-maps-v1`) | Sigue activo, incluido si el disparo es `main`. No se ha tocado en esta fase |
+| `apply-fairway-multicourse.yml` | En `main`: `workflow_dispatch` y push de `ops/fairway-multicourse-patch/**`. En esta rama ya no | En `main`: `apply.py`, copia `ops/fairway-multicourse-patch/sw.js` (caché `fairway-v159`, `skipWaiting`, borra el resto de cachés, mapas incluidos) y `git push` | **Neutralizado en esta rama**, igual que el de V3: sin dispatch, sin copia de `sw.js`, sin push, `if: false`, `contents: read`. En `main` sigue hasta fusionar |
 | `apply-player-tees.yml` | `workflow_dispatch` y push del parche o del propio YAML. `permissions: contents: write` | Si `index.html` no contiene `function setPlayerTee`, aplica `patches/player-tees.patch`, commit y `git push` de la rama del checkout | Sigue activo. `git apply --check patches/player-tees.patch` **falla** hoy (`patch failed: index.html:1884`). En el árbol actual no existe `setPlayerTee`. Con runner, el job fallaría en `git apply` antes del commit, salvo que el parche vuelva a encajar |
 | `assemble-fairway-index.yml` | `workflow_dispatch`, `contents: write` en el job | Si existe `index.parts/`, concatena y **reemplaza** `index.html`. Decodifica `*.b64`, `git add -A` y `git push` si hay diff | Sigue activo. No hay `index.parts` ni `*.b64` en el árbol. Sin cambios, el paso de commit no crea commit |
 | `decode-fairway-binaries.yml` | `workflow_dispatch`, `contents: write` en el job | Decodifica todo `*.b64`, borra el sidecar, exige `count > 0`, luego `git add -A`, commit y `git push` | Sigue activo. Sin `*.b64` el job fallaría en `test "$count" -gt 0` antes del commit |
@@ -235,13 +235,14 @@ Confirmado leyendo el YAML. Ninguno escribe `git push origin main` a mano. Todos
 | --- | --- | --- |
 | `publish-fairway-v3.yml` en `main` | Sí, tras sustituir `index.html` | Sí. Es el caso de los dos dispatch ya registrados, que no llegaron a ejecutar pasos |
 | `publish-fairway-v3.yml` en esta rama | No. El paso no hace push y el permiso es `contents: read` | El archivo de esta rama no ofrece dispatch |
-| `apply-fairway-multicourse.yml` | Sí, `index.html` y `sw.js`, si hay diff | Sí, por dispatch o por un push a `main` dentro de `ops/fairway-multicourse-patch/**` |
+| `apply-fairway-multicourse.yml` en `main` | Sí, `index.html` y `sw.js`, si hay diff | Sí, por dispatch o por un push a `main` dentro de `ops/fairway-multicourse-patch/**` |
+| `apply-fairway-multicourse.yml` en esta rama | No | El archivo de esta rama no ofrece dispatch ni el push por carpeta |
 | `apply-player-tees.yml` | Sí, `index.html`, si el parche se aplica | Sí, por dispatch o por un push a `main` de `patches/player-tees.patch` o del propio YAML. Hoy el parche no aplica |
 | `assemble-fairway-index.yml` | Sí, `git add -A`, si hay diff | Sí, si se dispara eligiendo `main` |
 | `decode-fairway-binaries.yml` | Sí, `git add -A`, si hay `*.b64` | Sí, si se dispara eligiendo `main` |
 | `test-fairway.yml` | No | No escribe en el repo |
 
-No se han desactivado esos cuatro. El único camino de publicación que esta fase corta es el de V3.
+No se ha desactivado el de tees, el de ensamblado ni el de decode. El de V3 y el multi-curso quedan cortados en esta rama; en `main` siguen hasta la fusión.
 
 ## Defectos demostrados
 
@@ -256,7 +257,7 @@ No se han desactivado esos cuatro. El único camino de publicación que esta fas
 No son bugs confirmados en un dispositivo. Son capacidades o huecos leídos en el código o en los workflows.
 
 1. **`publish-fairway-v3.yml` en `main` sigue pudiendo sustituir la app.** Ese archivo, el que Actions usa hoy, tiene `workflow_dispatch`, `contents: write`, descarga `index.html` de `app-golf-v3` y hace `git push`. Los dos dispatch de septiembre no llegaron a ejecutarse por la facturación. En `release/fairway-4.1` ese camino ya no está: no hay botón en el YAML, no hay escritura ni curl. El botón real desaparece al fusionar el PR, no antes. Revertir este archivo lo devolvería.
-2. **`apply-fairway-multicourse.yml` sigue armado** y, si un push toca esa carpeta y el runner existe, pisa `sw.js` con la variante v159 (skipWaiting inmediato y borrado del resto de cachés, mapas incluidos) y empuja `index.html`.
+2. **`apply-fairway-multicourse.yml` en `main` sigue pudiendo pisar `sw.js`.** El YAML de `main` copia la variante v159 (`skipWaiting` y borrado del resto de cachés, mapas incluidos) y empuja `index.html`. En `release/fairway-4.1` ese camino ya no está. El botón y el push por carpeta desaparecen al fusionar, no antes.
 3. **Al desbloquearse la facturación se reactivan a la vez** el test y todos los workflows con `contents: write`, no solo el test.
 4. **Presets creativos (`fairway.creativePresets.v1`) no viajan** en el JSON ni en Drive. Un cambio de teléfono los deja atrás. No hay constancia en el repo de que un usuario los esté usando.
 5. **El perfil (`host`) del JSON remoto pisa el local** en `mergeFairwayBackup` y en `driveApplyResolved` sin comparar fechas, aunque la ronda en curso se conserve.
@@ -305,13 +306,17 @@ Previstas por la misión 4.1 y **no empezadas** aquí. No son defectos demostrad
 
 El orden sale de lo que está demostrado arriba, no de reescribir la app en abstracto.
 
-1. **Fase 2 — contrato de datos, luego módulos.** Congelar el esquema 3 documentado aquí como contrato de lectura. Tests de migración (round-trip, JSON corrupto, cuota, interrupción) antes de mover nada a IndexedDB. No borrar claves viejas. El corte de `index.html` viene después de ese límite, porque un extract regex roto deja la suite ciega. Antes de editar el HTML a lo grande, desactivar o acotar `apply-fairway-multicourse.yml`: es el otro camino que pisa `sw.js` y hace push.
+1. **Fase 2 — contrato de datos, luego módulos.** En esta rama ya está la migración a IndexedDB descrita en `docs/architecture.md`: idempotente, con foto previa, sin borrar `localStorage`, con tests de round-trip, JSON corrupto, cuota e interrupción. El esquema del JSON sigue en 3. El corte grande de `index.html` (puntuación, pantallas, CSS) sigue pendiente: la suite extrae funciones por texto y un extract roto la dejaría ciega. `apply-fairway-multicourse.yml` queda neutralizado en esta rama para que un push no pise `sw.js` después de la fusión.
 2. **Fase 3 — Drive y service worker, sin credenciales inventadas.** El client id sigue vacío y documentado como único requisito externo. Se puede endurecer el versionado del `SHELL` ligado al release y la espera de reload con ronda activa; no se puede dar por probado el sync real. Conflictos: el plan ya existe en tests; falta el caso de perfil (`host`) que hoy se pisa.
 3. **Fase 4 — puntuación, stats, caddie.** No cambiar `courseHandicapFor` ni `strokesOnHole` sin un test que fije el número anterior. Separar CH y PH solo si hay una regla nueva y tests; hoy son el mismo valor a propósito. El caddie nuevo no sustituye el `tel:` de La Herrería ni al árbitro.
 4. **Fase 5 — cartografía y UX.** Partir del inventario contado: 54 campos, 26 carpetas, 404 webp, 19 con manifiesto (referencia La Herrería), 3 sin manifiesto, 4 `overviewOnly`, 28 sin carpeta (Puerta de Hierro incluida, ya en `COURSE_GEO`). No crear planos ni recolocar los `approx: true`. La piel de partida es la de la 4.0.11. Los párrafos 4.0.1–4.0.10 del README son el camino hasta esa piel, no otra versión de partida. Esta fase no la rediseña.
 5. **Fase 6 — tests y seguridad.** Dos huecos distintos: el runner no arranca (facturación) y, aunque arrancara, Pages legacy no lo espera. El cierre de publicación es el seguimiento de la sección de workflows (un solo publicador, `needs: test`), no un `deploy-pages` añadido al lado del legado. Revisar que ningún workflow con `contents: write` pueda publicar otro `index.html`. El saneado de importación ya quita `<>` y está testeado; no relajarlo al partir el archivo.
 6. **Fase 7 — 4.1.0.** Subir la versión de producto, el texto del manifiesto y el nombre de caché del shell juntos. Dejar `version: 3` del JSON salvo que la migración tenga tests y un lector de las copias viejas. No marcar estable mientras el check de tests no pueda arrancar, o mientras un workflow pueda sustituir `index.html` por V3.
 
-## Fuera de esta fase, a propósito
+## Fuera de la fase 1, a propósito
 
-No se ha partido `index.html`, no hay IndexedDB, no hay client id nuevo, no hay cambios de fórmula, de mapas ni de modalidades. No se ha cambiado el origen de Pages ni se ha añadido un segundo despliegue. En esta rama, `publish-fairway-v3.yml` sigue sin dispatch, sin descarga y sin push. `main` no se ha fusionado ni se ha hecho force-push.
+La fase 1 no partió `index.html`, no cambió fórmulas ni mapas, no inventó un client id y no fusionó `main`.
+
+## Fase 2 en esta rama
+
+IndexedDB guarda una copia verificada de las claves de la auditoría (historial, ronda activa y `.bak`, roster, host, creativo, presets, punteros de Drive). No guarda el token OAuth ni `fairway.drive.clientId`. `localStorage` sigue siendo la copia que lee el marcador y no se borra al verificar. El esquema del JSON sigue en 3. Los módulos nuevos están en `fairway/js/`. El CSS y la puntuación no se han extraído. `apply-fairway-multicourse.yml` queda en el mismo estado que el de V3: sin dispatch y sin push, en esta rama. `main` no se ha fusionado.

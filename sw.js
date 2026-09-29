@@ -8,7 +8,11 @@ const ASSETS = [
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./icons/apple-touch-icon.png",
-  "./icons/escorial-monasterio.png"
+  "./icons/escorial-monasterio.png",
+  "./fairway/js/keys.js",
+  "./fairway/js/persistence.js",
+  "./fairway/js/idb.js",
+  "./fairway/js/persist-boot.js"
 ];
 
 function isMapUrl(url) {
@@ -19,6 +23,7 @@ function isShellUrl(url) {
   if (url.origin !== self.location.origin) return false;
   const file = url.pathname.split("/").pop();
   if (!file) return true;
+  if (url.pathname.indexOf("/fairway/js/") !== -1 && /\.js$/.test(file)) return true;
   return file === "index.html"
     || file === "manifest.webmanifest"
     || file === "icon-192.png"
