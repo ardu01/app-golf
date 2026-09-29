@@ -1,122 +1,129 @@
 # Fairway
 
-Fairway es una PWA de golf para iPhone (Safari / Añadir a pantalla de inicio): marcador offline-first, sin cuenta, WHS, varios jugadores en el mismo dispositivo. Hosting: GitHub Pages.
+PWA personal de golf para iPhone (Safari / pantalla de inicio): marcador offline, sin cuenta, WHS, varios jugadores en el mismo teléfono. Publicada en GitHub Pages.
 
-**App en producción:** https://ardu01.github.io/app-golf/ · **Versión:** 4.1.3.1 (`fairway-v4-4131`) · **Esquema de copia JSON:** 3
-
----
-
-## Capturas 4.1.3.1 (producción)
-
-### Inicio — shell PWA y entrada a partida
-
-Cabecera con versión de producto, acceso a Perfil, CTA `Nueva partida`, tarjeta del campo por defecto (rating/tees/par) y barra inferior (`Inicio` / `Hoyo` / `Tarjeta` / `Clasif.`). El service worker `fairway-v4-4131` no recarga con ronda abierta; en Inicio el historial del navegador está anclado para que el gesto atrás de iOS no descargue la PWA.
-
-<img src="docs/recorrido/4.1/inicio.png" alt="Inicio 4.1.3.1: versión, Nueva partida, campo y tab bar" width="280">
-
-### Perfil — identidad, copia local y Drive
-
-Formulario de nombre / Handicap Index, accesos a historial y stats, bloque de copia de seguridad (export/import JSON esquema 3) y tarjeta Google Drive: OAuth web (`drive.file`), token solo en memoria, destino `Fairway/fairway-data.json`. Sin client secret en el repositorio.
-
-<img src="docs/recorrido/4.1/perfil-drive.png" alt="Perfil: copia JSON y Conectar Google Drive" width="280">
-
-### Historial — vueltas persistidas
-
-Lista vacía o poblada desde `localStorage` + espejo IndexedDB (desde 4.1.0). Restaurar / hacer copia sin pasar por un backend propio.
-
-<img src="docs/recorrido/4.1/historial.png" alt="Historial Mis vueltas" width="280">
-
-### Vídeo — tour 4.1.3.1
-
-[Inicio → Perfil → scroll hasta Drive (~15 s)](docs/recorrido/4.1/tour-4.1.mp4)
-
-También en la release: https://github.com/ardu01/app-golf/releases/tag/v4.1.3.1
+**App:** https://ardu01.github.io/app-golf/  
+**Copia de seguridad:** esquema JSON **3** (compatible a lo largo de 3.x / 4.0.x / 4.1.x)  
+**Releases:** https://github.com/ardu01/app-golf/releases · [`CHANGELOG.md`](CHANGELOG.md)
 
 ---
 
-## Evolución técnica (3.x → 4.1)
+## Fairway 3.x
 
-La **3.x** fijó el núcleo en un solo `index.html`: scorecard, WHS, SW y esquema de copia 3. La **4.0** cambió presentación (glass monocromo, densidad del marcador) sin tocar fórmulas ni claves de guardado. La **4.1** añade capa de datos y plataforma: IndexedDB espejo (4.1.0), retirada de bolsa/caddie digital (4.1.1), Drive OAuth (4.1.2), History API para gestos atrás (4.1.3) y ancla en Inicio (4.1.3.1). Releases con notas y media: https://github.com/ardu01/app-golf/releases · [`CHANGELOG.md`](CHANGELOG.md).
+La línea **3** consolida el producto como una sola app (`index.html`) pensada para el campo:
 
----
+- Anotar la vuelta sin cobertura: golpes, putts, bruto, neto, Stableford
+- Course / Playing Handicap según WHS (CR, Slope, SI); reparto correcto en 9 y en 18
+- Varios jugadores en el mismo dispositivo; tarjeta, clasificación y cierre
+- Perfil, historial reabrable, estadísticas
+- Service worker cuidadoso: no recarga a mitad de ronda abierta
+- Árbitro local (Reglas de Golf) y textos de modalidad
+- Copia de seguridad JSON (esquema 3) en el propio teléfono
 
-## Recorrido de partida (núcleo)
+### Capturas y vídeos del núcleo (recorrido 3.x / base de partida)
 
-### Setup — campo, tee, jugadores
-
-Selector de recorridos, tee con Course Rating / Slope, roster en el mismo teléfono.
+Setup y marcador:
 
 <img src="docs/recorrido/partida/campos.webp" alt="Lista de campos" width="200">
-<img src="docs/recorrido/partida/tees.webp" alt="Tees CR Slope" width="200">
+<img src="docs/recorrido/partida/tees.webp" alt="Tees con CR y Slope" width="200">
 <img src="docs/recorrido/partida/jugadores.webp" alt="Jugadores" width="200">
 
-[Vídeo: elegir campo](docs/recorrido/videos/elegir-campo.mp4)
-
-### Hoyo — entrada de golpes
-
-Controles de golpes/putts, FIR/GIR según modalidad, navegación de hoyos; penales y ajustes sin perder la ronda en curso.
-
 <img src="docs/recorrido/partida/marcador.webp" alt="Marcador del hoyo" width="200">
-<img src="docs/recorrido/partida/ajustes.webp" alt="Ajustes de partida" width="200">
-
-### Tarjeta y clasificación
-
-Vistas bruta/neta; clasificación por modalidades; cierre con ganadores (empates incluidos).
-
 <img src="docs/recorrido/partida/tarjeta-bruta.webp" alt="Tarjeta bruta" width="200">
 <img src="docs/recorrido/partida/tarjeta-neta.webp" alt="Tarjeta neta" width="200">
 <img src="docs/recorrido/partida/clasificacion.webp" alt="Clasificación" width="200">
 
-[Vídeo: ajustes, tarjeta y continuar](docs/recorrido/videos/ajustes-tarjeta-continuar.mp4) ·
-[Vídeo: paseo por la interfaz](docs/recorrido/videos/recorrido-interfaz.mp4)
+Perfil, historial y stats:
 
-### Perfil clásico y estadísticas
+<img src="docs/recorrido/partida/perfil.webp" alt="Perfil" width="200">
+<img src="docs/recorrido/partida/historial.webp" alt="Historial" width="200">
+<img src="docs/recorrido/stats/stats_con_vueltas.png" alt="Estadísticas" width="200">
 
-Historial reabrable; stats con filtros 5/10/20/temporada/año/todo; medias Gross 9 y Gross 18 separadas (4.1.0+).
-
-<img src="docs/recorrido/partida/perfil.webp" alt="Perfil clásico" width="200">
-<img src="docs/recorrido/partida/historial.webp" alt="Historial con vueltas" width="200">
-<img src="docs/recorrido/stats/stats_con_vueltas.png" alt="Stats con vueltas" width="200">
-
-[Vídeo: stats y perfil](docs/recorrido/videos/stats-perfil.mp4)
-
----
-
-## Hándicap WHS
-
-Course Handicap desde Index + CR + Slope; strokes por hoyo vía SI. En 9 hoyos el reparto usa la dificultad de esos nueve, no la vuelta de 18.
+Hándicap y árbitro:
 
 <img src="docs/recorrido/handicap/tee-cr-slope.webp" alt="Tee CR Slope" width="200">
 <img src="docs/recorrido/handicap/hoyo-con-golpe.webp" alt="Hoyo con stroke" width="200">
-<img src="docs/recorrido/handicap/18-hoyos-ch10.webp" alt="18 hoyos CH 10" width="200">
+<img src="docs/recorrido/reglas/arbitro-area-roja.webp" alt="Árbitro" width="220">
 
-[Vídeo: reparto en nueve hoyos](docs/recorrido/videos/handicap-9-hoyos.mp4)
+Vídeos:
 
----
-
-## Reglas y árbitro
-
-Textos de modalidad desde marcador/clasificación; árbitro local (lie → Reglas de Golf + cita), sin red.
-
-<img src="docs/recorrido/reglas/todos-los-modos.webp" alt="Modos" width="240">
-<img src="docs/recorrido/reglas/arbitro-area-roja.webp" alt="Árbitro área roja" width="240">
-
-[Vídeo: reglas](docs/recorrido/videos/reglas.mp4) ·
-[Vídeo: árbitro](docs/recorrido/videos/arbitro.mp4)
+- [Elegir campo](docs/recorrido/videos/elegir-campo.mp4)
+- [Ajustes, tarjeta y continuar](docs/recorrido/videos/ajustes-tarjeta-continuar.mp4)
+- [Paseo por la interfaz](docs/recorrido/videos/recorrido-interfaz.mp4)
+- [Stats y perfil](docs/recorrido/videos/stats-perfil.mp4)
+- [Hándicap en nueve hoyos](docs/recorrido/videos/handicap-9-hoyos.mp4)
+- [Reglas](docs/recorrido/videos/reglas.mp4)
+- [Árbitro](docs/recorrido/videos/arbitro.mp4)
 
 ---
 
-## Datos, Drive y tests
+## Fairway 4.x
 
-Partida primero en dispositivo (`localStorage`; espejo IndexedDB desde 4.1.0). Drive opcional: Perfil → Conectar, scope `drive.file`, sin secreto en repo. Tests: `node tests/run.mjs`.
+La línea **4** mantiene el mismo motor de partida y el mismo esquema de copia. Cambia la presentación y, en 4.1, la capa de plataforma.
 
-## Desarrollo local
+**4.0** — UI iPhone-first: tipografía y densidad tipo sistema, materiales glass monocromo, marcador pensado para un dedo. Las iteraciones 4.0.1–4.0.11 afilan cabecera, ficha del jugador y acciones del hoyo **sin** alterar fórmulas de hándicap ni el formato de guardado.
+
+**4.1** — encima de esa piel: datos más robustos (espejo IndexedDB), Drive opcional, gestos atrás de iOS dentro de la app, y limpieza de funciones que no son de Fairway (bolsa / caddie digital).
+
+### Capturas y vídeo 4.1 (producción reciente)
+
+Inicio (versión en cabecera, CTA de partida, tab bar; service worker que no recarga con ronda abierta; en Inicio el historial se ancla para no salir de la PWA):
+
+<img src="docs/recorrido/4.1/inicio.png" alt="Inicio 4.1 — shell PWA" width="280">
+
+Perfil con copia JSON (esquema 3) y Google Drive (`drive.file`, token en memoria, `Fairway/fairway-data.json`):
+
+<img src="docs/recorrido/4.1/perfil-drive.png" alt="Perfil — copia y Drive" width="280">
+
+Historial alimentado desde el dispositivo (localStorage + espejo IndexedDB):
+
+<img src="docs/recorrido/4.1/historial.png" alt="Historial" width="280">
+
+[Vídeo: Inicio → Perfil → Drive](docs/recorrido/4.1/tour-4.1.mp4)
+
+---
+
+## Detalle por versión (4.0 y 4.1)
+
+### 4.0.x
+
+Piel monocromo glass; refinados sucesivos del marcador (golpes/putts, fichas de acceso, cabecera). Esquema de copia **3**. Las partidas de 3.x siguen entrando.
+
+### 4.1.0
+
+IndexedDB como copia verificada del historial y estado; `localStorage` no se borra. Stats Gross · 9 y Gross · 18 separados. Workflows peligrosos del repo desactivados en esa línea. Drive aún sin client id. Shell `fairway-v4-410`.
+
+### 4.1.1
+
+Eliminados bolsa de palos y recomendaciones de caddie digital (otra app). Se mantienen tel. Herrería, árbitro, mapas y marcador. Shell `fairway-v4-411`.
+
+### 4.1.2
+
+Client id OAuth web de Google Drive para `https://ardu01.github.io` / `app-golf`. Sin secreto en el repo. Perfil → Conectar Google Drive. Shell `fairway-v4-412`. Media en [v4.1.2](https://github.com/ardu01/app-golf/releases/tag/v4.1.2).
+
+### 4.1.3
+
+History API: gesto atrás / botón Atrás cierra hoja de hoyo y pantallas dentro de la app; con ronda abierta no se pierden golpes. Shell `fairway-v4-413`.
+
+### 4.1.3.1
+
+Ancla de historial en **Inicio** (intento inicial). Shell `fairway-v4-4131`. Media en [v4.1.3.1](https://github.com/ardu01/app-golf/releases/tag/v4.1.3.1).
+
+### 4.2.1 (en curso / PR)
+
+Colchón de sentinels más robusto para iOS Safari/PWA en Inicio (`pushState` diferido), manteniendo un swipe = un paso en pantallas anidadas.
+
+---
+
+## Datos, Drive y desarrollo
+
+La partida vive primero en el teléfono. Drive, si se conecta, es el Drive del usuario. Tests: `node tests/run.mjs`.
 
 ```bash
 python3 -m http.server 8766
 ```
 
-HTTP obligatorio para el service worker. Pages publica el repo con `.nojekyll`.
+HTTP obligatorio para el service worker. Pages usa `.nojekyll`.
 
 ## Marca
 
