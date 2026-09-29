@@ -1,5 +1,14 @@
 # Changelog
 
+## 4.2.2
+
+Esquema del JSON de copia: 3. Las copias de la 4.0.11, de la 4.1.0, de la 4.1.1, de la 4.1.2, de la 4.1.3, de la 4.1.3.1 y de la 4.2.1 siguen entrando.
+
+- En Inicio, el gesto de volver desde el borde izquierdo del iPhone no llega a arrancar: no hay paso atrás, ni el deslizamiento de la página, ni un parpadeo hacia fuera de la PWA. El colchón de la 4.2.1 evitaba salir, pero cada centinela es una entrada real y Safari anima ese retroceso. Aquí un velo fijo en el borde cancela el toque antes de que el gesto se arme, y solo está en Inicio.
+- Si un swipe se cuela igual, Inicio no cambia de pantalla ni de scroll: el `popstate` no pinta nada y el colchón se repone en un turno siguiente.
+- En Perfil, en el alta de la ronda y en la hoja de hoyos el gesto sigue volviendo un paso.
+- El service worker pasa a `fairway-v4-422` y no recarga con una ronda abierta.
+
 ## 4.2.1
 
 Esquema del JSON de copia: 3. Las copias de la 4.0.11, de la 4.1.0, de la 4.1.1, de la 4.1.2, de la 4.1.3 y de la 4.1.3.1 siguen entrando.
