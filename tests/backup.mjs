@@ -97,7 +97,7 @@ assert.ok(html.includes("data.rounds.length > ROUNDS_MAX"));
 assert.ok(html.includes(".slice(0, ROUNDS_MAX)"));
 assert.ok(!html.includes("saveRounds(list.slice(0, 50))"));
 assert.ok(!html.includes("o.rounds.slice(0, 200)"));
-assert.ok(html.includes('appVersion: "4.0.9"'));
+assert.ok(html.includes('appVersion: "4.0.10"'));
 assert.ok(!html.includes('appVersion: "4.0.0-alpha"'));
 assert.ok(html.includes("fairwayShouldHoldUpdate"));
 assert.ok(html.includes("fairway.rounds.bak.v1"));
