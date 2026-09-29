@@ -129,7 +129,8 @@ Colchón de sentinels más robusto para iOS Safari/PWA en Inicio (`pushState` di
 
 ## Datos, Drive y desarrollo
 
-La partida vive primero en el teléfono. Drive, si se conecta, es el Drive del usuario. Tests: `node tests/run.mjs`.
+La partida vive primero en el teléfono. Drive, si se conecta, es el Drive del usuario. La partida compartida no usa ese JSON: es un buzón aparte. Tests: `node tests/run.mjs`.
+
 
 ```bash
 python3 -m http.server 8766

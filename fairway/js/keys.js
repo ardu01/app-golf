@@ -1,4 +1,4 @@
-/** Storage keys. JSON backup schema stays 3. */
+/** Storage keys. JSON backup schema stays 3. Shared-round queue is local, not inside that JSON. */
 
 export const APP_VERSION = "4.2.4";
 export const BACKUP_SCHEMA = 3;
@@ -20,6 +20,9 @@ export const DRIVE_FILE_KEY = "fairway.drive.fileId";
 export const DRIVE_FOLDER_KEY = "fairway.drive.folderId";
 export const DRIVE_META_KEY = "fairway.drive.meta";
 
+/** Device queue for an optional shared round. Not part of backup schema 3. */
+export const SHARED_KEY = "fairway.sharedRound.v1";
+
 /** Club bag removed in 4.1.1. Not mirrored. Dropped on boot. */
 export const RETIRED_KEYS = ["fairway.bag.v1"];
 
@@ -38,7 +41,8 @@ export const JSON_KEYS = [
   HOST_KEY,
   CREATIVE_KEY,
   CREATIVE_PRESETS_KEY,
-  DRIVE_META_KEY
+  DRIVE_META_KEY,
+  SHARED_KEY
 ];
 
 export const RAW_KEYS = [

@@ -31,3 +31,7 @@ Una sesión silenciosa de varias semanas necesitaría un backend. Esta copia no 
 ## Lo que no se puede probar aquí
 
 No hay credenciales de Google en CI. `tests/drive.mjs` cubre el plan, el merge y el saneado con datos ficticios, y que el client id público está en el código y no hay `client_secret`. No abre una sesión real contra Drive y no afirma un E2E. `tests/pwa.mjs` cubre que la actualización esperando no recarga el hoyo, la tarjeta, el cierre ni una ronda armada.
+
+## 4.2.2
+
+La partida compartida no usa `fairway-data.json`. Si Drive ya está conectado en este móvil y el buzón público no responde, el mismo alcance `drive.file` puede guardar `Fairway/fairway-room-CÓDIGO.json`. Ese archivo lo ve esta cuenta de Google, no un amigo con otra cuenta. El client id sigue siendo el público de la 4.1.2. No hay secreto nuevo. El detalle está en `docs/shared-round.md`.

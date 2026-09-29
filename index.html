@@ -2937,6 +2937,26 @@
     margin-top: 12px;
   }
   .rule-list > .rule-card + .rule-card { margin-top: 0; }
+
+  .shared-card .shared-code {
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    margin: 8px 0 4px;
+  }
+  .shared-card .shared-status { font-size: 13px; font-weight: 600; margin: 0 0 4px; }
+  .shared-card .shared-code-input {
+    width: 100%;
+    margin-top: 8px;
+    height: 44px;
+    border-radius: 12px;
+    border: 0.5px solid rgba(60,60,67,0.28);
+    background: rgba(255,255,255,0.92);
+    padding: 0 12px;
+    font-size: 17px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
 </style>
 </head>
 <body>
@@ -2974,6 +2994,7 @@
                 <div class="stat-pill"><div class="v">—</div><div class="l">Net</div></div>
               </div>
             </div>
+            <div id="sharedRoundHome"></div>
           </div>
           <div class="section-label"><h2>Accesos</h2></div>
           <div class="quick-grid">
@@ -3034,6 +3055,7 @@
           </p>
           <div class="hole-chips">
             <span class="badge" id="holeClubBadge">Centro Nacional de Golf</span>
+            <span class="badge" id="sharedRoundHole" hidden></span>
             <span class="badge badge-tier" id="tierBadge" hidden></span>
           </div>
         </div>
@@ -3273,9 +3295,8 @@
         <div class="sheet" role="dialog" aria-label="Invitar al flight">
           <div class="grab"></div>
           <h2>Varios móviles</h2>
-          <p class="muted" style="font-size:13px;margin-bottom:8px;">Compartir código o enlace no está disponible. No hay sala entre dispositivos.</p>
-          <p class="micro">En esta partida un móvil anota a todos. Los invitados se añaden en Nueva ronda.</p>
-          <button class="btn btn-primary mt-16" onclick="closeInvite()">Entendido</button>
+          <div id="sharedRoundInvite"></div>
+          <button class="btn btn-ghost mt-16" onclick="closeInvite()">Cerrar</button>
         </div>
       </div>
 
@@ -4724,6 +4745,7 @@ function go(name) {
     } catch (e) {}
     try { if (typeof refreshDriveUi === "function") refreshDriveUi(); } catch (e) {}
   }
+  try { if (typeof fairwayRenderShared === "function") fairwayRenderShared(); } catch (e) {}
   if (!_fairwayNavLock && name !== "hole" && fairwayHoleSheetIsOpen()) fairwaySheetDom(false);
   fairwayNavPush();
   try { fairwayNavSyncEdgeGuard(); } catch (e) {}
@@ -5320,6 +5342,11 @@ function persistActiveRound() {
       touchDataUpdated();
       if (typeof queueDriveSync === "function") queueDriveSync();
     }
+    var sharedApplying = false;
+    try { sharedApplying = typeof window !== "undefined" && !!window.__fairwaySharedApplying; } catch (e) {}
+    if (!sharedApplying && typeof fairwaySharedAfterPersist === "function") {
+      try { fairwaySharedAfterPersist(); } catch (e) {}
+    }
     return true;
   } catch (e) {
     console.warn("persistActiveRound", e);
@@ -5341,6 +5368,7 @@ function clearActiveRound() {
 
 /** After closing a round: wipe storage + scores so Home never shows Continuar */
 function endActiveRoundMemory() {
+  try { if (typeof fairwaySharedRoundClosed === "function") fairwaySharedRoundClosed(); } catch (e) {}
   state._activeRoundLive = false;
   clearActiveRound();
   // Double-clear in case ACTIVE_KEY was written under an alias
@@ -5931,7 +5959,7 @@ function renderSetup() {
           <button class="btn btn-primary" type="button" onclick="addGuestPlayer()" style="width:100%;">Añadir a la partida</button>
         </div>
       </div>
-      <p class="micro mt-12">Un móvil anota a todos. Anotar cada uno en el suyo necesita sincronización entre dispositivos y aún no está disponible.</p>
+      <p class="micro mt-12">Un móvil anota a todos. Para anotar en varios, crea o únete a una partida compartida en Inicio. Sin red se sigue apuntando aquí.</p>
       <div class="saved-roster" id="savedRoster"></div>`;
   } else if (step === 4) {
     html = `<p class="muted mb-8">¿Cómo queréis jugar?</p>
@@ -6444,6 +6472,7 @@ function setupNext() {
       const ok = window.confirm("Hay una ronda guardada en este móvil. La anterior no se borra hasta que esta nueva empiece de verdad. Si continúas, se sustituye. ¿Empezar la nueva ronda?");
       if (!ok) return;
     }
+    try { if (typeof fairwaySharedRoundClosed === "function") fairwaySharedRoundClosed(); } catch (e) {}
     state.hole = 1;
     state.activePlayer = 0;
     refreshPlayerHandicaps();
@@ -6510,7 +6539,7 @@ function renderLobby() {
   }));
   body.innerHTML = `
     <p class="muted mb-16">${escapeHtml(CLUB)} · ${escapeHtml(FX.tee)} · ${(state.setup && state.setup.holes) || 18} hoyos</p>
-    <p class="micro mb-12">Un móvil anota a todos. Varios móviles a la vez no está disponible: no hay sala ni sincronización.</p>
+    <p class="micro mb-12">Un móvil anota a todos. La partida compartida, con código, está en Inicio y en Ajustes.</p>
     ${seats.map(s => `
       <div class="player-row">
         <div class="avatar ${s.p.avatar||""}">${escapeHtml(s.p.initials)}</div>
@@ -6523,22 +6552,34 @@ function setWriteModeDemo(m) {
   state.writeMode = "A";
   if (typeof FX === "object") FX.write_mode = "single_device";
   if (state.setup) state.setup.writeMode = "single_device";
-  if (m === "B") showToast("Varios móviles aún no está disponible");
+  if (m === "B") openInvite();
   else showToast("Un móvil anota a todos", true);
   if (state.screen === "lobby") renderLobby();
 }
 
+function fairwaySharedCreate() {
+  showToast("La partida compartida se está abriendo");
+}
+function fairwaySharedJoin() {
+  showToast("La partida compartida se está abriendo");
+}
+function fairwaySharedLeave() {}
+function fairwaySharedCopy() {}
+function fairwaySharedFlush() {}
+
 function openInvite() {
-  showToast("Invitar por código o enlace aún no está disponible");
+  const sheet = document.getElementById("inviteSheet");
+  if (sheet) sheet.classList.add("open");
+  try { if (typeof fairwayRenderShared === "function") fairwayRenderShared(); } catch (e) {}
 }
 function closeInvite() {
   document.getElementById("inviteSheet").classList.remove("open");
 }
 function setInviteTab() {
-  showToast("Invitar por código o enlace aún no está disponible");
+  openInvite();
 }
 function copyInvite() {
-  showToast("Invitar por código o enlace aún no está disponible");
+  if (typeof fairwaySharedCopy === "function") fairwaySharedCopy();
 }
 
 /* —— Hole (Modo A · un asiento · golpes + putts) —— */
@@ -9849,6 +9890,77 @@ async function driveUploadJson(payload, fileId, folderId, retried) {
   return id;
 }
 
+async function fairwayDriveRoomGet(code, fileId) {
+  if (!_driveToken) return { skipped: true };
+  const safeCode = String(code || "").replace(/[^A-Z0-9]/g, "");
+  if (safeCode.length !== 6) return { skipped: true };
+  try {
+    let id = driveSafeId(fileId);
+    if (!id) {
+      const q = encodeURIComponent("name='fairway-room-" + safeCode + ".json' and trashed=false");
+      const res = await fetch("https://www.googleapis.com/drive/v3/files?q=" + q + "&spaces=drive&fields=files(id,name)&pageSize=5", {
+        headers: { Authorization: "Bearer " + _driveToken }
+      });
+      if (!res.ok) return { skipped: true };
+      const data = await res.json();
+      const found = data && data.files && data.files[0];
+      id = found ? driveSafeId(found.id) : "";
+    }
+    if (!id) return { doc: null };
+    const body = await fetch("https://www.googleapis.com/drive/v3/files/" + id + "?alt=media", {
+      headers: { Authorization: "Bearer " + _driveToken }
+    });
+    if (body.status === 404) return { doc: null };
+    if (!body.ok) return { skipped: true };
+    return { doc: await body.json(), fileId: id };
+  } catch (e) {
+    return { skipped: true };
+  }
+}
+
+async function fairwayDriveRoomPut(code, doc, fileId) {
+  if (!_driveToken) return { skipped: true };
+  const safeCode = String(code || "").replace(/[^A-Z0-9]/g, "");
+  if (safeCode.length !== 6 || !doc) return { skipped: true };
+  try {
+    const name = "fairway-room-" + safeCode + ".json";
+    let id = driveSafeId(fileId);
+    let folderId = "";
+    if (!id) {
+      try { folderId = await driveEnsureFolder(); } catch (e) { return { skipped: true }; }
+    }
+    const boundary = "fairway_room_" + Date.now();
+    const meta = id
+      ? { name: name, mimeType: "application/json" }
+      : { name: name, mimeType: "application/json", parents: [folderId] };
+    const body =
+      "--" + boundary + "\r\n" +
+      "Content-Type: application/json; charset=UTF-8\r\n\r\n" +
+      JSON.stringify(meta) + "\r\n" +
+      "--" + boundary + "\r\n" +
+      "Content-Type: application/json\r\n\r\n" +
+      JSON.stringify(doc) + "\r\n" +
+      "--" + boundary + "--";
+    const url = id
+      ? "https://www.googleapis.com/upload/drive/v3/files/" + id + "?uploadType=multipart"
+      : "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart";
+    const res = await fetch(url, {
+      method: id ? "PATCH" : "POST",
+      headers: {
+        Authorization: "Bearer " + _driveToken,
+        "Content-Type": "multipart/related; boundary=" + boundary
+      },
+      body: body
+    });
+    if (!res.ok) return { skipped: true };
+    const saved = await res.json();
+    const savedId = driveSafeId(saved && saved.id);
+    return savedId ? { fileId: savedId } : { skipped: true };
+  } catch (e) {
+    return { skipped: true };
+  }
+}
+
 async function driveReadFile(fileId) {
   const id = driveSafeId(fileId);
   if (!id) return { missing: true };
@@ -10433,10 +10545,12 @@ function renderAjustes() {
     try { hasStored = !!localStorage.getItem(ACTIVE_KEY); } catch (e) {}
     if (!hasStored) {
       body.innerHTML = `
+        <div id="sharedRoundAjustes"></div>
         <div class="card"><p class="muted">No hay partida en curso.</p>
         <p class="micro mt-8">Empieza una ronda o abre una del historial para editar jugadores y modos.</p></div>
         <button class="btn btn-ghost mt-16" onclick="go('historial')">Mis vueltas</button>
         <button class="btn btn-primary mt-8" onclick="setupStart()">Nueva partida</button>`;
+      try { if (typeof fairwayRenderShared === "function") fairwayRenderShared(); } catch (e) {}
       return;
     }
   }
@@ -10495,6 +10609,7 @@ function renderAjustes() {
   }).join("");
 
   body.innerHTML = `
+    <div id="sharedRoundAjustes"></div>
     <div class="aj-section">
       <h3>Jugadores</h3>
       <p class="micro mb-8">Cambia nombre, HI, bola o retira a alguien sin crear una partida nueva.</p>
@@ -10536,6 +10651,7 @@ function renderAjustes() {
            <button type="button" class="btn btn-ghost" style="width:100%;" onclick="if(persistActiveRound())showToast('Progreso guardado')">Guardar ahora</button>`}
       <button type="button" class="btn btn-ghost btn-end-round mt-8" style="width:100%;" onclick="finishRoundEarly()">Cerrar ronda en curso</button>
     </div>`;
+  try { if (typeof fairwayRenderShared === "function") fairwayRenderShared(); } catch (e) {}
 }
 
 function ajDraftHcp(delta) {
@@ -11084,5 +11200,6 @@ if ("serviceWorker" in navigator) {
 }
 </script>
 <script type="module" src="fairway/js/persist-boot.js"></script>
+<script type="module" src="fairway/js/shared-boot.js"></script>
 </body>
 </html>
