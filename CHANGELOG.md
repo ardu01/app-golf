@@ -1,5 +1,13 @@
 # Changelog
 
+## 4.2.1
+
+Esquema del JSON de copia: 3. Las copias de la 4.0.11, de la 4.1.0, de la 4.1.1, de la 4.1.2, de la 4.1.3 y de la 4.1.3.1 siguen entrando.
+
+- En Inicio, el gesto de volver del iPhone (Safari y la PWA instalada) y el botón Atrás no cierran ni descargan Fairway. Hay varias entradas centinela, el primer toque en Inicio deja una dentro del gesto, y cada atrás las repone en un turno siguiente: iOS ignora un `pushState` hecho en el mismo turno del `popstate`.
+- En Perfil, en el alta de la ronda y en la hoja de hoyos el gesto sigue volviendo un paso, como en la 4.1.3.
+- El service worker pasa a `fairway-v4-421` y no recarga con una ronda abierta.
+
 ## 4.1.3.1
 
 Esquema del JSON de copia: 3. Las copias de la 4.0.11, de la 4.1.0, de la 4.1.1, de la 4.1.2 y de la 4.1.3 siguen entrando.
