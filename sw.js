@@ -1,4 +1,5 @@
-const SHELL = "fairway-v4-411";
+/* Shell cache: product version with the extra minor zero collapsed. 4.0.11 → 411, 4.1.0 → 410. */
+const SHELL = "fairway-v4-410";
 const MAPS = "fairway-maps-v1";
 const MAPS_MAX = 120;
 const ASSETS = [
@@ -8,7 +9,12 @@ const ASSETS = [
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./icons/apple-touch-icon.png",
-  "./icons/escorial-monasterio.png"
+  "./icons/escorial-monasterio.png",
+  "./fairway/js/keys.js",
+  "./fairway/js/persistence.js",
+  "./fairway/js/idb.js",
+  "./fairway/js/persist-boot.js",
+  "./fairway/js/caddie.js"
 ];
 
 function isMapUrl(url) {
@@ -19,6 +25,7 @@ function isShellUrl(url) {
   if (url.origin !== self.location.origin) return false;
   const file = url.pathname.split("/").pop();
   if (!file) return true;
+  if (url.pathname.indexOf("/fairway/js/") !== -1 && /\.js$/.test(file)) return true;
   return file === "index.html"
     || file === "manifest.webmanifest"
     || file === "icon-192.png"

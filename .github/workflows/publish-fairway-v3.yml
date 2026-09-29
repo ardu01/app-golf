@@ -1,25 +1,47 @@
-name: Publish Fairway V3
+# DISABLED — Fairway 4.1 Phase 1 (2026-09-29).
+#
+# Why this file used to be dangerous:
+#   on: workflow_dispatch
+#   permissions: contents: write
+#   steps that checked out the chosen branch (the Actions UI defaults to
+#   main), downloaded
+#   https://raw.githubusercontent.com/ardu01/app-golf-v3/main/index.html
+#   over this repo's index.html, retitled it "Fairway V3", committed, and
+#   ran `git push`. That can replace Fairway 4.x on GitHub Pages.
+#
+# Two recorded dispatches on main (runs 35834656865 and 35834594078,
+# 2026-09-23) failed before any step: the account is locked due to a
+# billing issue. Nothing was published. The button was still live because
+# the workflow on main still had workflow_dispatch and contents: write.
+#
+# This copy removes workflow_dispatch, so the file no longer offers a
+# "Run workflow" button. It has no curl, no commit, and no git push.
+# contents is read. The job is also `if: false`.
+#
+# GitHub lists workflow_dispatch from the default branch. Until this
+# change is merged, main still serves the old file and the button there
+# stays. Do not restore workflow_dispatch or the download/push steps.
+
+name: Publish Fairway V3 (disabled)
+
 on:
-  workflow_dispatch:
+  # Not workflow_dispatch. This branch name is not used by the repo.
+  # A push to it would still skip the job (`if: false`) and could not
+  # write contents.
+  push:
+    branches:
+      - "__disabled__/publish-fairway-v3"
+
 jobs:
   publish:
+    if: false
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
     steps:
-      - uses: actions/checkout@v4
-      - name: Fetch V3 index
+      - name: Refused
         run: |
-          set -euxo pipefail
-          curl -fsSL https://raw.githubusercontent.com/ardu01/app-golf-v3/main/index.html -o index.html
-          python3 -c "from pathlib import Path; p=Path('index.html'); t=p.read_text(); t=t.replace('https://raw.githubusercontent.com/ardu01/app-golf/main/icons/apple-touch-icon.png','icons/apple-touch-icon.png').replace('https://raw.githubusercontent.com/ardu01/app-golf/main/icons/icon-192.png','icons/icon-192.png').replace('https://raw.githubusercontent.com/ardu01/app-golf/main/icons/icon-512.png','icons/icon-512.png').replace('<title>Fairway</title>','<title>Fairway V3</title>'); p.write_text(t); print(p.stat().st_size)"
-          wc -c index.html
-      - name: Commit published V3
-        run: |
-          set -euxo pipefail
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add index.html
-          if git diff --cached --quiet; then echo nothing; exit 0; fi
-          git commit -m "Publish depurated Fairway V3 to GitHub Pages"
-          git push
+          echo "Disabled in Fairway 4.1 Phase 1."
+          echo "This workflow would replace index.html with Fairway V3 and push."
+          echo "See docs/audit-4.1.md."
+          exit 1

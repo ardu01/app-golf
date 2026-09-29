@@ -1,49 +1,41 @@
-name: Apply Fairway multi-course patch
+# DISABLED — Fairway 4.1 Phase 2 (2026-09-29).
+#
+# Why this file used to be dangerous:
+#   on: workflow_dispatch AND push of ops/fairway-multicourse-patch/**
+#   permissions: contents: write
+#   steps that ran ops/fairway-multicourse-patch/apply.py, then
+#   copied ops/fairway-multicourse-patch/sw.js over the repo sw.js
+#   (cache name fairway-v159, skipWaiting on install, deletes every
+#   other cache including fairway-maps-v1), committed index.html and
+#   sw.js, and ran `git push` on the checked-out branch. A push to
+#   main, or a dispatch that defaults to main, can replace production.
+#
+# This copy removes workflow_dispatch and the path push trigger.
+# It has no apply.py, no copy of sw.js, no commit, and no git push.
+# contents is read. The job is also `if: false`.
+#
+# GitHub reads workflow_dispatch from the default branch. Until this
+# change is merged, main still serves the old file. Do not restore
+# the push trigger or the sw.js copy.
+
+name: Apply Fairway multi-course patch (disabled)
+
 on:
-  workflow_dispatch:
+  # Not workflow_dispatch. This branch name is not used by the repo.
   push:
-    paths:
-      - "ops/fairway-multicourse-patch/**"
+    branches:
+      - "__disabled__/apply-fairway-multicourse"
+
 jobs:
   apply:
+    if: false
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
     steps:
-      - uses: actions/checkout@v4
-      - name: Apply patch to index.html
+      - name: Refused
         run: |
-          set -euo pipefail
-          python3 ops/fairway-multicourse-patch/apply.py
-          # Keep sw.js at v159 if present in patch folder
-          if [ -f ops/fairway-multicourse-patch/sw.js ]; then
-            cp ops/fairway-multicourse-patch/sw.js sw.js
-          fi
-          wc -c index.html sw.js
-          # Guard: embeds still 18
-          python3 - <<'PY'
-          import re
-          t=open("index.html",encoding="utf-8").read()
-          m=re.search(r"const HOLE_MAPS_EMBEDDED\s*=\s*\{", t)
-          chunk=t[m.start():m.start()+2000000]
-          end=re.search(r"\n\};", chunk)
-          obj=chunk[:end.end()]
-          n=obj.count("data:image")
-          assert n==18, n
-          assert "Fotos disponibles en La Herrería" not in t
-          assert "COURSES_WITH_EXTERNAL_MAPS" in t
-          print("guards OK", n)
-          PY
-      - name: Commit
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html sw.js
-          git status
-          if git diff --cached --quiet; then
-            echo "Nothing to commit"
-            exit 0
-          fi
-          git commit -m "Fairway v159: multi-course hole maps + Madrid/P&P (keep Herrería embeds)"
-          git push
+          echo "Disabled in Fairway 4.1 Phase 2."
+          echo "This workflow would overwrite index.html and sw.js and push."
+          echo "See docs/architecture.md."
+          exit 1

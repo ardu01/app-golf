@@ -1,3 +1,10 @@
+# Does not gate GitHub Pages. Pages is a legacy branch deploy
+# (build_type legacy, source main /), workflow
+# dynamic/pages/pages-build-deployment, which is not in this repo.
+# On 7bbfee7474dbc11b1874b1c707cd98763a63965e, pages run 36531237675
+# succeeded while this workflow's run 36531238573 failed.
+# Do not add actions/deploy-pages here while that legacy publisher
+# is still on. The rewire is in docs/audit-4.1.md.
 name: test-fairway
 
 on:
