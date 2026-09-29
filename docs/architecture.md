@@ -54,3 +54,9 @@ En esta rama no tienen `workflow_dispatch` ni `git push`, el permiso es `content
 `FAIRWAY_DRIVE_CLIENT_ID` sigue vacío. El alta del cliente OAuth está en `docs/drive-sync.md`. El panel dice «Sin configurar» cuando el id no está. Un conflicto sigue mostrando «Conflicto» y no sustituye la ronda en curso hasta que el jugador elige.
 
 El nombre de caché del shell sigue `fairway-v4-411` hasta el commit de la 4.1.0. `fairwayShouldHoldUpdate` impide `SKIP_WAITING` y el reload mientras la pantalla es de juego, de cierre, o hay ronda armada. `tests/pwa.mjs` lo fija.
+
+## Stats y bolsa
+
+`statsGrossByLayout` separa el gross de 9 y el de 18. No los promedia juntos. La media dentro de cada largo es la misma media aritmética de `me.gross` que ya había. `courseHandicapFor` sigue en `index.html` (`hi * slope / 113`). No se ha extraído la puntuación: la suite la saca por texto y un traslado que no sea idéntico cambiaría el número.
+
+`fairway/js/caddie.js` lee par, SI y metros de la ficha del hoyo. La bolsa (`fairway.bag.v1`) guarda solo nombres que escribe el jugador, como máximo 14, sin metros. Esa clave entra en la migración. El enlace `tel:` del caddie de La Herrería sigue en el hoyo. El área de toque de las fichas de acceso pasa a 48×48.

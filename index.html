@@ -2556,17 +2556,35 @@
     background: rgba(0,0,0,0.06);
     color: #000;
   }
-  /* Hit area 44×44 centered on the 32px chip */
+  /* Hit area 48×48 centered on the 32px chip */
   #screen-hole .hole-access-chip::before {
     content: "";
     position: absolute;
     left: 50%;
     top: 50%;
-    width: 44px;
-    height: 44px;
+    width: 48px;
+    height: 48px;
     transform: translate(-50%, -50%);
   }
   #screen-hole .hole-access-chip[hidden] { display: none !important; }
+  #screen-hole .hole-bag {
+    margin: 0 16px 8px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.72);
+    border: 0.5px solid rgba(60,60,67,0.18);
+  }
+  #screen-hole .hole-bag[hidden] { display: none !important; }
+  #screen-hole .hole-bag-list { list-style: none; margin: 8px 0; padding: 0; }
+  #screen-hole .hole-bag-list li {
+    display: flex; align-items: center; justify-content: space-between;
+    min-height: 44px; gap: 8px;
+  }
+  #holeBagInput {
+    flex: 1; min-width: 0; min-height: 44px; border-radius: 10px;
+    border: 0.5px solid rgba(60,60,67,0.18); padding: 0 12px;
+    font: inherit; background: #fff;
+  }
   /* 4.0.11 — el pane y el main siguen flex:1. La ficha no se centra: el aire cae hacia el pie. */
   #screen-hole #holePlayPane.active {
     display: flex;
@@ -3018,7 +3036,9 @@
           <button type="button" class="hole-access-chip hole-foto-link" id="holeFotoLink" hidden onclick="setHoleTab('foto')">Mapa</button>
           <a class="hole-access-chip" id="holeCallCaddie" href="tel:+34918905111" hidden>Caddie</a>
           <a class="hole-access-chip" id="holeCallRest" href="tel:+34918905630" hidden>Restaurante</a>
+          <button type="button" class="hole-access-chip" id="holeBagBtn" onclick="toggleHoleBag()">Bolsa</button>
         </div>
+        <div id="holeBagPanel" class="hole-bag" hidden></div>
         <div id="holePlayPane" class="hole-tab-pane active" role="tabpanel">
           <div class="hole-play-main">
             <div class="carousel">
@@ -6314,6 +6334,57 @@ function updateHoleFoto() {
   requestCourseHoleManifest(courseId);
 }
 
+function readBagNames() {
+  let raw = [];
+  try { raw = JSON.parse(localStorage.getItem("fairway.bag.v1") || "[]"); } catch (e) { raw = []; }
+  if (window.fairwayCaddie && window.fairwayCaddie.bagNames) return window.fairwayCaddie.bagNames(raw);
+  return [];
+}
+function writeBagNames(names) {
+  if (!window.fairwayCaddie || !window.fairwayCaddie.bagNames) return;
+  const clean = window.fairwayCaddie.bagNames(names);
+  try {
+    localStorage.setItem("fairway.bag.v1", JSON.stringify(clean.map(function (name) { return { name: name }; })));
+  } catch (e) {}
+}
+function toggleHoleBag() {
+  const panel = document.getElementById("holeBagPanel");
+  if (!panel) return;
+  panel.hidden = !panel.hidden;
+  if (!panel.hidden) renderHoleBag();
+}
+function addBagClub() {
+  const input = document.getElementById("holeBagInput");
+  const names = readBagNames();
+  names.push(input ? input.value : "");
+  writeBagNames(names);
+  if (input) input.value = "";
+  renderHoleBag();
+}
+function removeBagClub(index) {
+  const names = readBagNames();
+  names.splice(index, 1);
+  writeBagNames(names);
+  renderHoleBag();
+}
+function renderHoleBag() {
+  const panel = document.getElementById("holeBagPanel");
+  if (!panel || panel.hidden) return;
+  const api = window.fairwayCaddie;
+  const hole = (typeof HOLES !== "undefined") ? HOLES[state.hole - 1] : null;
+  const names = readBagNames();
+  const card = api && api.caddieCard ? api.caddieCard(hole, names.map(function (n) { return { name: n }; })) : { factLine: "", clubs: names };
+  const clubs = (card.clubs || []).map(function (n, i) {
+    return `<li><span>${escapeHtml(n)}</span><button type="button" onclick="removeBagClub(${i})" aria-label="Quitar ${escapeHtml(n)}">×</button></li>`;
+  }).join("");
+  panel.innerHTML = `<p class="micro">${escapeHtml(card.factLine || "Sin ficha de este hoyo")}</p>
+    <p class="micro">Solo los metros de la ficha. Fairway no inventa distancias de palos.</p>
+    <ul class="hole-bag-list">${clubs}</ul>
+    <div class="btn-row">
+      <input id="holeBagInput" type="text" maxlength="40" placeholder="Nombre del palo" aria-label="Nombre del palo" autocomplete="off">
+      <button type="button" class="btn btn-primary" onclick="addBagClub()">Añadir</button>
+    </div>`;
+}
 function renderHole(opts) {
   opts = opts || {};
   if (typeof updateClubCalls === "function") updateClubCalls();
@@ -6325,6 +6396,7 @@ function renderHole(opts) {
   const h = HOLES[state.hole - 1];
   updateHoleFoto();
   if (typeof renderCreativePad === "function") renderCreativePad();
+  if (typeof renderHoleBag === "function") renderHoleBag();
   setHoleTab(state.holeTab);
   document.getElementById("holeNum").textContent = h.n;
   document.getElementById("holePar").textContent = h.par;
@@ -10198,6 +10270,15 @@ function fmtStat(n, digits) {
   if (n == null || !Number.isFinite(n)) return "—";
   return digits ? n.toFixed(digits) : String(Math.round(n));
 }
+function statsGrossByLayout(rounds) {
+  const out = { 9: [], 18: [] };
+  (rounds || []).forEach(function (r) {
+    const holes = statsNum(r && r.holes);
+    const gross = statsNum(r && r.me && r.me.gross);
+    if ((holes === 9 || holes === 18) && gross != null) out[holes].push(gross);
+  });
+  return out;
+}
 function renderStats() {
   const periods = [
     {k:"last_5",l:"5"},{k:"last_10",l:"10"},{k:"last_20",l:"20"},
@@ -10250,14 +10331,13 @@ function renderStats() {
     if (statsNum(me.firAtt)) { firAtt += me.firAtt; firHit += statsNum(me.firHit) || 0; }
     if (statsNum(me.girAtt)) { girAtt += me.girAtt; girYes += statsNum(me.girYes) || 0; }
   });
-  const layouts = rounds.map(r => statsNum(r.holes)).filter(n => n === 9 || n === 18);
-  const sameLayout = layouts.length === rounds.length && layouts.every(n => n === layouts[0]);
-  const grosses = sameLayout ? rounds.map(r => statsNum(r.me && r.me.gross)).filter(n => n != null) : [];
+  const byLayout = statsGrossByLayout(rounds);
   const pills = [
     [`${rounds.length}`, "Vueltas"],
     [fmtToParAvg(statsAvg(toPars)), "Al par"]
   ];
-  if (grosses.length) pills.push([fmtStat(statsAvg(grosses), 1), "Gross · " + layouts[0]]);
+  if (byLayout[9].length) pills.push([fmtStat(statsAvg(byLayout[9]), 1), "Gross · 9"]);
+  if (byLayout[18].length) pills.push([fmtStat(statsAvg(byLayout[18]), 1), "Gross · 18"]);
   if (sfs.length) pills.push([fmtStat(statsAvg(sfs), 1), "Stableford"]);
   if (puttHoles) pills.push([fmtStat(puttSum / puttHoles, 2), "Putts / hoyo"]);
   if (firAtt) pills.push([Math.round(100 * firHit / firAtt) + "%", "FIR"]);
@@ -10286,7 +10366,7 @@ function renderStats() {
     ${chips}
     <div class="close-stats">${pillsHtml}</div>
     <div class="list-card mb-16">${rows}</div>
-    <p class="footer-note" style="position:static;padding:4px 0;">Al par es la media de cada vuelta anotada, de 9 o de 18. FIR no cuenta los pares 3.</p>`;
+    <p class="footer-note" style="position:static;padding:4px 0;">Al par es la media de cada vuelta anotada. Gross · 9 y Gross · 18 no se mezclan. FIR no cuenta los pares 3.</p>`;
 }
 
 document.addEventListener("click", function (ev) {
@@ -10418,5 +10498,6 @@ if ("serviceWorker" in navigator) {
 }
 </script>
 <script type="module" src="fairway/js/persist-boot.js"></script>
+<script type="module" src="fairway/js/caddie.js"></script>
 </body>
 </html>

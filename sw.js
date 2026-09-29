@@ -13,7 +13,8 @@ const ASSETS = [
   "./fairway/js/keys.js",
   "./fairway/js/persistence.js",
   "./fairway/js/idb.js",
-  "./fairway/js/persist-boot.js"
+  "./fairway/js/persist-boot.js",
+  "./fairway/js/caddie.js"
 ];
 
 function isMapUrl(url) {

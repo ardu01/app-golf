@@ -327,3 +327,7 @@ IndexedDB guarda una copia verificada de las claves de la auditoría (historial,
 ## Fase 3 en esta rama
 
 El client id de Drive sigue vacío. Está documentado en `docs/drive-sync.md` (cliente OAuth web, origen `https://ardu01.github.io`, alcance `drive.file`, sin secreto y sin refresh token). Si no hay id, la etiqueta es «Sin configurar»; un conflicto sigue siendo «Conflicto». El aviso de conflicto dice que la ronda en curso no se sustituye hasta elegir. El perfil sigue escribiéndose con la copia aplicada: no se ha cambiado `mergeFairwayBackup`. El shell sigue en `fairway-v4-411` hasta la 4.1.0. `tests/pwa.mjs` cubre que no hay reload a mitad de ronda. No se ha añadido `deploy-pages` al lado del Pages legado.
+
+## Fase 4 en esta rama
+
+Stats muestra Gross · 9 y Gross · 18 por separado. Una vuelta de 9 y otra de 18 ya no se quedan sin media de gross: cada largo tiene la suya y no se mezclan. La fórmula de hándicap no se ha movido ni extraído. El caddie de juego es la ficha (par, SI, metros si la ficha los trae) más nombres de palos en `fairway.bag.v1`. No hay distancias inventadas. El `tel:` de La Herrería sigue. `PH` sigue igual que `CH`.

@@ -19,6 +19,7 @@ export const CREATIVE_PRESETS_KEY = "fairway.creativePresets.v1";
 export const DRIVE_FILE_KEY = "fairway.drive.fileId";
 export const DRIVE_FOLDER_KEY = "fairway.drive.folderId";
 export const DRIVE_META_KEY = "fairway.drive.meta";
+export const BAG_KEY = "fairway.bag.v1";
 
 /** Not migrated: unused client-id slot and the in-memory OAuth token. */
 export const DRIVE_CLIENT_KEY = "fairway.drive.clientId";
@@ -35,7 +36,8 @@ export const JSON_KEYS = [
   HOST_KEY,
   CREATIVE_KEY,
   CREATIVE_PRESETS_KEY,
-  DRIVE_META_KEY
+  DRIVE_META_KEY,
+  BAG_KEY
 ];
 
 export const RAW_KEYS = [
