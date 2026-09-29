@@ -1,200 +1,95 @@
 # Fairway
 
-Lo uso para apuntar la vuelta en el móvil. Golpes, putts, bruto, neto, Stableford. El hándicap del campo ya viene repartido. Pueden anotar varios en el mismo teléfono. No hay cuenta: la partida se queda en ese aparato, haya cobertura o no.
+PWA personal de golf para anotar la vuelta en el iPhone (Safari / pantalla de inicio). Offline-first, sin cuenta: golpes, putts, bruto, neto y Stableford en el mismo teléfono. Publicada en GitHub Pages.
 
-Las fotos las fui sacando mientras lo hacía. Alguna pantalla ya no es exactamente así (los iconos del perfil, sobre todo, y stats, que antes no calculaba nada).
+**App:** https://ardu01.github.io/app-golf/
 
-<img src="docs/recorrido/partida/inicio.webp" alt="Inicio, con la ronda a medias" width="260">
+<img src="docs/recorrido/partida/inicio.webp" alt="Inicio con ronda en curso" width="260">
 
-## Apuntar la vuelta
+## Características
 
-Campo, tee y jugadores. En el tee salen el Course Rating y el Slope.
+- Marcador por hoyo (varios jugadores en el mismo dispositivo)
+- Course Handicap / Playing Handicap según WHS (CR, Slope, SI); 9 y 18 hoyos
+- Tarjeta bruta y neta, clasificación y cierre con ganadores
+- Perfil, historial y estadísticas (filtros 5 / 10 / 20 / temporada / año / todo)
+- Árbitro local (Reglas de Golf) y accesos de campo cuando hay destino
+- Copia de seguridad JSON (esquema **3**) y Google Drive opcional (`drive.file`, token solo en memoria)
+- Gestos atrás de iOS dentro de la app; en Inicio no se sale de la PWA (4.1.3.1)
+
+## Capturas
+
+### Partida
 
 <img src="docs/recorrido/partida/campos.webp" alt="Lista de campos" width="200">
 <img src="docs/recorrido/partida/tees.webp" alt="Tees" width="200">
-<img src="docs/recorrido/partida/jugadores.webp" alt="Jugadores en el mismo móvil" width="200">
-
-[Elegir campo, en vídeo](docs/recorrido/videos/elegir-campo.mp4)
-
-En el hoyo, un toque por golpe. La tarjeta la miro en bruto y en neto. La clasificación lleva cada modo que haya marcado, y al cerrar pone los ganadores. Si empatan, salen los dos. La placa de La Herrería lleva el monasterio de El Escorial de fondo, el de las dos cúpulas. En los demás campos la placa sigue igual.
+<img src="docs/recorrido/partida/jugadores.webp" alt="Jugadores" width="200">
 
 <img src="docs/recorrido/partida/marcador.webp" alt="Marcador del hoyo" width="200">
 <img src="docs/recorrido/partida/tarjeta-bruta.webp" alt="Tarjeta bruta" width="200">
 <img src="docs/recorrido/partida/tarjeta-neta.webp" alt="Tarjeta neta" width="200">
 <img src="docs/recorrido/partida/clasificacion.webp" alt="Clasificación" width="200">
 
-A mitad de vuelta se puede tocar la bola y el resto de ajustes sin tirar lo anotado.
+[Elegir campo](docs/recorrido/videos/elegir-campo.mp4) ·
+[Ajustes y tarjeta](docs/recorrido/videos/ajustes-tarjeta-continuar.mp4) ·
+[Recorrido de interfaz](docs/recorrido/videos/recorrido-interfaz.mp4)
 
-<img src="docs/recorrido/partida/ajustes.webp" alt="Ajustes de la partida" width="200">
-<img src="docs/recorrido/partida/ajustes-bola.webp" alt="Ajuste de la bola" width="200">
-
-[Ajustes, tarjeta y seguir la ronda](docs/recorrido/videos/ajustes-tarjeta-continuar.mp4)
-
-El perfil guarda el nombre y el Handicap Index. El historial cuelga de ahí. Si cierro la app a mitad, la ronda sigue donde iba. Una ya guardada se puede volver a abrir.
+### Perfil y stats
 
 <img src="docs/recorrido/partida/perfil.webp" alt="Perfil" width="200">
-<img src="docs/recorrido/partida/historial.webp" alt="Una vuelta del historial" width="200">
-<img src="docs/recorrido/partida/continuar.webp" alt="Seguir la ronda desde el inicio" width="200">
-<img src="docs/recorrido/partida/reabrir.webp" alt="Reabrir una partida guardada" width="200">
+<img src="docs/recorrido/partida/historial.webp" alt="Historial" width="200">
+<img src="docs/recorrido/stats/stats_con_vueltas.png" alt="Estadísticas" width="200">
 
-[Un paseo por las pantallas](docs/recorrido/videos/recorrido-interfaz.mp4)
+[Stats y perfil](docs/recorrido/videos/stats-perfil.mp4)
 
-Stats filtra las últimas 5, 10 o 20 vueltas, la temporada (desde enero), el último año, o todo. La media de golpes brutos solo la saco si todas las del filtro son del mismo largo. Nueve y dieciocho juntos no dan un solo número.
+### Hándicap
 
-<img src="docs/recorrido/stats/stats_con_vueltas.png" alt="Stats con varias vueltas" width="200">
-<img src="docs/recorrido/stats/stats_temporada.png" alt="Filtro de temporada" width="200">
-<img src="docs/recorrido/stats/perfil_iconos.png" alt="Perfil, con los iconos geométricos" width="200">
-
-[Stats y los iconos del perfil](docs/recorrido/videos/stats-perfil.mp4)
-
-## Planos de hoyo
-
-Hay 54 campos. 25 son de 18 hoyos, 7 de 9, 18 de pitch & putt y 4 de pares 3. 22 traen plano de cada hoyo y 4 solo una vista del campo. Son 404 webp, en `holes/`. Se piden al abrir ese hoyo, no al instalar la app.
-
-Las Rozas, El Encín y La Herrería, el 1:
-
-<img src="docs/recorrido/mapas/las-rozas-hoyo-1.webp" alt="Las Rozas, hoyo 1" width="200">
-<img src="docs/recorrido/mapas/el-encin-hoyo-1.webp" alt="El Encín, hoyo 1" width="200">
-<img src="docs/recorrido/mapas/la-herreria-hoyo-1.webp" alt="La Herrería, hoyo 1" width="200">
-
-[Mapas en Las Rozas](docs/recorrido/videos/mapas-las-rozas.mp4)
-
-Aranjuez, dentro de la app y el plano del que salió. La Finca, igual.
-
-<img src="docs/recorrido/mapas/aranjuez-hoyo-1.webp" alt="Aranjuez en el marcador" width="200">
-<img src="docs/recorrido/mapas/aranjuez-hoyo-1-plano.webp" alt="Plano de Aranjuez" width="200">
-<img src="docs/recorrido/mapas/la-finca-hoyo-1.webp" alt="La Finca en el marcador" width="200">
-<img src="docs/recorrido/mapas/la-finca-hoyo-1-plano.webp" alt="Plano de La Finca" width="200">
-
-El Robledal: el marcador, el hoyo y el plano.
-
-<img src="docs/recorrido/mapas/robledal-en-la-app.webp" alt="Robledal en la app" width="200">
-<img src="docs/recorrido/mapas/robledal-hoyo-1.webp" alt="Robledal, hoyo 1" width="200">
-<img src="docs/recorrido/mapas/robledal-plano.png" alt="Plano del Robledal" width="280">
-
-RSHECC Norte, lo mismo.
-
-<img src="docs/recorrido/mapas/rshecc-norte-en-la-app.webp" alt="RSHECC Norte en la app" width="200">
-<img src="docs/recorrido/mapas/rshecc-norte-hoyo-1.webp" alt="RSHECC Norte, hoyo 1" width="200">
-<img src="docs/recorrido/mapas/rshecc-norte-plano.png" alt="Plano de RSHECC Norte" width="280">
-
-RSHECC Sur, el hoyo y una vista más ancha.
-
-<img src="docs/recorrido/mapas/rshecc-sur-hoyo-1.webp" alt="RSHECC Sur, hoyo 1" width="200">
-<img src="docs/recorrido/mapas/rshecc-sur-vista.png" alt="Vista de RSHECC Sur" width="320">
-
-Torrejón y Golf Santander, en la app y el plano.
-
-<img src="docs/recorrido/mapas/torrejon-en-la-app.webp" alt="Torrejón en la app" width="200">
-<img src="docs/recorrido/mapas/torrejon-vista.webp" alt="Vista de Torrejón" width="260">
-<img src="docs/recorrido/mapas/golf-santander-en-la-app.webp" alt="Golf Santander en la app" width="200">
-<img src="docs/recorrido/mapas/golf-santander-satelite.webp" alt="Vista de Golf Santander" width="260">
-
-La Moraleja, Olivar de la Hinojosa y Torrejón, juntos. Debajo, La Dehesa y Villa de El Escorial.
-
-<img src="docs/recorrido/mapas/moraleja-olivar-torrejon.png" alt="Moraleja, Olivar y Torrejón" width="480">
-
-<img src="docs/recorrido/mapas/dehesa-escorial.png" alt="La Dehesa y Villa de El Escorial" width="480">
-
-## Hándicap
-
-Sigo el WHS. Con el Handicap Index, el CR y el slope sale el course handicap, y de ahí el golpe de cada hoyo. En nueve hoyos el reparto usa la dificultad de esos nueve, no la de la vuelta de dieciocho.
-
-<img src="docs/recorrido/handicap/tee-cr-slope.webp" alt="Tee con CR y slope" width="200">
+<img src="docs/recorrido/handicap/tee-cr-slope.webp" alt="Tee con CR y Slope" width="200">
 <img src="docs/recorrido/handicap/hoyo-con-golpe.webp" alt="Hoyo con golpe" width="200">
-<img src="docs/recorrido/handicap/hoyo-sin-golpe.webp" alt="Hoyo sin golpe" width="200">
 
-Dieciocho hoyos con course handicap 10, y el caso de nueve: el 1, un hoyo donde cae el golpe por la dificultad de esos nueve, y uno donde no.
+[Reparto en nueve hoyos](docs/recorrido/videos/handicap-9-hoyos.mp4)
 
-<img src="docs/recorrido/handicap/18-hoyos-ch10.webp" alt="18 hoyos, course handicap 10" width="200">
-<img src="docs/recorrido/handicap/9-hoyos-hoyo-1.webp" alt="9 hoyos, hoyo 1" width="200">
-<img src="docs/recorrido/handicap/9-hoyos-golpe-relativo.webp" alt="Golpe por dificultad de los 9" width="200">
-<img src="docs/recorrido/handicap/9-hoyos-sin-golpe.webp" alt="9 hoyos, sin golpe" width="200">
+### Reglas y árbitro
 
-[El reparto en nueve hoyos](docs/recorrido/videos/handicap-9-hoyos.mp4)
+<img src="docs/recorrido/reglas/todos-los-modos.webp" alt="Modos de juego" width="260">
+<img src="docs/recorrido/reglas/arbitro-area-roja.webp" alt="Árbitro" width="260">
 
-## Reglas
+[Reglas](docs/recorrido/videos/reglas.mp4) ·
+[Árbitro](docs/recorrido/videos/arbitro.mp4)
 
-Las de cada modo se pueden leer cuando haga falta, también a mitad de hoyo. Volver atrás deja la ronda como estaba.
+## Versión actual
 
-<img src="docs/recorrido/reglas/boton-en-marcador.webp" alt="Reglas desde el marcador" width="200">
-<img src="docs/recorrido/reglas/boton-en-clasificacion.webp" alt="Reglas desde la clasificación" width="200">
-<img src="docs/recorrido/reglas/todos-los-modos.webp" alt="Lista de modos" width="260">
+**4.1.3.1** (shell `fairway-v4-4131`). El esquema de la copia de seguridad sigue en **3**: las copias de 4.0.x / 4.1.x siguen entrando.
 
-[Abrir las reglas y volver a la ronda](docs/recorrido/videos/reglas.mp4)
+| Versión | Resumen |
+|--------|---------|
+| 4.1.0 | IndexedDB espejo, stats Gross 9/18, PWA/Drive endurecidos |
+| 4.1.1 | Sin bolsa de palos ni caddie digital (otra app) |
+| 4.1.2 | Google Drive OAuth web (Perfil → Conectar) |
+| 4.1.3 | Gesto atrás / historial dentro de la app |
+| 4.1.3.1 | En Inicio, atrás no sale de la PWA |
 
-El árbitro es un chat en la propia partida. Cuentas el lie. Si falta un dato, pregunta. Cuando ya puede decidir, aplica las Reglas de Golf y deja la cita al final. Esta es una bola en área roja.
+Detalle y assets: [Releases](https://github.com/ardu01/app-golf/releases). Changelog: [`CHANGELOG.md`](CHANGELOG.md).
 
-<img src="docs/recorrido/reglas/arbitro-area-roja.webp" alt="Árbitro, área roja" width="260">
+### Datos y Drive
 
-[La cita del área roja](docs/recorrido/videos/arbitro.mp4)
+La partida se guarda primero en el dispositivo. Drive, si se conecta, escribe `Fairway/fairway-data.json` en el Drive del usuario. Sin red se sigue jugando. No hay secreto de cliente en el repositorio.
 
-## El icono
+Las fórmulas de hándicap no se cambian a la ligera; los tests están en `tests/` (`node tests/run.mjs`).
 
-Una F. Estos son los que pone en la pantalla de inicio.
+## Desarrollo local
 
-<img src="docs/recorrido/marca/logo-f.png" alt="La F" width="96">
-<img src="docs/recorrido/marca/icono-192.png" alt="Icono a 192" width="96">
-<img src="docs/recorrido/marca/icono-512.png" alt="Icono a 512" width="128">
-
-## Versión 3.0
-
-Esto es la 3.0. Lo que venga después va como 3.0.1, 3.0.2 y así.
-
-Si hay una ronda con golpes, una actualización no recarga el teléfono a mitad. Espera a volver al inicio, con la partida ya guardada. Los planos que ya abrí siguen en el caché aunque cambie la app, con un tope de 120 para que no crezca sin fin. El campo que no he abierto no se descarga al instalar.
-
-Sigue siendo un solo `index.html`. No lo he partido en módulos: la partida real depende de ese archivo y no quiero un build para abrirlo.
-
-`strokesRecv` aparece dos veces, una dentro de la clasificación de una vuelta guardada y otra al dibujar la tarjeta. No es la misma función repetida en el mismo sitio. Las dos llaman a `strokesOnHole`.
-
-La copia de seguridad sigue en el esquema 3, así que las de antes entran. El texto de versión dentro del JSON es 4.0.11. Si el historial o la ronda en curso se corrompen, hay una copia local anterior y no se pisa lo que no se puede leer.
-
-La 3.0.2 escribe la ronda al esconder la pestaña y al suspender Safari. Si la copia principal falta o no se puede leer, Inicio ofrece Recuperar copia local. Nueva partida no borra la ronda guardada hasta que la nueva empieza de verdad.
-
-La 3.0.3 pide dos confirmaciones antes de cerrar una ronda a medias (Inicio y Ajustes). Cancelar cualquiera de las dos deja la partida como estaba. Terminar el último hoyo sigue yendo al cierre sin ese doble aviso.
-
-La 4.0.1 es solo piel: monocromo glass claro en Inicio, hoyo, tarjeta, cierre y preparación. El cristal del inicio de la 4.0.0-alpha se queda, sin azul. El esquema de la copia sigue en 3. Las fórmulas, las claves de guardado y los mapas no cambian.
-
-La 4.0.2 deja el mismo monocromo y corrige la densidad del marcador: −, el número y + de Golpes vuelven a la misma altura, los chips de Putts y Golpes comparten tamaño, y Árbitro, Mapa, Caddie y Restaurante pasan a un menú ···. En Inicio, cerrar la ronda se lee como acción de terminar y sigue pidiendo las dos confirmaciones.
-
-La 4.0.3 deja la ficha del hoyo a la altura del contenido. Putts y Golpes comparten el eje centrado. El − y el + de Golpes son cristal, los dos a 48×48. El negro sólido se queda solo en Siguiente. El esquema de la copia sigue en 3.
-
-La 4.0.4 ensancha esa ficha (8px de aire a cada lado) y centra el bloque ficha + puntos entre el FIR y el pie. Los puntos quedan pegados a la ficha. El número de Golpes pasa a 52px; el − y el + siguen en cristal a 48×48. El negro sólido se queda solo en Siguiente, a 50px. El esquema de la copia sigue en 3.
-
-La 4.0.5 deja el marcador igual y saca Árbitro, Mapa, Caddie y Restaurante del menú ···. Quedan en una fila de fichas de cristal bajo el progreso de hoyos, y solo si hay destino (mapa o teléfono). Hoyos sigue en la cabecera. El esquema de la copia sigue en 3.
-
-La 4.0.6 deja el marcador igual y separa esa fila del progreso (12px). Hoyos pasa a ser la primera ficha y abre el salto de hoyos; Árbitro, Mapa, Caddie y Restaurante siguen en el mismo orden, y solo si hay destino. El esquema de la copia sigue en 3.
-
-La 4.0.7 deja el marcador igual y sube el tope del historial a 99999 partidas. Guardar una ronda, validar la copia y restaurar desde Drive o un JSON usan el mismo límite. El esquema de la copia sigue en 3. Las fórmulas no cambian. Para que el teléfono coja el service worker nuevo hace falta borrar los datos del sitio o reinstalar la PWA.
-
-La 4.0.8 estira la ficha del jugador hasta casi llenar el hueco entre las fichas de acceso y el pie del hoyo. Con varios jugadores asoma unos 10px del siguiente. Con uno solo, la ficha ocupa el ancho y no asoma nada. Golpes y Putts siguen juntos, con 10px entre ellos, y el aire queda por fuera del bloque. El número de Golpes sigue a 52px y el − y el + a 48×48. El pie (− / + / Siguiente) no cambia. El esquema de la copia sigue en 3.
-
-La 4.0.9 deja ese tamaño de ficha y mete el aire dentro de Golpes, para que el nombre, Golpes y Putts cubran casi toda la altura. El hueco entre Golpes y Putts queda en 12px fijos. El número de Golpes pasa a 64px y el − y el + a 56×56. Putts no crece. El pie no cambia. El esquema de la copia sigue en 3.
-
-La 4.0.10 deja la ficha a la altura del contenido y la centra en el hueco del hoyo, con aire arriba y abajo. No se estira para llenar el alto. Con varios jugadores asoman unos 16px del siguiente. Con uno solo, quedan 12px de margen a cada lado. El número de Golpes pasa a 56px y el − y el + vuelven a cristal 48×48. Putts queda 12px debajo. El pie no cambia. El esquema de la copia sigue en 3.
-
-La 4.0.11 adelgaza la cabecera (progreso, fichas y FIR) y sube esa ficha compacta al inicio del hueco. El aire queda debajo, hacia el pie, no encima. La ficha sigue a la altura del contenido: no se estira. Con varios jugadores asoma el siguiente. Con uno solo, el ancho es calc(100% - 20px). El número de Golpes pasa a 60px y el − y el + a cristal 52×52. Putts no crece. El pie no cambia. El esquema de la copia sigue en 3.
-
-La 4.1.0 deja esa piel. El texto de versión del JSON, del manifiesto y de la cabecera pasa a 4.1.0. El esquema de la copia sigue en 3: una copia de la 4.0.11 entra igual. `localStorage` sigue siendo lo que lee el marcador. IndexedDB guarda una copia verificada y no borra las claves viejas. Unos ayudantes viven en `fairway/js/` (claves y migración). La puntuación no se ha movido. Gross de 9 y de 18 se muestran por separado. El caddie de teléfono de La Herrería sigue. En esa versión el client id de Drive seguía vacío. El service worker de esa versión se llama `fairway-v4-410`; con una ronda abierta no recarga el teléfono.
-
-La 4.1.1 quita la bolsa de palos. No hay lista de palos, loft, distancias, dispersión ni notas, ni un panel que recomiende palo o un juego conservador o agresivo. Eso no es de Fairway. Siguen el teléfono del caddie y del restaurante de La Herrería, el árbitro, el marcador, los mapas, las estadísticas y Drive. El esquema de la copia sigue en 3. El texto de versión pasa a 4.1.1. El service worker de esa versión se llama `fairway-v4-411`; con una ronda abierta no recarga el teléfono.
-
-La 4.1.2 deja el marcador igual y pone el client id público de Google Drive para `https://ardu01.github.io` y `https://ardu01.github.io/app-golf/`. No hay secreto de cliente. El token sigue solo en memoria. El alcance sigue siendo `drive.file` y el archivo `Fairway/fairway-data.json`. El esquema de la copia sigue en 3. El texto de versión pasa a 4.1.2. El service worker nuevo se llama `fairway-v4-412`; con una ronda abierta no recarga el teléfono.
-
-Google Drive, si se conecta, es el Drive de cada uno: una carpeta Fairway y un solo `fairway-data.json`. La partida se apunta siempre primero en el teléfono. Drive es la copia entre aparatos, no un servidor de Fairway. Sin red se sigue jugando y, al volver la cobertura, se manda lo pendiente. El identificador OAuth de la web va en el código (`FAIRWAY_DRIVE_CLIENT_ID`); no hay secreto de cliente ni token de refresco guardado. Una sesión silenciosa de varias semanas haría falta un backend, y esta copia no lo finge. La exportación manual del JSON sigue donde estaba.
-
-El árbitro sigue en el teléfono, sin llamar a nadie. Si falta un dato, pregunta. Si el comité tiene una regla local, esa manda.
-
-Las fórmulas de hándicap no las he tocado. Los tests están en `tests/` y se lanzan con `node tests/run.mjs`. Para jugar no hace falta npm.
-
-## Para probarla
-
-Hace falta servirla por http. El service worker no arranca si abres el archivo a pelo.
+Hace falta servir por HTTP (el service worker no arranca como `file://`).
 
 ```bash
 python3 -m http.server 8766
 ```
 
-`http://localhost:8766`. Desde el navegador del móvil se puede añadir a la pantalla de inicio.
+Abre `http://localhost:8766`. En el móvil: Añadir a pantalla de inicio.
 
-GitHub Pages publica el repo tal cual: hay un `.nojekyll` en la raíz para que no pase por Jekyll.
+GitHub Pages publica el repositorio tal cual (hay `.nojekyll` en la raíz).
+
+## Marca
+
+<img src="docs/recorrido/marca/logo-f.png" alt="F de Fairway" width="96">
+<img src="docs/recorrido/marca/icono-192.png" alt="Icono 192" width="96">
+<img src="docs/recorrido/marca/icono-512.png" alt="Icono 512" width="128">
