@@ -337,3 +337,7 @@ Stats muestra Gross · 9 y Gross · 18 por separado. Una vuelta de 9 y otra de 1
 ## Fase 5 en esta rama
 
 Manifiestos nuevos, sin nombres, para `el-robledal`, `rshecc-norte` y `rshecc-sur`, apuntando a los webp que ya existían. `tests/maps.mjs` comprueba que cada `file` existe y que esos tres no llevan `name` ni `overview` como hoyo. No hay planos nuevos. Las fichas de acceso del hoyo tienen área de toque 48×48; el pie del hoyo ya era 50px y el − / + de golpes 52×52. No se ha rediseñado la piel de la 4.0.11.
+
+## Fase 6 en esta rama
+
+`tests/security.mjs` cubre `clipStr`, `escapeHtml`, un backup con etiquetas, el client id vacío y que ningún workflow de esta rama (fuera de comentarios) hace `git push`. `tests/e2e.mjs` recorre la bolsa en Chrome con Playwright: el nombre `<b>Driver</b>` no se inyecta como HTML y el pie del hoyo mide 50px en un viewport de 390×844. Esa prueba no está dentro de `node tests/run.mjs` y GitHub no la corre: el job de tests no arranca por facturación y la suite unitaria no depende de npm. El detalle está en `docs/testing.md`.
