@@ -109,7 +109,30 @@
     font-size: 15px;
     line-height: 1.4;
     -webkit-font-smoothing: antialiased;
+    /* x: engines that honor it. WebKit’s edge-swipe ignores this (bug 240183). */
+    overscroll-behavior-x: none;
     overscroll-behavior-y: none; /* Safari: bounce only inside scroll areas */
+  }
+  /* Inicio only. Width matches fairwayNavEdgeBandPx (30). The strip is the
+     hit target so the back-swipe touch does not land on the scrolling pane. */
+  .fairway-edge-guard {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 30px;
+    z-index: 70;
+    touch-action: none;
+    background: transparent;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .fairway-edge-guard[hidden] { display: none !important; }
+  html.fairway-edge-lock,
+  html.fairway-edge-lock body {
+    overscroll-behavior-x: none;
+    touch-action: pan-y;
   }
   button, input { -webkit-appearance: none; appearance: none; font-family: inherit; }
   button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
@@ -141,7 +164,7 @@
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain;
-    /* breathing room above in-flow tab bar */
+    /* breathing room above in-flow tab bar; later #screen-home .fit padding wins */
     padding-bottom: 28px;
   }
   #screen-home .round-card {
@@ -220,6 +243,7 @@
     position: relative;
     z-index: 5;
     flex-shrink: 0;
+    padding-left: 32px;
   }
 
   /* Main screens: fit 100dvh — no vertical scroll */
@@ -2171,7 +2195,8 @@
   #screen-home .fit {
     position: relative;
     z-index: 1;
-    padding: 6px 16px 22px;
+    /* left clears .fairway-edge-guard (30px) so taps are not swallowed */
+    padding: 6px 16px 22px 32px;
     gap: 12px;
   }
   #screen-home .home-top {
@@ -2916,6 +2941,7 @@
 </head>
 <body>
 
+<div id="fairwayEdgeGuard" class="fairway-edge-guard" hidden aria-hidden="true"></div>
 <div class="app-shell" id="appShell">
   <div class="app">
 
@@ -2924,7 +2950,7 @@
         <div class="fit">
           <div class="home-hero">
             <div class="home-top">
-              <span class="app-version" aria-label="Versión">4.2.1</span>
+              <span class="app-version" aria-label="Versión">4.2.2</span>
               <button type="button" class="topnav-action" onclick="go('perfil')" aria-label="Perfil">Perfil</button>
             </div>
             <div class="greeting">Buenos días</div>
@@ -4178,13 +4204,30 @@ function renderRules() {
 }
 
 /* In-app screens share one document. pushState lets Safari’s edge swipe and the
-   browser Back button pop a sheet or a screen. Home keeps several sentinels so
-   the gesture cannot reach the session edge and unload the PWA. iOS Safari
-   ignores pushState in the popstate turn, so a home back refills on a later
-   turn — and the first touch on Inicio pushes one sentinel inside a user
-   gesture, which is the entry standalone mode actually honors. Perfil, setup
-   and the hole sheet stay real history entries above that cushion. A live
-   round still traps the last step on any screen. Scores are left alone. */
+   browser Back button pop a sheet or a screen, one step.
+
+   Inicio must not play that gesture. A history cushion cannot do it by itself:
+   each sentinel is a real session entry, and WebKit’s interactive back-swipe
+   snapshots it. popstate fires only after that slide has started, and iOS
+   ignores pushState in the popstate turn, so refilling the cushion does not
+   erase the animation or the flicker toward leaving the PWA.
+
+   Nothing in the manifest disables it. touch-action has no value for this
+   gesture (it is not a pan). overscroll-behavior-x is specified to suppress
+   navigation, but WebKit does not (bug 240183); it stays on for engines that
+   honor it. The swipe arms from a touch that begins in a narrow left-edge
+   band. Since iOS 13.4, a non-passive touchstart that preventDefault()s in
+   that band stops Safari from arming it, in the tab and in the installed PWA
+   (same WebKit gesture; no allowsBackForwardNavigationGestures). The fixed
+   guard is that hit target, so the touch is not on the scrolling pane —
+   preventDefault is ignored while a scroll is already in progress. The guard
+   exists only on Inicio. Nested screens keep a normal one-step swipe.
+
+   If a swipe still commits, the home popstate is a trap: no go(), no sheet
+   change, document scroll left where it was. The cushion refills on a later
+   turn. The first touch on Inicio still pushes a sentinel inside a user
+   gesture, which standalone mode actually honors. A live round still traps
+   the last step on any screen. Scores are left alone. */
 let _fairwayNavLock = false;
 let _fairwayNavTrapSerial = 0;
 let _fairwayNavSentinelToken = 0;
@@ -4400,11 +4443,136 @@ function fairwayNavScheduleHomeSentinel() {
 
 function fairwayNavOnPageShow() {
   try {
+    fairwayNavSyncEdgeGuard();
+    fairwayNavNoteScroll();
     const cur = history.state;
     if (cur && cur.fairwayNav && cur.trap && !cur.root) return;
     if (!fairwayNavShouldTrap()) return;
     fairwayNavScheduleHomeSentinel();
   } catch (e) {}
+}
+
+/* Left-edge band, in CSS pixels. Same number as .fairway-edge-guard width. */
+function fairwayNavEdgeBandPx() {
+  return 30;
+}
+
+function fairwayNavEdgeState() {
+  if (!fairwayNavEdgeState.box) {
+    fairwayNavEdgeState.box = { touch: false, move: false, lock: false, y: 0 };
+  }
+  return fairwayNavEdgeState.box;
+}
+
+function fairwayNavEdgeBlockView(screen, sheetOpen) {
+  return screen === "home" && !sheetOpen;
+}
+
+function fairwayNavEdgeBand(clientX, viewportWidth) {
+  const band = fairwayNavEdgeBandPx();
+  const x = Number(clientX);
+  const w = Number(viewportWidth);
+  if (!isFinite(x) || x < 0) return false;
+  if (!isFinite(w) || w <= 0) return false;
+  return x < band;
+}
+
+function fairwayNavShouldBlockEdge() {
+  try {
+    const screen = state && state.screen;
+    return fairwayNavEdgeBlockView(screen, fairwayHoleSheetIsOpen());
+  } catch (e) { return false; }
+}
+
+function fairwayNavNoteScroll() {
+  const box = fairwayNavEdgeState();
+  if (box.lock) return;
+  try { box.y = window.scrollY || window.pageYOffset || 0; } catch (e) {}
+}
+
+function fairwayNavRestoreScroll() {
+  const box = fairwayNavEdgeState();
+  try {
+    const y = box.y || 0;
+    const cur = window.scrollY || window.pageYOffset || 0;
+    if (cur !== y && window.scrollTo) window.scrollTo(0, y);
+  } catch (e) {}
+}
+
+function fairwayNavArmEdgeMove() {
+  const box = fairwayNavEdgeState();
+  if (box.move) return;
+  box.move = true;
+  document.addEventListener("touchmove", fairwayNavBlockEdgeMove, { passive: false, capture: true });
+}
+
+function fairwayNavDisarmEdgeMove() {
+  const box = fairwayNavEdgeState();
+  if (!box.move) return;
+  box.move = false;
+  try {
+    document.removeEventListener("touchmove", fairwayNavBlockEdgeMove, { capture: true });
+  } catch (e) {}
+}
+
+function fairwayNavBlockEdgeTouch(ev) {
+  const box = fairwayNavEdgeState();
+  box.touch = false;
+  try { fairwayNavNoteScroll(); } catch (e) {}
+  try {
+    if (!fairwayNavShouldBlockEdge()) return;
+    if (!ev || !ev.touches || ev.touches.length !== 1) return;
+    const t = ev.touches[0];
+    let w = 0;
+    try { w = window.innerWidth; } catch (e2) { w = 0; }
+    if (!fairwayNavEdgeBand(t.clientX, w)) return;
+    box.touch = true;
+    if (ev.cancelable) ev.preventDefault();
+    fairwayNavArmEdgeMove();
+  } catch (e) {}
+}
+
+function fairwayNavBlockEdgeMove(ev) {
+  try {
+    const box = fairwayNavEdgeState();
+    if (!box.touch) return;
+    if (!fairwayNavShouldBlockEdge()) {
+      box.touch = false;
+      fairwayNavDisarmEdgeMove();
+      return;
+    }
+    if (ev && ev.cancelable) ev.preventDefault();
+  } catch (e) {}
+}
+
+function fairwayNavBlockEdgeEnd() {
+  const box = fairwayNavEdgeState();
+  box.touch = false;
+  fairwayNavDisarmEdgeMove();
+}
+
+function fairwayNavSyncEdgeGuard() {
+  let on = false;
+  try { on = fairwayNavShouldBlockEdge(); } catch (e) { on = false; }
+  try {
+    const el = document.getElementById("fairwayEdgeGuard");
+    if (el) el.hidden = !on;
+  } catch (e) {}
+  try {
+    document.documentElement.classList.toggle("fairway-edge-lock", !!on);
+  } catch (e) {}
+}
+
+function fairwayNavHoldHomeTrap() {
+  const box = fairwayNavEdgeState();
+  box.lock = true;
+  try { fairwayNavRestoreScroll(); } catch (e) {}
+  setTimeout(function () { try { fairwayNavRestoreScroll(); } catch (e) {} }, 0);
+  setTimeout(function () {
+    try { fairwayNavRestoreScroll(); } catch (e) {}
+    fairwayNavEdgeState().lock = false;
+    try { fairwayNavNoteScroll(); } catch (e) {}
+  }, 80);
 }
 
 function fairwayNavView() {
@@ -4429,7 +4597,9 @@ function fairwayOnPopState(ev) {
     return;
   }
   if (decision.type === "trap") {
+    if (state && state.screen === "home") fairwayNavHoldHomeTrap();
     fairwayNavScheduleHomeSentinel();
+    try { fairwayNavSyncEdgeGuard(); } catch (e) {}
     return;
   }
   _fairwayNavLock = true;
@@ -4450,6 +4620,7 @@ function fairwayOnPopState(ev) {
   }
   _fairwayNavLock = false;
   if (decision.repush) fairwayNavScheduleHomeSentinel();
+  try { fairwayNavSyncEdgeGuard(); } catch (e) {}
 }
 
 function fairwayNavArmTrap() {
@@ -4483,10 +4654,27 @@ function fairwayNavBoot() {
       for (let i = 0; i < n; i++) fairwayNavRepush();
     }
   } catch (e) {}
+  try {
+    if (history.scrollRestoration) history.scrollRestoration = "manual";
+  } catch (e) {}
   window.addEventListener("popstate", fairwayOnPopState);
   window.addEventListener("pageshow", fairwayNavOnPageShow);
   document.addEventListener("touchstart", fairwayNavArmTrap, { passive: true, capture: true });
   document.addEventListener("pointerdown", fairwayNavArmTrap, { passive: true, capture: true });
+  document.addEventListener("touchstart", fairwayNavBlockEdgeTouch, { passive: false, capture: true });
+  document.addEventListener("touchend", fairwayNavBlockEdgeEnd, { passive: true, capture: true });
+  document.addEventListener("touchcancel", fairwayNavBlockEdgeEnd, { passive: true, capture: true });
+  try {
+    const guard = document.getElementById("fairwayEdgeGuard");
+    if (guard) {
+      guard.addEventListener("touchstart", fairwayNavBlockEdgeTouch, { passive: false });
+      guard.addEventListener("touchmove", fairwayNavBlockEdgeMove, { passive: false });
+      guard.addEventListener("touchend", fairwayNavBlockEdgeEnd, { passive: true });
+      guard.addEventListener("touchcancel", fairwayNavBlockEdgeEnd, { passive: true });
+    }
+  } catch (e) {}
+  try { fairwayNavSyncEdgeGuard(); } catch (e) {}
+  try { fairwayNavNoteScroll(); } catch (e) {}
 }
 
 function go(name) {
@@ -4538,6 +4726,8 @@ function go(name) {
   }
   if (!_fairwayNavLock && name !== "hole" && fairwayHoleSheetIsOpen()) fairwaySheetDom(false);
   fairwayNavPush();
+  try { fairwayNavSyncEdgeGuard(); } catch (e) {}
+  try { fairwayNavNoteScroll(); } catch (e) {}
 }
 
 function hasStoredActiveRound() {
@@ -9034,7 +9224,7 @@ function collectFairwayBackup() {
   return {
     version: 3,
     app: "Fairway",
-    appVersion: "4.2.1",
+    appVersion: "4.2.2",
     exportedAt: new Date().toISOString(),
     updatedAt: (typeof getDataUpdatedAt === "function" ? getDataUpdatedAt() : "") || "",
     includes: ["rounds", "players.scores", "players.putts", "players.fir", "players.gir", "players.ball", "players.withdrawn", "roster", "host", "activeRound", "winners", "standings"],
@@ -10049,7 +10239,7 @@ function renderPerfil() {
     <div class="profile-hero">
       <div class="avatar-lg">${escapeHtml(initials)}</div>
       <p class="muted" style="margin-top:8px;">Tu perfil en este dispositivo</p>
-      <p class="micro">Fairway 4.2.1</p>
+      <p class="micro">Fairway 4.2.2</p>
     </div>
     <div class="card mb-16">
       <div class="eyebrow">Nombre</div>
