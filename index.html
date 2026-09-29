@@ -2924,7 +2924,7 @@
         <div class="fit">
           <div class="home-hero">
             <div class="home-top">
-              <span class="app-version" aria-label="Versión">4.1.2</span>
+              <span class="app-version" aria-label="Versión">4.1.3</span>
               <button type="button" class="topnav-action" onclick="go('perfil')" aria-label="Perfil">Perfil</button>
             </div>
             <div class="greeting">Buenos días</div>
@@ -4177,6 +4177,209 @@ function renderRules() {
   body.innerHTML = `<button type="button" class="btn btn-primary mb-16" onclick="openReferee()">Consultar un lie</button><p class="muted" style="margin:4px 0 12px;">Oficiales y sociales. Las que llevas en la partida van marcadas.</p><div class="rule-list">${cards}</div>`;
 }
 
+/* In-app screens share one document. pushState lets Safari’s edge swipe and the
+   browser Back button pop a sheet or a screen. The root entry stays so a live
+   round is not unloaded: that last step is a no-op and scores are left alone. */
+let _fairwayNavLock = false;
+
+function fairwayNavKnownScreen(name) {
+  return name === "home" || name === "setup" || name === "lobby" || name === "hole"
+    || name === "scorecard" || name === "leader" || name === "reglas" || name === "arbitro"
+    || name === "close" || name === "perfil" || name === "historial" || name === "detalle"
+    || name === "ajustes" || name === "stats";
+}
+
+function fairwayNavPlayScreen(name) {
+  return name === "hole" || name === "scorecard" || name === "leader" || name === "ajustes";
+}
+
+function fairwayNavSameView(a, b) {
+  if (!a || !b) return false;
+  return (a.screen || "home") === (b.screen || "home")
+    && (a.sheet || "") === (b.sheet || "")
+    && (Number(a.setupStep) || 0) === (Number(b.setupStep) || 0);
+}
+
+function fairwayNavTarget(frame, keepsPlay) {
+  let screen = frame && fairwayNavKnownScreen(frame.screen) ? frame.screen : "home";
+  if (!keepsPlay && fairwayNavPlayScreen(screen)) screen = "home";
+  const sheet = frame && frame.sheet === "hole" && screen === "hole" ? "hole" : "";
+  let setupStep = 0;
+  if (screen === "setup") {
+    const maxStep = (typeof SETUP_STEPS !== "undefined" && SETUP_STEPS && SETUP_STEPS.length) ? SETUP_STEPS.length - 1 : 6;
+    setupStep = Math.max(0, Math.min(maxStep, Number(frame && frame.setupStep) || 0));
+  }
+  return { screen: screen, sheet: sheet, setupStep: setupStep };
+}
+
+function fairwayNavDecide(app, frame, flags) {
+  const trap = !!(flags && flags.trap);
+  const keepsPlay = !!(flags && flags.keepsPlay);
+  const view = app || { screen: "home", sheet: "", setupStep: 0 };
+  if (!frame || !frame.fairwayNav) return trap ? { type: "trap" } : { type: "stay" };
+  if ((view.sheet || "") === "hole" && frame.sheet !== "hole" && (frame.screen || "home") === view.screen) {
+    return { type: "apply", screen: view.screen, sheet: "", setupStep: view.setupStep || 0, repush: false };
+  }
+  if (!keepsPlay && fairwayNavPlayScreen(frame.screen) && view.screen !== "home") {
+    return { type: "stay", resync: true };
+  }
+  const target = fairwayNavTarget(frame, keepsPlay);
+  if (frame.root && trap && fairwayNavSameView(view, target)) return { type: "trap" };
+  return {
+    type: "apply",
+    screen: target.screen,
+    sheet: target.sheet,
+    setupStep: target.setupStep,
+    repush: !!(frame.root && trap)
+  };
+}
+
+function fairwayNavHref(frame) {
+  const f = frame || {};
+  let path = "";
+  try { path = String(location.pathname || "") + String(location.search || ""); } catch (e) { path = ""; }
+  const parts = [];
+  if (f.screen && f.screen !== "home") parts.push("s=" + encodeURIComponent(f.screen));
+  if (f.sheet) parts.push("o=" + encodeURIComponent(f.sheet));
+  if (f.screen === "setup" && Number(f.setupStep) > 0) parts.push("p=" + String(Number(f.setupStep) || 0));
+  if (f.trap) parts.push("b=1");
+  return parts.length ? path + "#" + parts.join("&") : path;
+}
+
+function fairwayHoleSheetIsOpen() {
+  try {
+    const el = document.getElementById("holeSheet");
+    return !!(el && el.classList.contains("open"));
+  } catch (e) { return false; }
+}
+
+function fairwaySheetDom(open) {
+  try {
+    const backdrop = document.getElementById("holeSheetBackdrop");
+    const sheet = document.getElementById("holeSheet");
+    if (backdrop) backdrop.classList.toggle("open", !!open);
+    if (sheet) sheet.classList.toggle("open", !!open);
+  } catch (e) {}
+}
+
+function fairwayNavRoundKeepsPlayScreen() {
+  try {
+    if (state._newRoundArmed || state._activeRoundLive) return true;
+    if (typeof isRoundInProgress === "function" && isRoundInProgress()) return true;
+    if (typeof hasStoredActiveRound === "function" && hasStoredActiveRound()) return true;
+  } catch (e) {}
+  return false;
+}
+
+function fairwayNavShouldTrap() {
+  try {
+    if (typeof fairwayShouldHoldUpdate === "function" && fairwayShouldHoldUpdate()) return true;
+  } catch (e) {}
+  return fairwayNavRoundKeepsPlayScreen();
+}
+
+function fairwayNavCapture() {
+  const raw = state && state.screen;
+  const screen = fairwayNavKnownScreen(raw) ? raw : "home";
+  const sheet = screen === "hole" && fairwayHoleSheetIsOpen() ? "hole" : "";
+  let setupStep = 0;
+  if (screen === "setup") {
+    const maxStep = (typeof SETUP_STEPS !== "undefined" && SETUP_STEPS && SETUP_STEPS.length) ? SETUP_STEPS.length - 1 : 6;
+    setupStep = Math.max(0, Math.min(maxStep, Number(state.setupStep) || 0));
+  }
+  return { fairwayNav: 1, screen: screen, sheet: sheet, setupStep: setupStep };
+}
+
+function fairwayNavPush() {
+  if (_fairwayNavLock) return;
+  if (typeof history === "undefined" || !history.pushState) return;
+  const frame = fairwayNavCapture();
+  const cur = history.state;
+  if (cur && cur.fairwayNav && fairwayNavSameView(cur, frame)) return;
+  try {
+    if (!cur || !cur.fairwayNav) history.replaceState(Object.assign({ root: true }, frame), "", fairwayNavHref(frame));
+    else history.pushState(frame, "", fairwayNavHref(frame));
+  } catch (e) {}
+}
+
+function fairwayNavReplace() {
+  if (typeof history === "undefined" || !history.replaceState) return;
+  const cur = history.state;
+  const frame = fairwayNavCapture();
+  if (cur && cur.root) frame.root = true;
+  try { history.replaceState(frame, "", fairwayNavHref(frame)); } catch (e) {}
+}
+
+function fairwayNavRepush() {
+  if (typeof history === "undefined" || !history.pushState) return;
+  const frame = Object.assign({}, fairwayNavCapture(), { trap: 1 });
+  try { history.pushState(frame, "", fairwayNavHref(frame)); } catch (e) {}
+}
+
+function fairwayNavView() {
+  const cap = fairwayNavCapture();
+  return { screen: cap.screen, sheet: cap.sheet, setupStep: cap.setupStep };
+}
+
+function fairwayOnPopState(ev) {
+  let decision;
+  try {
+    decision = fairwayNavDecide(fairwayNavView(), ev && ev.state, {
+      trap: fairwayNavShouldTrap(),
+      keepsPlay: fairwayNavRoundKeepsPlayScreen()
+    });
+  } catch (e) { return; }
+  if (!decision || decision.type === "stay") {
+    if (decision && decision.resync) fairwayNavReplace();
+    return;
+  }
+  if (decision.type === "trap") {
+    fairwayNavRepush();
+    return;
+  }
+  _fairwayNavLock = true;
+  try {
+    if (decision.sheet === "hole") {
+      if (!fairwayHoleSheetIsOpen()) {
+        try { renderHoleGrid(); } catch (e) {}
+        fairwaySheetDom(true);
+      }
+    } else fairwaySheetDom(false);
+    if (decision.screen && decision.screen !== state.screen) go(decision.screen);
+    if (decision.screen === "setup" && (Number(state.setupStep) || 0) !== decision.setupStep) {
+      state.setupStep = decision.setupStep;
+      if (state.screen === "setup" && typeof renderSetup === "function") renderSetup();
+    }
+  } catch (e) {
+    console.warn("fairwayOnPopState", e);
+  }
+  _fairwayNavLock = false;
+  if (decision.repush) fairwayNavRepush();
+}
+
+function fairwayNavArmTrap() {
+  try {
+    if (!fairwayNavShouldTrap()) return;
+    const cur = history.state;
+    if (!cur || !cur.fairwayNav || !cur.root) return;
+    fairwayNavRepush();
+  } catch (e) {}
+}
+
+function fairwayNavBoot() {
+  if (fairwayNavBoot.done) return;
+  fairwayNavBoot.done = true;
+  if (typeof history === "undefined" || !history.replaceState) return;
+  const frame = fairwayNavCapture();
+  try {
+    history.replaceState(Object.assign({ root: true }, frame), "", fairwayNavHref(frame));
+    if (fairwayNavShouldTrap()) fairwayNavRepush();
+  } catch (e) {}
+  window.addEventListener("popstate", fairwayOnPopState);
+  document.addEventListener("touchstart", fairwayNavArmTrap, { passive: true });
+  document.addEventListener("pointerdown", fairwayNavArmTrap, { passive: true });
+}
+
 function go(name) {
   if (name === "home" && state.screen === "setup" && state._newRoundArmed) {
     state._newRoundArmed = false;
@@ -4224,6 +4427,8 @@ function go(name) {
     } catch (e) {}
     try { if (typeof refreshDriveUi === "function") refreshDriveUi(); } catch (e) {}
   }
+  if (!_fairwayNavLock && name !== "hole" && fairwayHoleSheetIsOpen()) fairwaySheetDom(false);
+  fairwayNavPush();
 }
 
 function hasStoredActiveRound() {
@@ -5559,6 +5764,7 @@ function renderSetup() {
   body.style.webkitOverflowScrolling = "touch";
   body.innerHTML = html;
   if (step === 3) renderSavedRoster();
+  if (state.screen === "setup") fairwayNavPush();
 }
 
 
@@ -5971,10 +6177,26 @@ function setupNext() {
 }
 
 function setupBack() {
-  if (state.setupStep > 0) {
-    state.setupStep--;
-    renderSetup();
-  } else go("home");
+  const st = (typeof history !== "undefined" && history.state) || null;
+  const onSetup = st && st.fairwayNav && st.screen === "setup" && !st.root;
+  if (!_fairwayNavLock && onSetup && (state.setupStep || 0) > 0) {
+    history.back();
+    return;
+  }
+  if (!_fairwayNavLock && st && st.fairwayNav && !st.root && state.screen === "setup" && (state.setupStep || 0) === 0) {
+    history.back();
+    return;
+  }
+  _fairwayNavLock = true;
+  try {
+    if (state.setupStep > 0) {
+      state.setupStep--;
+      renderSetup();
+    } else go("home");
+  } finally {
+    _fairwayNavLock = false;
+  }
+  fairwayNavReplace();
 }
 
 /* —— Lobby / Invite —— */
@@ -6546,12 +6768,15 @@ function setPlayerPutt(idx, n) {
 
 function openHoleSheet() {
   renderHoleGrid();
-  document.getElementById("holeSheetBackdrop").classList.add("open");
-  document.getElementById("holeSheet").classList.add("open");
+  fairwaySheetDom(true);
+  fairwayNavPush();
 }
 function closeHoleSheet() {
-  document.getElementById("holeSheetBackdrop").classList.remove("open");
-  document.getElementById("holeSheet").classList.remove("open");
+  const sheetWasHistory = !_fairwayNavLock && typeof history !== "undefined" && history.state && history.state.sheet === "hole";
+  fairwaySheetDom(false);
+  if (sheetWasHistory) {
+    try { history.back(); } catch (e) {}
+  }
 }
 function holeMarkStatus(n, list) {
   if (!list.length) return "todo";
@@ -8700,7 +8925,7 @@ function collectFairwayBackup() {
   return {
     version: 3,
     app: "Fairway",
-    appVersion: "4.1.2",
+    appVersion: "4.1.3",
     exportedAt: new Date().toISOString(),
     updatedAt: (typeof getDataUpdatedAt === "function" ? getDataUpdatedAt() : "") || "",
     includes: ["rounds", "players.scores", "players.putts", "players.fir", "players.gir", "players.ball", "players.withdrawn", "roster", "host", "activeRound", "winners", "standings"],
@@ -9715,7 +9940,7 @@ function renderPerfil() {
     <div class="profile-hero">
       <div class="avatar-lg">${escapeHtml(initials)}</div>
       <p class="muted" style="margin-top:8px;">Tu perfil en este dispositivo</p>
-      <p class="micro">Fairway 4.1.2</p>
+      <p class="micro">Fairway 4.1.3</p>
     </div>
     <div class="card mb-16">
       <div class="eyebrow">Nombre</div>
@@ -10374,6 +10599,7 @@ loadHostHcp();
   try { updateClubCalls(); } catch (e) {}
   try { if (typeof bindActiveRoundLifecycle === "function") bindActiveRoundLifecycle(); } catch (e) {}
   try { if (typeof driveBoot === "function") driveBoot(); } catch (e) {}
+  try { if (typeof fairwayNavBoot === "function") fairwayNavBoot(); } catch (e) {}
 })();
 </script>
 
