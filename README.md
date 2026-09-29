@@ -109,6 +109,10 @@ History API: gesto atrás / botón Atrás cierra hoja de hoyo y pantallas dentro
 
 Ancla de historial en **Inicio** (intento inicial). Shell `fairway-v4-4131`. Media en [v4.1.3.1](https://github.com/ardu01/app-golf/releases/tag/v4.1.3.1).
 
+### 4.2.5
+
+Partida compartida, opcional: sin código se anota igual; con código, cada golpe se encola y sale cuando hay red. En Inicio el toque del borde no crea historia antes de cancelar el swipe. Deslizar la ficha del hoyo sigue seleccionando al jugador. Shell `fairway-v4-425`. Esquema 3.
+
 ### 4.2.4
 
 En el marcador, deslizar hasta otra ficha selecciona a ese jugador (golpes, putts, FIR y GIR), igual que tocarla. Un solo jugador no cambia. Shell `fairway-v4-424`. Esquema 3.
