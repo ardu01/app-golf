@@ -2950,7 +2950,7 @@
         <div class="fit">
           <div class="home-hero">
             <div class="home-top">
-              <span class="app-version" aria-label="Versión">4.2.3</span>
+              <span class="app-version" aria-label="Versión">4.2.4</span>
               <button type="button" class="topnav-action" onclick="go('perfil')" aria-label="Perfil">Perfil</button>
             </div>
             <div class="greeting">Buenos días</div>
@@ -6837,6 +6837,7 @@ function updateHoleFoto() {
 
 function renderHole(opts) {
   opts = opts || {};
+  carouselSwipeSuppress();
   if (typeof updateClubCalls === "function") updateClubCalls();
   syncFirGirUI();
   /* QC-016: FIR/GIR stay collapsed so golpes+putts remain visible */
@@ -6873,6 +6874,7 @@ function renderHole(opts) {
   const list = activePlayers();
   if (state.activePlayer >= list.length) state.activePlayer = 0;
   if (track) track.classList.toggle("solo", list.length === 1);
+  const holdLeft = (opts.holdScroll && track) ? track.scrollLeft : null;
 
   const allScored = list.length > 0 && list.every(p => p.scores[state.hole] != null);
   const nextBtn = document.getElementById("holeNextBtn");
@@ -6953,6 +6955,8 @@ function renderHole(opts) {
       </div>`;
   }).join("");
 
+  if (holdLeft != null && track) track.scrollLeft = holdLeft;
+
   persistActiveRound(); // keep local memory
   dots.innerHTML = list.map((p, idx) => {
     const on = idx === state.activePlayer ? "on" : "";
@@ -6963,7 +6967,12 @@ function renderHole(opts) {
   }).join("");
 
   renderSocialPills(list);
+  bindPlayerCarouselSwipe();
   requestAnimationFrame(() => {
+    if (holdLeft != null) {
+      if (!_carouselSwipe && track) track.scrollLeft = holdLeft;
+      return;
+    }
     const card = track.querySelector(".player-card.active");
     if (card) card.scrollIntoView({ inline: "center", block: "nearest", behavior: opts.instant ? "auto" : "smooth" });
   });
@@ -6975,10 +6984,132 @@ function renderSocialPills(list) {
   el.innerHTML = ""; // Apple clean: no noise under the card
 }
 
-function selectPlayer(idx, flash) {
+/* Deslizar la ficha selecciona al jugador, igual que tocarla.
+   Un solo jugador no cambia de selección. El scroll del render no cuenta. */
+let _carouselSwipe = null;
+let _carouselSwipeTimer = 0;
+let _carouselSwipeGen = 0;
+let _carouselIgnoreSelectUntil = 0;
+let _carouselIgnoreIdx = -1;
+
+function carouselSwipeSuppress() {
+  _carouselSwipe = null;
+  _carouselSwipeGen++;
+  if (_carouselSwipeTimer) {
+    clearTimeout(_carouselSwipeTimer);
+    _carouselSwipeTimer = 0;
+  }
+}
+
+function carouselSwipeArm(scrollLeft) {
+  if (_carouselSwipe && _carouselSwipe.user) return _carouselSwipe;
+  _carouselSwipe = { user: true, start: Number(scrollLeft) || 0, moved: false };
+  return _carouselSwipe;
+}
+
+function carouselSwipeMarkGesture(gesture, scrollLeft) {
+  if (!gesture || !gesture.user) return gesture || null;
+  const start = Number(gesture.start) || 0;
+  const left = Number(scrollLeft) || 0;
+  const moved = !!gesture.moved || Math.abs(left - start) > 12;
+  return { user: true, start: start, moved: moved };
+}
+
+function carouselSnappedPlayerIndex(trackRect, cardRects) {
+  if (!trackRect || !cardRects || cardRects.length < 2) return null;
+  const width = Number(trackRect.width);
+  if (!isFinite(width) || width <= 0) return null;
+  const viewMid = Number(trackRect.left) + width / 2;
+  let best = null;
+  let bestDist = Infinity;
+  for (let i = 0; i < cardRects.length; i++) {
+    const r = cardRects[i];
+    if (!r || !isFinite(r.left) || !isFinite(r.width) || r.width <= 0) continue;
+    const dist = Math.abs(r.left + r.width / 2 - viewMid);
+    if (dist < bestDist) {
+      bestDist = dist;
+      best = i;
+    }
+  }
+  return best;
+}
+
+function carouselPlayerAfterSwipe(activePlayer, trackRect, cardRects, gesture) {
+  if (!gesture || !gesture.user || !gesture.moved) return activePlayer;
+  const idx = carouselSnappedPlayerIndex(trackRect, cardRects);
+  if (idx == null || idx === activePlayer) return activePlayer;
+  return idx;
+}
+
+function carouselTrackRects(track) {
+  if (!track || !track.getBoundingClientRect) return null;
+  const cards = track.querySelectorAll(".player-card");
+  const cardRects = [];
+  for (let i = 0; i < cards.length; i++) cardRects.push(cards[i].getBoundingClientRect());
+  return { trackRect: track.getBoundingClientRect(), cardRects: cardRects };
+}
+
+function carouselSwipeSchedule(track, delay) {
+  const gen = _carouselSwipeGen;
+  if (_carouselSwipeTimer) clearTimeout(_carouselSwipeTimer);
+  _carouselSwipeTimer = setTimeout(function () {
+    _carouselSwipeTimer = 0;
+    if (gen !== _carouselSwipeGen) return;
+    carouselSwipeFinish(track);
+  }, delay);
+}
+
+function carouselSwipeOnScroll(track) {
+  if (!_carouselSwipe || !track) return;
+  _carouselSwipe = carouselSwipeMarkGesture(_carouselSwipe, track.scrollLeft);
+  carouselSwipeSchedule(track, 160);
+}
+
+function carouselSwipeFinish(track) {
+  const gesture = _carouselSwipe;
+  if (!track || !gesture) {
+    carouselSwipeSuppress();
+    return;
+  }
+  const rects = carouselTrackRects(track);
+  const next = rects
+    ? carouselPlayerAfterSwipe(state.activePlayer, rects.trackRect, rects.cardRects, gesture)
+    : state.activePlayer;
+  carouselSwipeSuppress();
+  if (next === state.activePlayer) return;
+  selectPlayer(next, false, { fromSwipe: true, holdScroll: true });
+}
+
+function bindPlayerCarouselSwipe() {
+  const track = document.getElementById("playerCarousel");
+  if (!track || track.getAttribute("data-swipe-select") === "1") return;
+  track.setAttribute("data-swipe-select", "1");
+  const arm = function () { carouselSwipeArm(track.scrollLeft); };
+  track.addEventListener("pointerdown", arm);
+  track.addEventListener("touchstart", arm, { passive: true });
+  track.addEventListener("wheel", function () { carouselSwipeArm(track.scrollLeft); }, { passive: true });
+  track.addEventListener("scroll", function () { carouselSwipeOnScroll(track); }, { passive: true });
+  track.addEventListener("scrollend", function () {
+    if (!_carouselSwipe || !_carouselSwipe.moved) return;
+    carouselSwipeSchedule(track, 50);
+  });
+}
+
+function selectPlayer(idx, flash, opts) {
+  const fromSwipe = !!(opts && opts.fromSwipe);
+  if (!fromSwipe && _carouselSwipe && _carouselSwipe.moved) return;
+  if (!fromSwipe && idx === _carouselIgnoreIdx && Date.now() < _carouselIgnoreSelectUntil) return;
+  const previous = state.activePlayer;
+  carouselSwipeSuppress();
   state.activePlayer = idx;
   syncFirGirUI();
-  renderHole({ flash: !!flash });
+  const renderOpts = { flash: !!flash };
+  if (opts && opts.holdScroll) renderOpts.holdScroll = true;
+  renderHole(renderOpts);
+  if (fromSwipe) {
+    _carouselIgnoreIdx = previous;
+    _carouselIgnoreSelectUntil = Date.now() + 400;
+  }
 }
 
 function shiftPlayer(delta) {
@@ -9224,7 +9355,7 @@ function collectFairwayBackup() {
   return {
     version: 3,
     app: "Fairway",
-    appVersion: "4.2.3",
+    appVersion: "4.2.4",
     exportedAt: new Date().toISOString(),
     updatedAt: (typeof getDataUpdatedAt === "function" ? getDataUpdatedAt() : "") || "",
     includes: ["rounds", "players.scores", "players.putts", "players.fir", "players.gir", "players.ball", "players.withdrawn", "roster", "host", "activeRound", "winners", "standings"],
@@ -10239,7 +10370,7 @@ function renderPerfil() {
     <div class="profile-hero">
       <div class="avatar-lg">${escapeHtml(initials)}</div>
       <p class="muted" style="margin-top:8px;">Tu perfil en este dispositivo</p>
-      <p class="micro">Fairway 4.2.3</p>
+      <p class="micro">Fairway 4.2.4</p>
     </div>
     <div class="card mb-16">
       <div class="eyebrow">Nombre</div>
@@ -10899,6 +11030,7 @@ loadHostHcp();
   try { if (typeof bindActiveRoundLifecycle === "function") bindActiveRoundLifecycle(); } catch (e) {}
   try { if (typeof driveBoot === "function") driveBoot(); } catch (e) {}
   try { if (typeof fairwayNavBoot === "function") fairwayNavBoot(); } catch (e) {}
+  try { if (typeof bindPlayerCarouselSwipe === "function") bindPlayerCarouselSwipe(); } catch (e) {}
 })();
 </script>
 

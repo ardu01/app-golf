@@ -1,6 +1,6 @@
 /** Storage keys. JSON backup schema stays 3. */
 
-export const APP_VERSION = "4.2.3";
+export const APP_VERSION = "4.2.4";
 export const BACKUP_SCHEMA = 3;
 
 export const DB_NAME = "fairway";
