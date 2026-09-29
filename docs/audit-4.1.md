@@ -172,13 +172,13 @@ El toast de importación usa `data.rounds.length` del JSON crudo, no el número 
 
 ## Google Drive
 
-`FAIRWAY_DRIVE_CLIENT_ID = ""` en `index.html` (línea 8445). El comentario del propio código dice que es un client id público de OAuth web, no un secreto, y que se deja vacío hasta registrar el origen de GitHub Pages. `getDriveClientId()` devuelve solo esa constante. `driveConnect()` si está vacía muestra «Esta copia de Fairway todavía no tiene Google Drive configurado.» y no llama a Google.
+`FAIRWAY_DRIVE_CLIENT_ID` en `index.html` es el client id público de OAuth web registrado para `https://ardu01.github.io` y `https://ardu01.github.io/app-golf/` (4.1.2). No es un secreto. `getDriveClientId()` devuelve solo esa constante. `driveConnect()` si estuviera vacía mostraría «Esta copia de Fairway todavía no tiene Google Drive configurado.» y no llamaría a Google.
 
 No hay client secret en el repo. El access token vive en memoria. `fairway.drive.meta` guarda banderas y sellos (`connected`, `lastSync`, `lastSyncUpdatedAt`, `lastSyncRemoteModifiedTime`, `lastSyncedHash`, `pending`, `status`, `needsReconnect`, `conflict`, `conflictChoice`), no el token.
 
 Estados de UI ya implementados en `driveUiState`: No conectado, Conectando…, Sincronizando…, Sin conexión, Cambios pendientes, Necesita reconexión, Conflicto, Sincronizado. Debounce 4000 ms. El cierre de ronda y el sync manual piden envío inmediato (`driveSyncImmediate`).
 
-Bloqueo externo, no inventado aquí: sin un client id de OAuth registrado para el origen de Pages, Drive no se puede probar de punta a punta. Los tests de `tests/drive.mjs` cubren el plan, el merge y el saneado con datos ficticios. No cubren GIS ni la API real.
+La 4.1.2 ya lleva el client id público del origen de Pages. No hay credenciales de Google en CI, así que los tests no abren una sesión real. `tests/drive.mjs` cubre el plan, el merge y el saneado con datos ficticios. No cubre GIS ni la API real, y no afirma un E2E.
 
 ## Workflows
 
@@ -269,7 +269,7 @@ No son bugs confirmados en un dispositivo. Son capacidades o huecos leídos en e
 6. **`setup` de primer nivel se exporta y se tira al validar.** La ronda viva va en `activeRound`. Quien dependa del `setup` suelto del JSON no lo recupera.
 7. **Historial hasta 99999 partidas contra la cuota de `localStorage`.** El código responde a `QuotaExceededError` (test de memoria) y no migra a IndexedDB. No se ha medido el tamaño real en Safari ni en Chrome.
 8. **Service worker cache-first del shell.** `fairwayShouldHoldUpdate` evita `SKIP_WAITING` y el reload con ronda, cierre o pantallas de juego, y `fairway.swReload` corta recargas a menos de 10 s. Un `index.html` nuevo con el mismo `sw.js` se sirve primero desde caché y se actualiza en segundo plano. El README de esta 4.0.11, en el párrafo que cuenta la 4.0.7, dice que a veces hace falta borrar datos del sitio para coger el worker nuevo. No se ha medido en un teléfono en esta fase.
-9. **Drive de punta a punta no es comprobable** mientras `FAIRWAY_DRIVE_CLIENT_ID` esté vacío. El plan de conflicto está testeado con dobles, no contra Google. No se inventan credenciales.
+9. **Drive de punta a punta no se ejecuta en CI.** La 4.1.2 pone el client id público. No hay credenciales de Google en el repositorio ni en el job de tests. El plan de conflicto está testeado con dobles, no contra Google. No se inventan credenciales ni se afirma un E2E.
 10. **Centros `COURSE_GEO` con `approx: true`** son aproximados por marca del propio código. Tratarlos como levantamiento no está justificado. Esta fase no los mueve.
 11. **El parche de tee por jugador no entra en el `index.html` actual.** Si más adelante el contexto vuelve a coincidir, el workflow lo aplicaría y haría push. Hoy `git apply --check` falla.
 
@@ -289,7 +289,7 @@ Previstas por la misión 4.1 y **no empezadas** aquí. No son defectos demostrad
 
 - Migración a IndexedDB idempotente, con copia previa y sin borrar `localStorage` hasta verificar. Hace falta antes de subir el volumen del historial con seguridad.
 - Módulos (`css/` y `js/` de la misión) sin cambiar el comportamiento ni exigir un build para abrir la app. El README dice que la partida real depende del archivo único.
-- Drive utilizable cuando exista un client id público para el origen de Pages, con los estados que el código ya nombra. Sigue sin backend y sin refresh token de larga duración; el propio README lo dice.
+- Drive usa el client id público de la 4.1.2 para el origen de Pages, con los estados que el código ya nombra. Sigue sin backend y sin refresh token de larga duración; el propio README lo dice. No hay sesión real contra Google en CI.
 - Incluir en la copia los presets creativos, si se decide que son datos de usuario que deben sobrevivir a un cambio de aparato.
 - Tee de salida por jugador: existe como parche que no aplica, no como función en 4.0.11. El producto actual tiene un tee de partida.
 - Caddie de juego (palos, estrategia): no está. Lo que hay es la llamada al caddie master de La Herrería y las reglas sobre el caddie.
@@ -301,7 +301,7 @@ Previstas por la misión 4.1 y **no empezadas** aquí. No son defectos demostrad
 - Recorrido manual de la PWA: actualizar el service worker con una ronda abierta, offline, y un plano ya visto dentro del tope de 120. Esta fase no abrió el navegador contra un servidor.
 - Importar un JSON real de un usuario (no hay muestras de partidas en el repo) y comprobar el conteo del toast frente a las partidas que el saneado conserva.
 - Cuota real de `localStorage` con un historial grande, en Safari y en Chrome.
-- Drive contra Google: bloqueado por el client id vacío.
+- Drive contra Google: el client id público ya está en la 4.1.2. No hay credenciales en CI, así que esta lista no da el sync real por hecho.
 - Modalidades sociales una a una (Chaos, Rey, Back Nine, Last Call, No Bogey, Creativo). `tests/scoring.mjs` fija hándicap, reparto y Stableford, no cada modo social.
 - Árbitro: la suite cubre un conjunto de frases (agua, árbol, divot, búnker, injugable). No es una cobertura de las Reglas completas.
 - Migración IndexedDB: no hay implementación que probar.
@@ -312,7 +312,7 @@ Previstas por la misión 4.1 y **no empezadas** aquí. No son defectos demostrad
 El orden sale de lo que está demostrado arriba, no de reescribir la app en abstracto.
 
 1. **Fase 2 — contrato de datos, luego módulos.** En esta rama ya está la migración a IndexedDB descrita en `docs/architecture.md`: idempotente, con foto previa, sin borrar `localStorage`, con tests de round-trip, JSON corrupto, cuota e interrupción. El esquema del JSON sigue en 3. El corte grande de `index.html` (puntuación, pantallas, CSS) sigue pendiente: la suite extrae funciones por texto y un extract roto la dejaría ciega. Los workflows que hacían `git push` quedan neutralizados en esta rama.
-2. **Fase 3 — Drive y service worker, sin credenciales inventadas.** El client id sigue vacío y documentado como único requisito externo. Se puede endurecer el versionado del `SHELL` ligado al release y la espera de reload con ronda activa; no se puede dar por probado el sync real. Conflictos: el plan ya existe en tests; falta el caso de perfil (`host`) que hoy se pisa.
+2. **Fase 3 — Drive y service worker, sin credenciales inventadas.** El plan pedía no inventar un client id. La 4.1.2 pone el id público ya registrado; el sync real sigue sin probarse en CI. Se puede endurecer el versionado del `SHELL` ligado al release y la espera de reload con ronda activa. Conflictos: el plan ya existe en tests; falta el caso de perfil (`host`) que hoy se pisa.
 3. **Fase 4 — puntuación, stats, caddie.** No cambiar `courseHandicapFor` ni `strokesOnHole` sin un test que fije el número anterior. Separar CH y PH solo si hay una regla nueva y tests; hoy son el mismo valor a propósito. El caddie nuevo no sustituye el `tel:` de La Herrería ni al árbitro.
 4. **Fase 5 — cartografía y UX.** Partir del inventario contado: 54 campos, 26 carpetas, 404 webp, 19 con manifiesto (referencia La Herrería), 3 sin manifiesto, 4 `overviewOnly`, 28 sin carpeta (Puerta de Hierro incluida, ya en `COURSE_GEO`). No crear planos ni recolocar los `approx: true`. La piel de partida es la de la 4.0.11. Los párrafos 4.0.1–4.0.10 del README son el camino hasta esa piel, no otra versión de partida. Esta fase no la rediseña.
 5. **Fase 6 — tests y seguridad.** Dos huecos distintos: el runner no arranca (facturación) y, aunque arrancara, Pages legacy no lo espera. El cierre de publicación es el seguimiento de la sección de workflows (un solo publicador, `needs: test`), no un `deploy-pages` añadido al lado del legado. Revisar que ningún workflow con `contents: write` pueda publicar otro `index.html`. El saneado de importación ya quita `<>` y está testeado; no relajarlo al partir el archivo.
@@ -328,7 +328,7 @@ IndexedDB guarda una copia verificada de las claves de la auditoría (historial,
 
 ## Fase 3 en esta rama
 
-El client id de Drive sigue vacío. Está documentado en `docs/drive-sync.md` (cliente OAuth web, origen `https://ardu01.github.io`, alcance `drive.file`, sin secreto y sin refresh token). Si no hay id, la etiqueta es «Sin configurar»; un conflicto sigue siendo «Conflicto». El aviso de conflicto dice que la ronda en curso no se sustituye hasta elegir. El perfil sigue escribiéndose con la copia aplicada: no se ha cambiado `mergeFairwayBackup`. El shell sigue en `fairway-v4-411` hasta la 4.1.0. `tests/pwa.mjs` cubre que no hay reload a mitad de ronda. No se ha añadido `deploy-pages` al lado del Pages legado.
+En la fase 3 el client id de Drive seguía vacío. La 4.1.2 lo rellena; el detalle está en `docs/drive-sync.md` (cliente OAuth web, origen `https://ardu01.github.io`, alcance `drive.file`, sin secreto y sin refresh token). Si no hay id, la etiqueta es «Sin configurar»; un conflicto sigue siendo «Conflicto». El aviso de conflicto dice que la ronda en curso no se sustituye hasta elegir. El perfil sigue escribiéndose con la copia aplicada: no se ha cambiado `mergeFairwayBackup`. El shell sigue en `fairway-v4-411` hasta la 4.1.0. `tests/pwa.mjs` cubre que no hay reload a mitad de ronda. No se ha añadido `deploy-pages` al lado del Pages legado.
 
 ## Fase 4 en esta rama
 
@@ -340,8 +340,8 @@ Manifiestos nuevos, sin nombres, para `el-robledal`, `rshecc-norte` y `rshecc-su
 
 ## Fase 6 en esta rama
 
-`tests/security.mjs` cubre `clipStr`, `escapeHtml`, un backup con etiquetas, el client id vacío y que ningún workflow de esta rama (fuera de comentarios) hace `git push`. `tests/e2e.mjs` abre el hoyo en Chrome con Playwright, comprueba que no hay bolsa, que el `tel:` de La Herrería sigue y que el pie del hoyo mide 50px en un viewport de 390×844. Esa prueba no está dentro de `node tests/run.mjs` y GitHub no la corre: el job de tests no arranca por facturación y la suite unitaria no depende de npm. El detalle está en `docs/testing.md`.
+`tests/security.mjs` cubre `clipStr`, `escapeHtml`, un backup con etiquetas, el client id público de la 4.1.2 (sin secreto) y que ningún workflow de esta rama (fuera de comentarios) hace `git push`. `tests/e2e.mjs` abre el hoyo en Chrome con Playwright, comprueba que no hay bolsa, que el `tel:` de La Herrería sigue y que el pie del hoyo mide 50px en un viewport de 390×844. Esa prueba no está dentro de `node tests/run.mjs` y GitHub no la corre: el job de tests no arranca por facturación y la suite unitaria no depende de npm. El detalle está en `docs/testing.md`.
 
 ## Fase 7 en esta rama
 
-El producto de esta rama es **4.1.1**: cabecera, perfil, `appVersion` del JSON, `manifest.webmanifest` y `APP_VERSION` en `fairway/js/keys.js`. El shell es `fairway-v4-411`. El esquema del JSON sigue en 3. La partida documentada arriba sigue siendo la 4.0.11 de `main`. Documentos: `docs/architecture.md`, `docs/data-migration.md`, `docs/drive-sync.md`, `docs/testing.md`, `docs/release-4.1.md`, `CHANGELOG.md`. `test-fairway.yml` sigue siendo el check del PR y no publica. No se ha fusionado `main`.
+El producto de esta rama es **4.1.2**: cabecera, perfil, `appVersion` del JSON, `manifest.webmanifest` y `APP_VERSION` en `fairway/js/keys.js`. El shell es `fairway-v4-412`. `FAIRWAY_DRIVE_CLIENT_ID` es el client id público de `https://ardu01.github.io`. El esquema del JSON sigue en 3. La partida documentada arriba sigue siendo la 4.0.11 de `main`. Documentos: `docs/architecture.md`, `docs/data-migration.md`, `docs/drive-sync.md`, `docs/testing.md`, `docs/release-4.1.md`, `CHANGELOG.md`. `test-fairway.yml` sigue siendo el check del PR y no publica. No se ha fusionado `main`.

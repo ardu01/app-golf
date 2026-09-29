@@ -1,10 +1,10 @@
 # Fairway — arquitectura
 
-Partida de esta rama: **4.0.11**. Producto en esta rama: **4.1.1**. Esquema del JSON de copia: **3**. No es un rediseño de la app.
+Partida de esta rama: **4.0.11**. Producto en esta rama: **4.1.2**. Esquema del JSON de copia: **3**. No es un rediseño de la app.
 
 ## Qué sigue siendo la fuente de la partida
 
-La ronda en memoria (`state`, `PLAYERS`) y `localStorage` siguen siendo la copia que lee el marcador. Las fórmulas de hándicap no se han movido de `index.html`. `collectFairwayBackup` escribe `version: 3` y `appVersion: "4.1.1"`.
+La ronda en memoria (`state`, `PLAYERS`) y `localStorage` siguen siendo la copia que lee el marcador. Las fórmulas de hándicap no se han movido de `index.html`. `collectFairwayBackup` escribe `version: 3` y `appVersion: "4.1.2"`.
 
 IndexedDB es una copia verificada de esas claves, no un segundo marcador. Importar un JSON o aplicar Drive sigue pasando por `mergeFairwayBackup` y `driveApplyResolved`, que ya no pisan una ronda local protegida. La migración no es un import remoto: copia lo que ya está en este dispositivo.
 
@@ -21,7 +21,7 @@ Sin bundler. GitHub Pages sirve los archivos tal cual. `index.html` carga al fin
 | `fairway/js/idb.js` | `indexedDB.open("fairway", 1)`, almacén `kv` |
 | `fairway/js/persist-boot.js` | Arranque en el navegador |
 
-El service worker precachea esos archivos y los trata como shell (`/fairway/js/`). El nombre de caché del shell es `fairway-v4-411` (4.1.1). El CSS no se ha partido. La puntuación sigue en `index.html`.
+El service worker precachea esos archivos y los trata como shell (`/fairway/js/`). El nombre de caché del shell es `fairway-v4-412` (4.1.2). El CSS no se ha partido. La puntuación sigue en `index.html`.
 
 ## Migración
 
@@ -53,9 +53,9 @@ En esta rama no tienen `workflow_dispatch` ni `git push`, el permiso es `content
 
 ## Drive y el service worker
 
-`FAIRWAY_DRIVE_CLIENT_ID` sigue vacío. El alta del cliente OAuth está en `docs/drive-sync.md`. El panel dice «Sin configurar» cuando el id no está. Un conflicto sigue mostrando «Conflicto» y no sustituye la ronda en curso hasta que el jugador elige.
+`FAIRWAY_DRIVE_CLIENT_ID` es el client id público de OAuth web para `https://ardu01.github.io` y `https://ardu01.github.io/app-golf/`. El detalle está en `docs/drive-sync.md`. El panel dice «Sin configurar» cuando el id no está. Un conflicto sigue mostrando «Conflicto» y no sustituye la ronda en curso hasta que el jugador elige.
 
-El nombre de caché del shell es `fairway-v4-411`. `fairwayShouldHoldUpdate` impide `SKIP_WAITING` y el reload mientras la pantalla es de juego, de cierre, o hay ronda armada. `tests/pwa.mjs` lo fija.
+El nombre de caché del shell es `fairway-v4-412`. `fairwayShouldHoldUpdate` impide `SKIP_WAITING` y el reload mientras la pantalla es de juego, de cierre, o hay ronda armada. `tests/pwa.mjs` lo fija.
 
 ## Stats
 

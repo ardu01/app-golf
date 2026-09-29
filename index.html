@@ -2924,7 +2924,7 @@
         <div class="fit">
           <div class="home-hero">
             <div class="home-top">
-              <span class="app-version" aria-label="Versión">4.1.1</span>
+              <span class="app-version" aria-label="Versión">4.1.2</span>
               <button type="button" class="topnav-action" onclick="go('perfil')" aria-label="Perfil">Perfil</button>
             </div>
             <div class="greeting">Buenos días</div>
@@ -8438,11 +8438,12 @@ function renderClose() {
 
 /* —— Google Drive sync (OAuth · drive.file) ——
    FAIRWAY_DRIVE_CLIENT_ID is a public OAuth web client id, not a secret.
-   Leave it empty until the GitHub Pages origin is registered on that client.
+   Registered for https://ardu01.github.io and
+   https://ardu01.github.io/app-golf/. No client secret in this repo.
    Access tokens stay in memory. A silent session of many weeks needs a
    backend that holds the refresh token; this static app does not invent one.
 */
-const FAIRWAY_DRIVE_CLIENT_ID = "";
+const FAIRWAY_DRIVE_CLIENT_ID = "429682128465-06rq4tc60pmo6r0808a8b27itcp9v9dv.apps.googleusercontent.com";
 const DRIVE_CLIENT_KEY = "fairway.drive.clientId";
 const DRIVE_FILE_KEY = "fairway.drive.fileId";
 const DRIVE_FOLDER_KEY = "fairway.drive.folderId";
@@ -8699,7 +8700,7 @@ function collectFairwayBackup() {
   return {
     version: 3,
     app: "Fairway",
-    appVersion: "4.1.1",
+    appVersion: "4.1.2",
     exportedAt: new Date().toISOString(),
     updatedAt: (typeof getDataUpdatedAt === "function" ? getDataUpdatedAt() : "") || "",
     includes: ["rounds", "players.scores", "players.putts", "players.fir", "players.gir", "players.ball", "players.withdrawn", "roster", "host", "activeRound", "winners", "standings"],
@@ -9714,7 +9715,7 @@ function renderPerfil() {
     <div class="profile-hero">
       <div class="avatar-lg">${escapeHtml(initials)}</div>
       <p class="muted" style="margin-top:8px;">Tu perfil en este dispositivo</p>
-      <p class="micro">Fairway 4.1.1</p>
+      <p class="micro">Fairway 4.1.2</p>
     </div>
     <div class="card mb-16">
       <div class="eyebrow">Nombre</div>

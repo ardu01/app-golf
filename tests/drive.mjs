@@ -115,7 +115,7 @@ assert.ok(html.includes("needsReconnect: true"));
 assert.ok(!html.includes("localStorage.clear"));
 assert.ok(!html.includes("client_secret"));
 assert.ok(html.includes("https://www.googleapis.com/auth/drive.file"));
-assert.ok(html.includes('const FAIRWAY_DRIVE_CLIENT_ID = ""'));
+assert.ok(html.includes('const FAIRWAY_DRIVE_CLIENT_ID = "429682128465-06rq4tc60pmo6r0808a8b27itcp9v9dv.apps.googleusercontent.com"'));
 
 function mockFind(storedId, byId, listed) {
   const row = storedId ? byId[storedId] : null;
@@ -225,7 +225,7 @@ assert.ok(html.includes("Desconectar Google Drive"));
 assert.ok(html.includes("Usar este dispositivo"));
 assert.ok(html.includes("Usar Google Drive"));
 assert.ok(html.includes("no se sustituye hasta que elijas"));
-assert.ok(html.includes('const FAIRWAY_DRIVE_CLIENT_ID = "";'));
+assert.ok(html.includes('const FAIRWAY_DRIVE_CLIENT_ID = "429682128465-06rq4tc60pmo6r0808a8b27itcp9v9dv.apps.googleusercontent.com";'));
 assert.ok(html.includes("Fairway guarda tus datos en tu propio Google Drive."));
 assert.ok(html.includes("function importFairwayBackup("));
 assert.ok(html.includes("function shareFairwayBackup("));
@@ -233,7 +233,7 @@ assert.ok(html.includes("DRIVE_DEBOUNCE_MS = 4000"));
 assert.ok(html.includes('method: safeFile ? "PATCH" : "POST"'));
 assert.ok(!html.includes("driveClientIdInput"));
 
-assert.ok(sw.includes('const SHELL = "fairway-v4-411"'));
+assert.ok(sw.includes('const SHELL = "fairway-v4-412"'));
 assert.ok(sw.includes("accounts.google.com"));
 assert.ok(sw.includes(".googleapis.com"));
 assert.ok(sw.includes("fairway-maps-v1"));
