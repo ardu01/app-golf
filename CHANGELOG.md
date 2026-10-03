@@ -1,5 +1,14 @@
 # Changelog
 
+## 5.0.2
+
+Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 5.0.1 siguen entrando.
+
+- Si falta `fairway.rounds.v1` y la `.bak` tiene partidas, el historial vuelve de esa copia. Una lista vacía válida no se sustituye.
+- Una clave principal ilegible no se copia encima de `fairway.rounds.bak.v1`.
+- La versión de producto es 5.0.2: cabecera, perfil, manifiesto y `appVersion` del JSON.
+- El service worker pasa a `fairway-v5-502`. No hace `skipWaiting` al instalar y no recarga con una ronda abierta.
+
 ## 5.0.1
 
 Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 5.0.0 siguen entrando.
