@@ -160,17 +160,8 @@ export async function migrateLocalToIdb(localStorage, idb, opts) {
   let payloadWrites = 0;
   for (const key of MIRRORED_KEYS) {
     const raw = localSnapshot[key];
-    if (blank(raw)) {
-      if (live) {
-        const existing = await idb.get(key);
-        if (existing !== undefined) {
-          try { await idb.del(key); } catch (e) {
-            return { ok: false, action: failureReason(e), status: "in_progress", deletedLocal: false, schema: BACKUP_SCHEMA, skipped: skipped };
-          }
-        }
-      }
-      continue;
-    }
+    // A blank local key must not erase the good IndexedDB copy.
+    if (blank(raw)) continue;
     const decoded = decodeRaw(key, raw);
     if (decoded.corrupt) {
       skipped.push({ key: key, reason: "corrupt" });

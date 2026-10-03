@@ -1,6 +1,6 @@
 import assert from "assert";
 import { readFileSync } from "fs";
-import { readApp, loadFunctions } from "./extract.mjs";
+import { readApp, extractFunction, loadFunctions } from "./extract.mjs";
 
 const html = readApp();
 const sw = readFileSync(new URL("../sw.js", import.meta.url), "utf8");
@@ -17,7 +17,12 @@ const api = loadFunctions(html, [
   "validateFairwayBackup",
   "driveHash",
   "driveRoundStamp",
+  "driveMergeHoleMap",
+  "drivePlayerMergeKey",
+  "driveMergeRoundPlayers",
+  "driveMergeOneRound",
   "driveMergeRounds",
+  "driveResolveRounds",
   "driveActiveFingerprint",
   "driveActiveRoundDirty",
   "drivePickActiveRound",
@@ -164,6 +169,169 @@ const olderEdit = api.driveMergeRounds(
   [{ id: "same", dateISO: "2026-09-02T10:00:00.000Z", updatedAt: "2026-09-02T10:00:00.000Z", club: "Vieja" }]
 );
 assert.strictEqual(olderEdit[0].club, "Nueva");
+
+const holeMerged = api.driveMergeRounds(
+  [{
+    id: "same",
+    dateISO: "2026-09-02T10:00:00.000Z",
+    updatedAt: "2026-09-02T10:00:00.000Z",
+    club: "Local",
+    players: [{ id: "p1", name: "Ana", scores: { 1: 4, 2: 5 }, putts: { 1: 2 } }]
+  }],
+  [{
+    id: "same",
+    dateISO: "2026-09-02T10:00:00.000Z",
+    updatedAt: "2026-09-20T10:00:00.000Z",
+    club: "Remote",
+    players: [{ id: "p1", name: "Ana", scores: { 1: 6, 3: 4 }, putts: { 3: 2 } }]
+  }]
+);
+assert.strictEqual(holeMerged[0].club, "Remote");
+assert.strictEqual(holeMerged[0].players[0].scores[1], 6);
+assert.strictEqual(holeMerged[0].players[0].scores[2], 5);
+assert.strictEqual(holeMerged[0].players[0].scores[3], 4);
+assert.strictEqual(holeMerged[0].players[0].putts[1], 2);
+assert.strictEqual(holeMerged[0].players[0].putts[3], 2);
+
+const localNewerHoles = api.driveMergeRounds(
+  [{
+    id: "same",
+    dateISO: "2026-09-02T10:00:00.000Z",
+    updatedAt: "2026-09-22T12:00:00.000Z",
+    club: "Nueva",
+    players: [{ id: "p1", scores: { 1: 4 } }, { id: "local-only", scores: { 4: 3 } }]
+  }],
+  [{
+    id: "same",
+    dateISO: "2026-09-02T10:00:00.000Z",
+    updatedAt: "2026-09-02T10:00:00.000Z",
+    club: "Vieja",
+    players: [{ id: "p1", scores: { 2: 5 } }]
+  }]
+);
+assert.strictEqual(localNewerHoles[0].club, "Nueva");
+assert.strictEqual(localNewerHoles[0].players.find(p => p.id === "p1").scores[1], 4);
+assert.strictEqual(localNewerHoles[0].players.find(p => p.id === "p1").scores[2], 5);
+assert.strictEqual(localNewerHoles[0].players.find(p => p.id === "local-only").scores[4], 3);
+
+const equalStamp = api.driveMergeRounds(
+  [{ id: "same", dateISO: "2026-09-02T10:00:00.000Z", updatedAt: "2026-09-20T10:00:00.000Z", club: "Local", players: [{ id: "p1", scores: { 1: 4 } }] }],
+  [{ id: "same", dateISO: "2026-09-02T10:00:00.000Z", updatedAt: "2026-09-20T10:00:00.000Z", club: "Remote", players: [{ id: "p1", scores: { 9: 5 } }] }]
+);
+assert.strictEqual(equalStamp[0].club, "Remote");
+assert.strictEqual(equalStamp[0].players[0].scores[1], 4);
+assert.strictEqual(equalStamp[0].players[0].scores[9], 5);
+
+const byDate = api.driveMergeRounds(
+  [{ id: "same", dateISO: "2026-09-02T10:00:00.000Z", club: "Local", players: [{ id: "p1", scores: { 1: 4 } }] }],
+  [{ id: "same", dateISO: "2026-09-20T10:00:00.000Z", club: "Remote", players: [{ id: "p1", scores: { 2: 6 } }] }]
+);
+assert.strictEqual(api.driveRoundStamp(byDate[0]), "2026-09-20T10:00:00.000Z");
+assert.strictEqual(byDate[0].players[0].scores[1], 4);
+assert.strictEqual(byDate[0].players[0].scores[2], 6);
+
+const downloaded = api.driveResolveRounds(
+  [
+    { id: "same", updatedAt: "2026-09-02T10:00:00.000Z", dateISO: "2026-09-02T10:00:00.000Z", players: [{ id: "p1", scores: { 1: 4 } }] },
+    { id: "local-only", updatedAt: "2026-09-01T10:00:00.000Z", dateISO: "2026-09-01T10:00:00.000Z", players: [{ id: "p1", scores: { 7: 3 } }] }
+  ],
+  [{ id: "same", updatedAt: "2026-09-20T10:00:00.000Z", dateISO: "2026-09-02T10:00:00.000Z", players: [{ id: "p1", scores: { 2: 5 } }] }],
+  { action: "download", mergeRounds: false }
+);
+assert.strictEqual(downloaded.find(r => r.id === "same").players[0].scores[1], 4);
+assert.strictEqual(downloaded.find(r => r.id === "same").players[0].scores[2], 5);
+assert.strictEqual(downloaded.find(r => r.id === "local-only").players[0].scores[7], 3);
+const uploaded = api.driveResolveRounds(
+  [{ id: "keep", updatedAt: localNewer, players: [{ id: "p1", scores: { 1: 4 } }] }],
+  [{ id: "drop-me", updatedAt: remoteNewer, players: [{ id: "p1", scores: { 1: 9 } }] }],
+  { action: "upload", mergeRounds: false }
+);
+assert.strictEqual(uploaded.length, 1);
+assert.strictEqual(uploaded[0].id, "keep");
+
+function memoryStorage(initial) {
+  const data = Object.assign({}, initial || {});
+  return {
+    data,
+    getItem(k) { return Object.prototype.hasOwnProperty.call(data, k) ? data[k] : null; },
+    setItem(k, v) { data[k] = String(v); },
+    removeItem(k) { delete data[k]; }
+  };
+}
+function loadApply(scope) {
+  const code = ["clampHcp", "drivePlayScreen", "driveApplyResolved"].map((name) => extractFunction(html, name)).join("\n");
+  const fn = new Function("scope", [
+    "var state = scope.state;",
+    "var PLAYERS = scope.PLAYERS;",
+    "var localStorage = scope.localStorage;",
+    "var HOST_KEY = 'fairway.host.v1';",
+    "var ACTIVE_KEY = 'fairway.activeRound.v1';",
+    "var ROUNDS_MAX = 99999;",
+    "var _driveApplying = false;",
+    "function saveRounds() {}",
+    "function saveRoster() {}",
+    "function applyHostName(name) { if (PLAYERS[0]) PLAYERS[0].name = String(name || '').trim(); }",
+    "function touchDataUpdated() { return ''; }",
+    "function getDataUpdatedAt() { return ''; }",
+    "function restoreActiveRound() {}",
+    "function isRoundInProgress() { return false; }",
+    "function showToast() {}",
+    "function localActiveRoundIsProtected() { return !!scope.protectedRound; }",
+    code,
+    "return { driveApplyResolved: driveApplyResolved };"
+  ].join("\n"));
+  return fn(scope);
+}
+function hostScope(extra) {
+  const localCard = JSON.stringify({ hole: 4, players: [{ id: "me", scores: { 1: 5 } }] });
+  const scope = Object.assign({
+    state: { screen: "perfil" },
+    protectedRound: false,
+    PLAYERS: [{ name: "Miguel", hcp: 12, ph: 12, ch: 12 }],
+    localStorage: memoryStorage({
+      "fairway.host.v1": JSON.stringify({ name: "Miguel", hcp: 12 }),
+      "fairway.activeRound.v1": localCard
+    })
+  }, extra || {});
+  scope.api = loadApply(scope);
+  return scope;
+}
+function applyRemoteHost(scope) {
+  scope.api.driveApplyResolved(null, remoteNewer, {
+    host: { name: "Remoto", hcp: 20 },
+    active: { hole: 9, players: [{ id: "me", scores: { 1: 3 } }] },
+    writeActive: true
+  });
+}
+{
+  const blocked = hostScope({ protectedRound: true, state: { screen: "perfil" } });
+  applyRemoteHost(blocked);
+  assert.strictEqual(JSON.parse(blocked.localStorage.getItem("fairway.host.v1")).name, "Miguel");
+  assert.strictEqual(JSON.parse(blocked.localStorage.getItem("fairway.host.v1")).hcp, 12);
+  assert.strictEqual(blocked.PLAYERS[0].hcp, 12);
+  assert.strictEqual(blocked.PLAYERS[0].name, "Miguel");
+  assert.strictEqual(JSON.parse(blocked.localStorage.getItem("fairway.activeRound.v1")).hole, 4);
+}
+{
+  const playing = hostScope({ protectedRound: false, state: { screen: "hole" } });
+  applyRemoteHost(playing);
+  assert.strictEqual(JSON.parse(playing.localStorage.getItem("fairway.host.v1")).hcp, 12);
+  assert.strictEqual(playing.PLAYERS[0].hcp, 12);
+  assert.strictEqual(playing.PLAYERS[0].ph, 12);
+  assert.strictEqual(playing.PLAYERS[0].ch, 12);
+  assert.strictEqual(JSON.parse(playing.localStorage.getItem("fairway.activeRound.v1")).hole, 4);
+}
+{
+  const open = hostScope({ protectedRound: false, state: { screen: "perfil" } });
+  applyRemoteHost(open);
+  assert.strictEqual(JSON.parse(open.localStorage.getItem("fairway.host.v1")).name, "Remoto");
+  assert.strictEqual(open.PLAYERS[0].hcp, 20);
+  assert.strictEqual(open.PLAYERS[0].ph, 20);
+  assert.strictEqual(open.PLAYERS[0].ch, 20);
+  assert.strictEqual(JSON.parse(open.localStorage.getItem("fairway.activeRound.v1")).hole, 9);
+}
+assert.ok(html.includes("version: 3"));
+assert.ok(html.includes('appVersion: "4.2.6"'));
 
 const dirty = {
   hole: 4,
