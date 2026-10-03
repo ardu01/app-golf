@@ -1791,7 +1791,7 @@
     font-size: 34px; font-weight: 650; font-variant-numeric: tabular-nums;
     letter-spacing: -0.5px; color: #000; line-height: 1;
   }
-  #screen-hole .stepper-row .step-val.empty { color: rgba(60,60,67,0.35); }
+  #screen-hole .stepper-row .step-val.empty { color: #3A3A3C; }
   #screen-hole .chip-row-entry {
     display: flex; flex-wrap: wrap; gap: 6px; width: 100%;
   }
@@ -2704,8 +2704,9 @@
     line-height: 1;
     min-width: 60px;
   }
+  /* Empty em dash. #3A3A3C on the rendered card is 11.2:1. */
   #screen-hole .entry-section.golpes .step-val.empty {
-    color: rgba(60,60,67,0.32);
+    color: #3A3A3C;
     font-weight: 600;
     font-size: 60px;
   }
@@ -2746,7 +2747,8 @@
     font-variant-numeric: tabular-nums;
     border-radius: 10px;
     background: rgba(120,120,128,0.10);
-    color: rgba(60,60,67,0.72);
+    /* #1C1C1E on the rendered chip fill is 14.8:1. */
+    color: #1C1C1E;
   }
   #screen-hole .entry-section.golpes .chip-row-entry .qs.on {
     background: rgba(0,0,0,0.08);
@@ -2794,7 +2796,7 @@
     font-variant-numeric: tabular-nums;
     color: rgba(60,60,67,0.88);
   }
-  #screen-hole .entry-section.putts .step-val.empty { color: rgba(60,60,67,0.32); }
+  #screen-hole .entry-section.putts .step-val.empty { color: #3A3A3C; }
   #screen-hole .entry-section.putts .chip-row-entry .qs {
     position: relative;
     flex: 0 0 36px;
@@ -2808,7 +2810,8 @@
     font-variant-numeric: tabular-nums;
     border-radius: 10px;
     background: rgba(120,120,128,0.08);
-    color: rgba(60,60,67,0.62);
+    /* Same #1C1C1E ink as the stroke chips. */
+    color: #1C1C1E;
   }
   /* Chip visual 36px; el toque llega a 44px. */
   #screen-hole .entry-section.putts .chip-row-entry .qs::before {
