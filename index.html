@@ -4799,30 +4799,6 @@ function go(name) {
   try { fairwayNavNoteScroll(); } catch (e) {}
 }
 
-function hasStoredActiveRound() {
-  try { return !!localStorage.getItem(ACTIVE_KEY); } catch (e) { return false; }
-}
-
-function playerHasMarks(p) {
-  if (!p) return false;
-  if (p.scores && Object.keys(p.scores).length) return true;
-  if (p.putts && Object.keys(p.putts).length) return true;
-  if (p.fir && Object.keys(p.fir).length) return true;
-  if (p.gir && Object.keys(p.gir).length) return true;
-  if (p.totalsGross != null || p.totalsPutts != null) return true;
-  return false;
-}
-
-function isRoundInProgress() {
-  // After cierre, _roundSaved stays set until Nueva partida — never show Continuar
-  if (state._roundSaved) return false;
-  if (PLAYERS.some(playerHasMarks)) return true;
-  try {
-    if (inspectActiveKey(ACTIVE_KEY).status === "ok") return true;
-  } catch (e) {}
-  return false;
-}
-
 /** Hold a waiting app update while a live round, the trophy, or an open hole can still lose the screen. */
 function fairwayShouldHoldUpdate() {
   if (state.screen === "close") return true;
@@ -4839,7 +4815,7 @@ function updateHomeThru() {
   if (typeof updateHomeGreeting === "function") updateHomeGreeting();
   const p = PLAYERS[0];
   let gross = 0, par = 0, thru = 0;
-  const live = isRoundInProgress();
+  const live = typeof isRoundInProgress === "function" && isRoundInProgress();
   if (live) {
     for (let i = 1; i <= 18; i++) {
       if (p.scores[i] != null) { gross += p.scores[i]; par += HOLES[i-1].par; thru = i; }
@@ -4898,9 +4874,7 @@ function updateNetBadge() {
   /* offline/online UI removed — app is local-only */
 }
 
-function activePlayers() {
-  return PLAYERS.filter((p, i) => state.setup.players[i] && !p.withdrawn);
-}
+
 
 function scoringPlayers() {
   // Incluye retirados para historial/tarjeta completa si se necesita
@@ -5196,589 +5170,12 @@ function setHostHcpFromPerfil(raw) {
   renderPerfil();
 }
 
+// History and the active card are written by fairway/js/rounds.js. These names stay for Drive and the backup.
 const ROUNDS_KEY = "fairway.rounds.v1";
 const ROUNDS_MAX = 99999;
 const ROUNDS_BAK_KEY = "fairway.rounds.bak.v1";
 const ACTIVE_KEY = "fairway.activeRound.v1";
 const ACTIVE_BAK_KEY = "fairway.activeRound.bak.v1";
-
-let _roundsUnreadable = false;
-function readRoundList(raw) {
-  if (!raw) return null;
-  try {
-    const data = JSON.parse(raw);
-    return Array.isArray(data) ? data : null;
-  } catch (e) { return null; }
-}
-function loadRounds() {
-  try {
-    const raw = localStorage.getItem(ROUNDS_KEY);
-    if (!raw) { _roundsUnreadable = false; return []; }
-    const data = readRoundList(raw);
-    if (data) { _roundsUnreadable = false; return data; }
-    const bak = readRoundList(localStorage.getItem(ROUNDS_BAK_KEY));
-    if (bak) {
-      _roundsUnreadable = false;
-      try { localStorage.setItem(ROUNDS_KEY, JSON.stringify(bak)); } catch (e) {}
-      console.warn("loadRounds: recovered history from local backup");
-      if (typeof showToast === "function") showToast("Historial recuperado de la copia local");
-      return bak;
-    }
-    _roundsUnreadable = true;
-    console.warn("loadRounds: stored history is not a list");
-    if (typeof showToast === "function") showToast("El historial guardado no se pudo leer. No se ha borrado.");
-    return [];
-  } catch (e) {
-    _roundsUnreadable = true;
-    console.warn("loadRounds", e);
-    if (typeof showToast === "function") showToast("El historial guardado no se pudo leer. No se ha borrado.");
-    return [];
-  }
-}
-function saveRounds(list) {
-  if (_roundsUnreadable) {
-    console.warn("saveRounds blocked: stored history is unreadable");
-    if (typeof showToast === "function") showToast("No se guarda encima de un historial dañado");
-    return false;
-  }
-  try {
-    const prev = localStorage.getItem(ROUNDS_KEY);
-    const next = JSON.stringify(list);
-    if (prev && prev !== next) {
-      try { localStorage.setItem(ROUNDS_BAK_KEY, prev); } catch (e) {}
-    }
-    localStorage.setItem(ROUNDS_KEY, next);
-    if (localStorage.getItem(ROUNDS_KEY) !== next) {
-      console.warn("saveRounds short write");
-      if (typeof showToast === "function") showToast("No se pudo guardar el historial en este dispositivo");
-      return false;
-    }
-    if (prev !== next) touchDataUpdated();
-  } catch (e) {
-    console.warn("saveRounds", e);
-    if (typeof showToast === "function") showToast("No se pudo guardar el historial en este dispositivo");
-    return false;
-  }
-  if (typeof queueDriveSync === "function") queueDriveSync();
-  return true;
-}
-function formatRoundDate(iso) {
-  try {
-    const d = iso ? new Date(iso) : new Date();
-    return d.toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" });
-  } catch (e) { return "Hoy"; }
-}
-function snapshotPlayers() {
-  return PLAYERS.map(p => ({
-    id: p.id, name: p.name, short: p.short, initials: p.initials,
-    hcp: p.hcp, ch: p.ch, ph: p.ph, guest: !!p.guest,
-    ball: (p.ball || "").toString().slice(0, 48),
-    withdrawn: !!p.withdrawn,
-    scores: Object.assign({}, p.scores),
-    putts: Object.assign({}, p.putts),
-    fir: Object.assign({}, p.fir || {}),
-    gir: Object.assign({}, p.gir || {}),
-    totalsGross: (p.totalsGross != null ? Number(p.totalsGross) : null),
-    totalsPutts: (p.totalsPutts != null ? Number(p.totalsPutts) : null),
-    creativePts: Number(p.creativePts) || 0,
-    creativeLog: Array.isArray(p.creativeLog) ? p.creativeLog.slice() : []
-  }));
-}
-function inspectActiveRaw(raw) {
-  if (!raw) return { status: "missing", data: null };
-  try {
-    const data = JSON.parse(raw);
-    if (!data || typeof data !== "object" || Array.isArray(data) || !Array.isArray(data.players) || !data.players.length) {
-      return { status: "corrupt", data: null };
-    }
-    return { status: "ok", data: data };
-  } catch (e) {
-    return { status: "corrupt", data: null };
-  }
-}
-function inspectActiveKey(key) {
-  try { return inspectActiveRaw(localStorage.getItem(key)); }
-  catch (e) { return { status: "corrupt", data: null }; }
-}
-let _activeStorageError = "";
-function noteActiveStorageError(msg) {
-  _activeStorageError = msg || "No se pudo guardar en este dispositivo";
-  let hidden = false;
-  try { hidden = typeof document !== "undefined" && document.visibilityState === "hidden"; } catch (e) {}
-  if (hidden) return;
-  if (typeof showToast === "function") showToast(_activeStorageError, false, 4200);
-}
-function flushActiveStorageError() {
-  if (!_activeStorageError) return;
-  let hidden = false;
-  try { hidden = typeof document !== "undefined" && document.visibilityState === "hidden"; } catch (e) {}
-  if (hidden) return;
-  const msg = _activeStorageError;
-  _activeStorageError = "";
-  if (typeof showToast === "function") showToast(msg, false, 4200);
-}
-function storageSetItem(key, value, failMsg) {
-  try {
-    localStorage.setItem(key, value);
-    if (localStorage.getItem(key) !== value) {
-      noteActiveStorageError(failMsg || "No se pudo guardar en este dispositivo");
-      return false;
-    }
-    return true;
-  } catch (e) {
-    console.warn("storageSetItem", key, e);
-    noteActiveStorageError(failMsg || "No se pudo guardar en este dispositivo");
-    return false;
-  }
-}
-function activeBackupNeedsRecovery() {
-  if (state._roundSaved) return false;
-  if (inspectActiveKey(ACTIVE_KEY).status === "ok") return false;
-  return inspectActiveKey(ACTIVE_BAK_KEY).status === "ok";
-}
-function roundWouldBeReplaced() {
-  if (state._roundSaved) return false;
-  if (inspectActiveKey(ACTIVE_KEY).status === "ok") return true;
-  if (inspectActiveKey(ACTIVE_BAK_KEY).status === "ok") return true;
-  return PLAYERS.some(playerHasMarks);
-}
-function localActiveRoundIsProtected() {
-  if (!state) return false;
-  if (state._newRoundArmed || state._activeRoundLive) return true;
-  const screen = state.screen;
-  if (screen === "hole" || screen === "scorecard" || screen === "leader" || screen === "ajustes" || screen === "arbitro" || screen === "close" || screen === "setup") return true;
-  const primary = inspectActiveKey(ACTIVE_KEY);
-  if (primary.status === "corrupt") return true;
-  if (primary.status === "missing" && inspectActiveKey(ACTIVE_BAK_KEY).status === "ok") return true;
-  if (PLAYERS.some(playerHasMarks)) return true;
-  return false;
-}
-function persistActiveRound() {
-  if (state._newRoundArmed || state._roundSaved) return false;
-  try {
-    const course = typeof getSelectedCourse === "function" ? getSelectedCourse() : null;
-    const payload = {
-      v: 1,
-      savedAt: new Date().toISOString(),
-      hole: state.hole,
-      activePlayer: state.activePlayer,
-      dataTier: state.dataTier,
-      scNine: state.scNine,
-      scCard: state.scCard || "gross",
-      editingRoundId: state.editingRoundId || null,
-      setup: JSON.parse(JSON.stringify(state.setup)),
-      club: typeof CLUB !== "undefined" ? CLUB : (course && course.name),
-      players: snapshotPlayers(),
-      setupPlayers: (state.setup && state.setup.players) ? state.setup.players.slice() : [true]
-    };
-    let prev = null;
-    try { prev = localStorage.getItem(ACTIVE_KEY); } catch (e) { prev = null; }
-    const next = JSON.stringify(payload);
-    let changed = !prev || prev !== next;
-    try {
-      if (prev) {
-        const a = JSON.parse(prev);
-        const b = JSON.parse(next);
-        delete a.savedAt;
-        delete b.savedAt;
-        changed = JSON.stringify(a) !== JSON.stringify(b);
-      }
-    } catch (e) { changed = true; }
-    // Never replace a good backup with a corrupt primary.
-    if (prev && prev !== next && inspectActiveRaw(prev).status === "ok") {
-      storageSetItem(ACTIVE_BAK_KEY, prev, "No se pudo guardar la copia de seguridad");
-    }
-    if (!storageSetItem(ACTIVE_KEY, next, "No se pudo guardar la ronda en curso")) return false;
-    _activeStorageError = "";
-    state._activeRoundLive = true;
-    if (changed) {
-      touchDataUpdated();
-      if (typeof queueDriveSync === "function") queueDriveSync();
-    }
-    var sharedApplying = false;
-    try { sharedApplying = typeof window !== "undefined" && !!window.__fairwaySharedApplying; } catch (e) {}
-    if (!sharedApplying && typeof fairwaySharedAfterPersist === "function") {
-      try { fairwaySharedAfterPersist(); } catch (e) {}
-    }
-    return true;
-  } catch (e) {
-    console.warn("persistActiveRound", e);
-    noteActiveStorageError("No se pudo guardar la ronda en curso");
-    return false;
-  }
-}
-function clearActiveRound() {
-  let had = false;
-  try { had = !!localStorage.getItem(ACTIVE_KEY) || !!localStorage.getItem(ACTIVE_BAK_KEY); } catch (e) {}
-  try { localStorage.removeItem(ACTIVE_KEY); } catch (e) {}
-  try { localStorage.removeItem(ACTIVE_BAK_KEY); } catch (e) {}
-  state._activeRoundLive = false;
-  if (had) {
-    touchDataUpdated();
-    if (typeof queueDriveSync === "function") queueDriveSync();
-  }
-}
-
-/** After closing a round: wipe storage + scores so Home never shows Continuar */
-function endActiveRoundMemory() {
-  try { if (typeof fairwaySharedRoundClosed === "function") fairwaySharedRoundClosed(); } catch (e) {}
-  state._activeRoundLive = false;
-  clearActiveRound();
-  // Double-clear in case ACTIVE_KEY was written under an alias
-  try { localStorage.removeItem("fairway.activeRound.v1"); } catch (e) {}
-  PLAYERS.forEach(p => {
-    p.scores = {};
-    p.putts = {};
-    p.fir = {};
-    p.gir = {};
-    p.totalsGross = null;
-    p.totalsPutts = null;
-    p.creativePts = 0;
-    p.creativeLog = [];
-  });
-  state.hole = 1;
-  state.activePlayer = 0;
-  state.editingRoundId = null;
-  try {
-    document.querySelectorAll("[data-continue-hole]").forEach(btn => {
-      btn.style.display = "none";
-      btn.textContent = "Continuar · Hoyo 1";
-    });
-    document.querySelectorAll("[data-recover-backup]").forEach(btn => {
-      btn.style.display = "none";
-    });
-    document.querySelectorAll("[data-finish-round]").forEach(btn => {
-      btn.style.display = "none";
-    });
-    document.querySelectorAll("[data-round-ajustes]").forEach(btn => {
-      btn.style.display = "none";
-    });
-    const card = document.querySelector("#screen-home .round-card");
-    if (card) {
-      card.style.display = "";
-      card.setAttribute("data-active", "0");
-    }
-  } catch (e) {}
-  if (typeof updateHomeThru === "function") updateHomeThru();
-}
-function applyActivePayload(data) {
-  if (!data || !data.players || !data.players.length) return false;
-  if (data.setup) state.setup = data.setup;
-  if (data.setupPlayers) state.setup.players = data.setupPlayers;
-  state.hole = data.hole || 1;
-  state.activePlayer = data.activePlayer || 0;
-  state.dataTier = data.dataTier || "score";
-  state.scNine = data.scNine || "out";
-  state.scCard = data.scCard === "net" ? "net" : "gross";
-  state.editingRoundId = data.editingRoundId || null;
-  PLAYERS.length = 0;
-  data.players.forEach(p => {
-    PLAYERS.push({
-      id: p.id, rp: "rp-" + p.id, name: p.name,
-      short: p.short || (p.name || "?").slice(0, 3),
-      initials: p.initials || (p.name || "?").slice(0, 2).toUpperCase(),
-      hcp: p.hcp, ch: p.ch, ph: p.ph, guest: !!p.guest,
-      ball: (p.ball || "").toString(),
-      withdrawn: !!p.withdrawn,
-      avatar: "", scores: p.scores || {}, putts: p.putts || {},
-      fir: p.fir || {}, gir: p.gir || {},
-      totalsGross: (p.totalsGross != null ? Number(p.totalsGross) : null),
-      totalsPutts: (p.totalsPutts != null ? Number(p.totalsPutts) : null),
-      creativePts: Number(p.creativePts) || 0,
-      creativeLog: Array.isArray(p.creativeLog) ? p.creativeLog.slice() : []
-    });
-  });
-  if (state.setup && state.setup.courseId && typeof COURSES !== "undefined") {
-    const course = COURSES.find(c => c.id === state.setup.courseId);
-    if (course) {
-      CLUB = course.name;
-      const teeNames = (course.tees || []).map(x => x.name);
-      let tee = state.setup.tee;
-      if (!tee || !teeNames.includes(tee)) {
-        tee = teeNames.includes("Amarillas") ? "Amarillas" : (teeNames[0] || tee);
-      }
-      state.setup.tee = tee;
-      FX.tee = tee;
-      HOLES = (typeof holesForTee === "function")
-        ? holesForTee(course, tee)
-        : course.holes.map(h => ({
-            n: h.n, par: h.par, hcp: h.hcp,
-            m: (h.mByTee && h.mByTee[tee] != null) ? h.mByTee[tee] : (h.m || 0)
-          }));
-    }
-  }
-  state._activeRoundLive = true;
-  if (typeof refreshPlayerHandicaps === "function") refreshPlayerHandicaps();
-  if (typeof updateClubCalls === "function") updateClubCalls();
-  return true;
-}
-function restoreActiveRound() {
-  try {
-    const primary = inspectActiveKey(ACTIVE_KEY);
-    let data = primary.status === "ok" ? primary.data : null;
-    let fromBak = false;
-    if (!data) {
-      const bak = inspectActiveKey(ACTIVE_BAK_KEY);
-      if (bak.status !== "ok") return false;
-      data = bak.data;
-      fromBak = true;
-    }
-    if (!applyActivePayload(data)) return false;
-    if (fromBak) {
-      const wrote = storageSetItem(ACTIVE_KEY, JSON.stringify(data), "No se pudo guardar la ronda recuperada");
-      if (wrote && typeof showToast === "function") showToast("Ronda recuperada de la copia local");
-    }
-    return true;
-  } catch (e) {
-    console.warn("restoreActiveRound", e);
-    return false;
-  }
-}
-function recoverActiveRoundFromBackup() {
-  const bak = inspectActiveKey(ACTIVE_BAK_KEY);
-  if (bak.status !== "ok") {
-    if (typeof showToast === "function") showToast("No hay copia local de la ronda");
-    return false;
-  }
-  state._roundSaved = null;
-  state._newRoundArmed = false;
-  if (!applyActivePayload(bak.data)) {
-    if (typeof showToast === "function") showToast("No se pudo recuperar la ronda");
-    return false;
-  }
-  const wrote = storageSetItem(ACTIVE_KEY, JSON.stringify(bak.data), "No se pudo guardar la ronda recuperada");
-  if (wrote && typeof showToast === "function") showToast("Ronda recuperada de la copia local");
-  if (typeof updateHomeThru === "function") updateHomeThru();
-  return true;
-}
-function flushActiveRoundForLifecycle() {
-  try {
-    if (!state || state._newRoundArmed || state._roundSaved || !state._activeRoundLive) return;
-    persistActiveRound();
-  } catch (e) {
-    console.warn("flushActiveRoundForLifecycle", e);
-  }
-}
-function bindActiveRoundLifecycle() {
-  if (bindActiveRoundLifecycle.done) return;
-  bindActiveRoundLifecycle.done = true;
-  document.addEventListener("visibilitychange", function () {
-    if (document.visibilityState === "hidden") flushActiveRoundForLifecycle();
-    else flushActiveStorageError();
-  });
-  window.addEventListener("pagehide", flushActiveRoundForLifecycle, true);
-  window.addEventListener("beforeunload", flushActiveRoundForLifecycle);
-  document.addEventListener("freeze", flushActiveRoundForLifecycle);
-}
-function buildRoundRecord() {
-  const { rows, mods } = liveStandings();
-  const me = rows.find(r => r.me) || rows[0];
-  const course = typeof getSelectedCourse === "function" ? getSelectedCourse() : null;
-  const now = new Date();
-  const id = "r-" + now.getTime();
-  const winners = (typeof buildLivePodium === "function" ? buildLivePodium() : []).slice();
-  const playersSnap = snapshotPlayers();
-  function playerExtras(pSnap, row) {
-    const scores = pSnap.scores || {};
-    const putts = pSnap.putts || {};
-    const fir = pSnap.fir || {};
-    const gir = pSnap.gir || {};
-    let puttSum = 0, puttN = 0, firHit = 0, firAtt = 0, girYes = 0, girAtt = 0;
-    Object.keys(scores).forEach(k => {
-      const hole = (typeof HOLES !== "undefined") ? HOLES[Number(k) - 1] : null;
-      const par3 = hole && Number(hole.par) === 3;
-      if (putts[k] != null) { puttSum += Number(putts[k]) || 0; puttN++; }
-      if (!par3 && (fir[k] === "hit" || fir[k] === "miss")) { firAtt++; if (fir[k] === "hit") firHit++; }
-      if (gir[k] === "yes" || gir[k] === "no") { girAtt++; if (gir[k] === "yes") girYes++; }
-    });
-    return {
-      name: row ? row.name : pSnap.name,
-      gross: row ? row.gross : null,
-      net: row ? row.net : null,
-      toPar: row ? row.toPar : null,
-      sf: row ? row.sf : null,
-      thru: row ? row.thru : null,
-      ch: row ? row.ch : pSnap.ch,
-      strokesUsed: row ? row.strokesUsed : null,
-      puttsTotal: puttN ? puttSum : null,
-      puttsHoles: puttN,
-      birdies: row ? row.birdies : null,
-      puttPts: row ? row.puttPts : null,
-      holeWins: row ? row.holeWins : null,
-      firHit, firAtt,
-      girYes, girAtt,
-      firPct: firAtt ? Math.round(100 * firHit / firAtt) : null,
-      girPct: girAtt ? Math.round(100 * girYes / girAtt) : null
-    };
-  }
-  const meSnap = playersSnap.find(p => me && ((me.p && p.id === me.p.id) || p.name === me.name)) || playersSnap[0];
-  return {
-    id,
-    dateISO: now.toISOString(),
-    updatedAt: now.toISOString(),
-    date: formatRoundDate(now.toISOString()),
-    club: (course && course.name) || CLUB || "Fairway",
-    courseId: state.setup.courseId,
-    layout: (typeof roundLayoutLabel === "function" ? roundLayoutLabel() : (((state.setup && state.setup.holes) || 18) + " hoyos")),
-    tee: state.setup.tee,
-    par: (course && course.par) || 72,
-    holes: state.setup.holes || 18,
-    holesPlayed: meSnap ? countMarkedHoles(meSnap.scores, state.setup.holes || 18) : 0,
-    modalities: (state.setup.modalities || []).slice(),
-    creative: creativeEnabled() ? JSON.parse(JSON.stringify(ensureCreativeSetup())) : null,
-    official: !!(course && course.official),
-    players: playersSnap, // scores + putts + fir + gir por hoyo
-    me: me ? playerExtras(meSnap || {}, me) : null,
-    winners,
-    standings: rows.map(r => {
-      const snap = playersSnap.find(p => (r.p && p.id === r.p.id) || p.name === r.name) || {};
-      return playerExtras(snap, r);
-    })
-  };
-}
-function persistCompletedRound() {
-  // Always wipe activeRound even if already saved (P05: stale Continuar)
-  if (state._roundSaved) {
-    endActiveRoundMemory();
-    if (typeof queueDriveSync === "function") queueDriveSync({ immediate: true });
-    return state._roundSaved;
-  }
-  const { rows } = liveStandings();
-  const any = rows.some(r => r.thru > 0) || PLAYERS.some(p =>
-    Object.keys(p.scores || {}).length || p.totalsGross != null
-  );
-  if (!any) {
-    endActiveRoundMemory();
-    state.editingRoundId = null;
-    if (typeof queueDriveSync === "function") queueDriveSync({ immediate: true });
-    return null;
-  }
-  const rec = buildRoundRecord();
-  const list = loadRounds();
-  if (_roundsUnreadable) {
-    if (typeof showToast === "function") showToast("No se pudo guardar el historial. La ronda sigue en este móvil.");
-    return null;
-  }
-  if (state.editingRoundId) {
-    const idx = list.findIndex(r => r.id === state.editingRoundId);
-    if (idx >= 0) {
-      const prev = list[idx];
-      rec.id = prev.id;
-      rec.dateISO = prev.dateISO || rec.dateISO;
-      rec.date = prev.date || rec.date;
-      list[idx] = rec;
-      if (saveRounds(list.slice(0, ROUNDS_MAX)) !== true) {
-        if (typeof showToast === "function") showToast("No se pudo guardar el historial. La ronda sigue en este móvil.");
-        return null;
-      }
-      state._roundSaved = rec.id;
-      state.editingRoundId = null;
-      endActiveRoundMemory();
-      if (typeof queueDriveSync === "function") queueDriveSync({ immediate: true });
-      return rec.id;
-    }
-  }
-  list.unshift(rec);
-  if (saveRounds(list.slice(0, ROUNDS_MAX)) !== true) {
-    if (typeof showToast === "function") showToast("No se pudo guardar el historial. La ronda sigue en este móvil.");
-    return null;
-  }
-  state._roundSaved = rec.id;
-  state.editingRoundId = null;
-  endActiveRoundMemory();
-  if (typeof queueDriveSync === "function") queueDriveSync({ immediate: true });
-  return rec.id;
-}
-function getRoundById(id) {
-  return loadRounds().find(r => r.id === id) || null;
-}
-function deleteSavedRound(id) {
-  saveRounds(loadRounds().filter(r => r.id !== id));
-  state.deletedRounds[id] = true;
-}
-
-/** Carga una vuelta del historial para ver/editar la tarjeta y el marcador */
-function reopenRound(id, dest) {
-  const d = getRoundById(id);
-  if (!d || !d.players || !d.players.length) {
-    showToast("Sin partida", true);
-    return false;
-  }
-  if (isRoundInProgress() && state.editingRoundId !== id) {
-    showToast("Cierra antes la partida en curso", true);
-    return false;
-  }
-  state._roundSaved = null;
-  state.editingRoundId = id;
-  state.setup = Object.assign({}, state.setup, {
-    courseId: d.courseId || state.setup.courseId,
-    tee: d.tee || state.setup.tee,
-    holes: d.holes || state.setup.holes || 18,
-    modalities: Array.isArray(d.modalities) ? d.modalities.slice() : (state.setup.modalities || []).slice(),
-    creative: d.creative ? JSON.parse(JSON.stringify(d.creative)) : state.setup.creative
-  });
-  if (d.courseId) {
-    const course = COURSES.find(c => c.id === d.courseId);
-    if (course) applyCourseData(course, d.tee || state.setup.tee, false);
-  }
-  PLAYERS.length = 0;
-  d.players.forEach(p => {
-    PLAYERS.push({
-      id: p.id || ("p" + Date.now() + Math.random().toString(16).slice(2, 6)),
-      rp: "rp-" + (p.id || "x"),
-      name: (p.name || "").toString(),
-      short: p.short || (p.name || "?").slice(0, 3),
-      initials: p.initials || guestInitials(p.name || "?"),
-      hcp: p.hcp, ch: p.ch, ph: p.ph, guest: !!p.guest,
-      ball: (p.ball || "").toString(),
-      withdrawn: !!p.withdrawn,
-      avatar: "",
-      scores: Object.assign({}, p.scores || {}),
-      putts: Object.assign({}, p.putts || {}),
-      fir: Object.assign({}, p.fir || {}),
-      gir: Object.assign({}, p.gir || {}),
-      totalsGross: (p.totalsGross != null ? Number(p.totalsGross) : null),
-      totalsPutts: (p.totalsPutts != null ? Number(p.totalsPutts) : null),
-      creativePts: Number(p.creativePts) || 0,
-      creativeLog: Array.isArray(p.creativeLog) ? p.creativeLog.slice() : []
-    });
-  });
-  state.setup.players = PLAYERS.map(() => true);
-  state.hole = 1;
-  for (let i = (state.setup.holes || 18); i >= 1; i--) {
-    if (PLAYERS.some(p => p.scores && p.scores[i] != null)) { state.hole = i; break; }
-  }
-  state.activePlayer = 0;
-  state.scNine = state.hole > 9 ? "in" : "out";
-  if (typeof refreshPlayerHandicaps === "function") refreshPlayerHandicaps();
-  if (typeof updateClubCalls === "function") updateClubCalls();
-  persistActiveRound();
-  updateHomeThru();
-  showToast("Partida cargada · puedes editar");
-  go(dest === "scorecard" ? "scorecard" : "hole");
-  return true;
-}
-
-function saveEditingRoundDraft() {
-  if (!state.editingRoundId) {
-    if (persistActiveRound()) showToast("Progreso guardado");
-    return;
-  }
-  const list = loadRounds();
-  const idx = list.findIndex(r => r.id === state.editingRoundId);
-  if (idx < 0) {
-    if (persistActiveRound()) showToast("Progreso guardado");
-    return;
-  }
-  const rec = buildRoundRecord();
-  const prev = list[idx];
-  rec.id = prev.id;
-  rec.dateISO = prev.dateISO || rec.dateISO;
-  rec.date = prev.date || rec.date;
-  list[idx] = rec;
-  saveRounds(list);
-  if (persistActiveRound()) showToast("Cambios guardados en el historial");
-}
 
 
 function renderSavedRoster() {
@@ -7749,29 +7146,8 @@ function playerHasMarkedHoles(p) {
   return Object.keys(s).some(k => s[k] != null);
 }
 
-function playerGross(p, maxH) {
-  let g = 0, thru = 0;
-  for (let i = 1; i <= maxH; i++) {
-    if (p.scores[i] != null) { g += p.scores[i]; thru = i; }
-  }
-  if (thru === 0 && p.totalsGross != null && Number.isFinite(Number(p.totalsGross))) {
-    return { gross: Number(p.totalsGross), thru: maxH, totalsOnly: true };
-  }
-  return { gross: g, thru, totalsOnly: false };
-}
-function playerParPlayed(p, maxH) {
-  let par = 0;
-  let any = false;
-  for (let i = 1; i <= maxH; i++) {
-    if (p.scores[i] != null && HOLES[i - 1]) { par += HOLES[i - 1].par; any = true; }
-  }
-  if (!any && p.totalsGross != null) {
-    for (let i = 1; i <= maxH; i++) {
-      if (HOLES[i - 1]) par += HOLES[i - 1].par;
-    }
-  }
-  return par;
-}
+
+
 
 function setPlayerTotalsGross(pi, raw) {
   const list = activePlayers();
@@ -7838,72 +7214,21 @@ function renderTotalsEntry() {
     </div>
     ${rows}`;
 }
-function stablefordHole(score, par, strokesReceived) {
-  const netDiff = score - par - strokesReceived;
-  if (netDiff <= -3) return 5;
-  if (netDiff === -2) return 4;
-  if (netDiff === -1) return 3;
-  if (netDiff === 0) return 2;
-  if (netDiff === 1) return 1;
-  return 0;
-}
 
-/** WHS Course Handicap: round(HI × Slope/113 + (CR − Par)); 9 hoyos → round(CH18/2). */
-function resolveSetupTee(course) {
-  const c = course || (typeof getSelectedCourse === "function" ? getSelectedCourse() : null);
-  if (!c || !c.tees || !c.tees.length) return (state.setup && state.setup.tee) || "Amarillas";
-  const names = c.tees.map(x => x.name);
-  let tee = (state.setup && state.setup.tee) || FX.tee;
-  if (!tee || !names.includes(tee)) {
-    tee = names.includes("Amarillas") ? "Amarillas" : names[0];
-  }
-  return tee;
-}
 
-function holesInRound(explicit) {
-  if (explicit != null && Number.isFinite(Number(explicit))) {
-    return Math.max(1, Math.min(18, Math.floor(Number(explicit))));
-  }
-  const n = Number(state.setup && state.setup.holes);
-  return Math.max(1, Math.min(18, Number.isFinite(n) ? n : 18));
-}
 
-/** Scale 18-hole CH when playing 9 holes of an 18-hole rated course (WHS). */
-function scaleHandicapForRound(ch18, nHoles, courseHoleCount) {
-  const n = holesInRound(nHoles);
-  const total = courseHoleCount != null
-    ? Number(courseHoleCount)
-    : ((typeof HOLES !== "undefined" && HOLES.length) ? HOLES.length : 18);
-  if (n <= 9 && total > 9) return Math.round(Number(ch18) / 2);
-  return Math.round(Number(ch18)) || 0;
-}
 
-function courseHandicapFor(player, opts) {
-  opts = opts || {};
-  const hi = Number(player && player.hcp);
-  if (!Number.isFinite(hi)) return 0;
-  const course = opts.course || (typeof getSelectedCourse === "function" ? getSelectedCourse() : null);
-  const teeName = opts.tee || resolveSetupTee(course);
-  const tee = course && course.tees && course.tees.find(x => x.name === teeName);
-  const nHoles = opts.holes != null ? opts.holes : holesInRound();
-  const courseHoleCount = (course && course.holes && course.holes.length)
-    || (typeof HOLES !== "undefined" ? HOLES.length : 18);
-  if (!tee || tee.slope == null || tee.cr == null) {
-    return scaleHandicapForRound(Math.round(hi), nHoles, courseHoleCount);
-  }
-  const par = (tee.par != null ? tee.par : course.par) || 72;
-  const ch18 = Math.round(hi * (Number(tee.slope) / 113) + (Number(tee.cr) - Number(par)));
-  return scaleHandicapForRound(ch18, nHoles, courseHoleCount);
-}
 
-/** Safe CH lookup — keeps CH 0 and plus handicaps (avoids `||` falsy bug). */
-function playerCourseHcp(p) {
-  if (p && p.ch != null && Number.isFinite(Number(p.ch))) return Number(p.ch);
-  if (p && p.ph != null && Number.isFinite(Number(p.ph))) return Number(p.ph);
-  return typeof courseHandicapFor === "function" ? courseHandicapFor(p) : 0;
-}
+
+
+
+
+
+
 
 function refreshPlayerHandicaps() {
+  // courseHandicapFor arrives from fairway/js/scoring-boot.js after this classic script.
+  if (typeof courseHandicapFor !== "function") return;
   PLAYERS.forEach(p => {
     const ch = courseHandicapFor(p);
     p.ch = ch;
@@ -7911,52 +7236,9 @@ function refreshPlayerHandicaps() {
   });
 }
 
-/**
- * Relative stroke index among holes in play (1 = hardest of those holes).
- * For 18 holes uses the scorecard SI (dolor) as-is.
- */
-function relativeStrokeIndex(holeHcp, nHoles, holeList) {
-  const n = holesInRound(nHoles);
-  const abs = Number(holeHcp);
-  const si = Number.isFinite(abs) ? abs : n;
-  const list = holeList || (typeof HOLES !== "undefined" ? HOLES : null);
-  if (!list || !list.length || n >= 18 || n >= list.length) return si;
-  const played = list.slice(0, n);
-  const ranked = played
-    .map((h, i) => ({ si: Number(h.hcp) || 99, n: h.n || (i + 1) }))
-    .sort((a, b) => (a.si - b.si) || (a.n - b.n));
-  const pos = ranked.findIndex(x => x.si === si);
-  return pos >= 0 ? (pos + 1) : si;
-}
 
-/**
- * Strokes received (+) or given (−) on a hole from Playing Handicap + SI (dolor).
- * opts: { holes, holeList } for historial / export off the live setup.
- */
-function strokesOnHole(ph, holeHcp, opts) {
-  opts = opts || {};
-  const chRaw = Number(ph);
-  if (!Number.isFinite(chRaw) || chRaw === 0) return 0;
-  const ch = chRaw < 0 ? Math.ceil(chRaw) : Math.floor(chRaw);
-  if (ch === 0) return 0;
-  const nHoles = holesInRound(opts.holes);
-  const idx = relativeStrokeIndex(holeHcp, nHoles, opts.holeList);
-  if (ch > 0) {
-    let n = 0;
-    for (let k = 0; k * nHoles < ch; k++) {
-      if (idx <= (ch - k * nHoles)) n += 1;
-    }
-    return n;
-  }
-  // Plus handicap: give strokes on easiest holes (highest relative SI)
-  const give = -ch;
-  let n = 0;
-  for (let k = 0; k * nHoles < give; k++) {
-    const band = Math.min(give - k * nHoles, nHoles);
-    if (idx >= (nHoles - band + 1)) n -= 1;
-  }
-  return n;
-}
+
+
 
 const LB_MODES = [
   { id: "stroke", tab: "Stroke", mod: "Stroke Play", always: true, key: "net", unit: "net" },
@@ -7977,243 +7259,16 @@ function leaderModes(mods) {
   return LB_MODES.filter(m => m.always || on.has(m.mod));
 }
 
-function chaosSpin(seed, holeN) {
-  let h = 2166136261;
-  const s = String(seed || "fairway") + "#" + holeN;
-  for (let i = 0; i < s.length; i++) {
-    h ^= s.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  const bucket = (h >>> 0) % 10;
-  if (bucket < 5) return "none";
-  if (bucket < 7) return "angel";
-  if (bucket < 9) return "snake";
-  return "double";
-}
 
-function blankModeScore() {
-  return {
-    girPts: 0, girYes: 0, girBirdies: 0,
-    birdiePts: 0, birdieN: 0, eagleN: 0,
-    reyPts: 0, reyHoles: 0, reyDefenses: 0,
-    chaosPts: 0,
-    brawlPts: 0, brawlWins: 0, brawlGross: 0,
-    lastPts: 0, lastToPar: 0, lastBirdies: 0,
-    noBogeyPts: 0, bestClean: 0, doubles: 0,
-    onePutts: 0, threePutts: 0
-  };
-}
 
-/** Points for every social mode, using the rules shown in setup. */
-function applyModeScores(players, holeMeta, maxH, seed, strokesFor) {
-  const out = (players || []).map(() => blankModeScore());
-  const clean = (players || []).map(() => 0);
-  const lastFrom = Math.max(1, maxH - 2);
-  let king = -1;
-  for (let i = 1; i <= maxH; i++) {
-    const h = holeMeta && holeMeta[i - 1];
-    if (!h) continue;
-    const scored = [];
-    const gross = {};
-    const netDiff = {};
-    (players || []).forEach((p, pi) => {
-      if (!p || !p.scores || p.scores[i] == null) return;
-      scored.push(pi);
-      const s = Number(p.scores[i]) || 0;
-      const recv = strokesFor ? Number(strokesFor(p, h)) || 0 : 0;
-      gross[pi] = s;
-      netDiff[pi] = s - Number(h.par) - recv;
-    });
-    if (!scored.length) continue;
-    const bestGross = Math.min.apply(null, scored.map(pi => gross[pi]));
-    const holeWinners = scored.filter(pi => gross[pi] === bestGross);
-    if (holeWinners.length === 1) {
-      const pi = holeWinners[0];
-      if (king === pi) {
-        out[pi].reyPts += 3;
-        out[pi].reyDefenses += 1;
-      } else {
-        out[pi].reyPts += 2;
-        king = pi;
-      }
-      out[pi].reyHoles += 1;
-    } else {
-      holeWinners.forEach(pi => { out[pi].reyPts += 1; });
-    }
-    if (i >= 10) {
-      if (holeWinners.length === 1) {
-        out[holeWinners[0]].brawlPts += 3;
-        out[holeWinners[0]].brawlWins += 1;
-      } else {
-        holeWinners.forEach(pi => { out[pi].brawlPts += 1; });
-      }
-    }
-    if ((players || []).length >= 2) {
-      const hunters = scored.filter(pi => netDiff[pi] <= -1);
-      if (hunters.length) {
-        const bestNet = Math.min.apply(null, hunters.map(pi => netDiff[pi]));
-        const firsts = hunters.filter(pi => netDiff[pi] === bestNet);
-        const bonus = firsts.length === 1 ? 2 : 1;
-        firsts.forEach(pi => { out[pi].birdiePts += bonus; });
-      }
-    }
-    scored.forEach(pi => {
-      const p = players[pi];
-      const o = out[pi];
-      const s = gross[pi];
-      const diff = s - Number(h.par);
-      const gir = p.gir && p.gir[i];
-      if (gir === "yes") {
-        o.girYes += 1;
-        if (diff <= -1) {
-          o.girPts += 4;
-          o.girBirdies += 1;
-        } else o.girPts += 1;
-      } else if (gir === "no" && diff >= 1) {
-        o.girPts -= 1;
-      }
-      if (netDiff[pi] <= -2) {
-        o.birdiePts += 10;
-        o.eagleN += 1;
-        o.birdieN += 1;
-      } else if (netDiff[pi] === -1) {
-        o.birdiePts += 5;
-        o.birdieN += 1;
-      }
-      let chaos = 0;
-      if (diff <= -1) chaos += 3;
-      else if (diff === 1) chaos -= 1;
-      else if (diff >= 2) chaos -= 3;
-      const pt = p.putts && p.putts[i];
-      if (pt != null && pt !== "") {
-        const putt = Number(pt);
-        if (putt === 1) {
-          chaos += 3;
-          o.onePutts += 1;
-        } else if (putt === 2) chaos += 1;
-        else if (putt >= 3) {
-          chaos -= 1;
-          o.threePutts += 1;
-        }
-      }
-      if (gir === "yes") chaos += 1;
-      const spin = chaosSpin(seed, i);
-      if (spin === "angel") chaos += 3;
-      else if (spin === "snake") chaos -= 3;
-      else if (spin === "double") chaos *= 2;
-      o.chaosPts += chaos;
-      if (i >= lastFrom) {
-        if (diff <= -1) {
-          o.lastPts += 6;
-          o.lastBirdies += 1;
-        } else if (diff === 0) o.lastPts += 2;
-        else if (diff === 1) o.lastPts -= 2;
-        else o.lastPts -= 4;
-        o.lastToPar += diff;
-      }
-      if (diff <= 0) {
-        o.noBogeyPts += 2;
-        clean[pi] += 1;
-        if (clean[pi] > o.bestClean) o.bestClean = clean[pi];
-        if (clean[pi] % 3 === 0) o.noBogeyPts += 3;
-      } else {
-        clean[pi] = 0;
-        if (diff === 1) o.noBogeyPts -= 2;
-        else {
-          o.noBogeyPts -= 5;
-          o.doubles += 1;
-        }
-      }
-      if (i >= 10) {
-        o.brawlGross += s;
-        if (diff <= -1) o.brawlPts += 2;
-      }
-    });
-  }
-  return out;
-}
 
-function attachModeScores(rows, players, holeMeta, maxH, seed, strokesFor) {
-  const scored = applyModeScores(players, holeMeta, maxH, seed, strokesFor);
-  (rows || []).forEach((r, i) => Object.assign(r, scored[i] || blankModeScore()));
-  return rows;
-}
 
-function liveStandings() {
-  const maxH = state.setup.holes || 18;
-  const list = activePlayers();
-  const mods = state.setup.modalities || [];
-  if (typeof recalculateAllCreativePts === "function") recalculateAllCreativePts();
-  const rows = list.map(p => {
-    const pg = playerGross(p, maxH);
-    const { gross, thru } = pg;
-    const totalsOnly = !!pg.totalsOnly;
-    const parP = playerParPlayed(p, maxH);
-    const ph = playerCourseHcp(p);
-    let sf = 0, puttPts = 0, holeWins = 0, birdies = 0;
-    let puttSum = 0, puttN = 0;
-    for (let i = 1; i <= maxH; i++) {
-      const h = HOLES[i - 1];
-      if (!h) continue;
-      const s = p.scores[i];
-      if (s == null) continue;
-      sf += stablefordHole(s, h.par, strokesOnHole(ph, h.hcp));
-      const _recvB = strokesOnHole(ph, h.hcp);
-      if ((s - _recvB) <= h.par - 1) birdies++;
-      const pt = p.putts[i];
-      if (pt != null) {
-        puttSum += Number(pt) || 0;
-        puttN++;
-        if (pt === 1) puttPts += 3;
-        else if (pt === 2) puttPts += 1;
-        else if (pt >= 3) puttPts -= 1;
-      }
-    }
-    for (let i = 1; i <= maxH; i++) {
-      const scored = list.filter(q => q.scores[i] != null);
-      if (!scored.length || p.scores[i] == null) continue;
-      const best = Math.min(...scored.map(q => q.scores[i]));
-      const winners = scored.filter(q => q.scores[i] === best);
-      if (winners.length === 1 && winners[0] === p) holeWins += 2;
-    }
-    let strokesUsed = 0;
-    if (totalsOnly) {
-      // Total-only round: apply full course handicap as strokes
-      strokesUsed = ph;
-    } else {
-      for (let i = 1; i <= maxH; i++) {
-        const h = HOLES[i - 1];
-        if (!h || p.scores[i] == null) continue;
-        strokesUsed += strokesOnHole(ph, h.hcp);
-      }
-    }
-    const net = thru ? (gross - strokesUsed) : null;
-    const puttsTotal = puttN ? puttSum : (p.totalsPutts != null ? Number(p.totalsPutts) : null);
-    return {
-      p, name: p.name, initials: p.initials, avatar: p.avatar || "",
-      guest: !!p.guest, me: p === list[0] || p.id === PLAYERS[0].id,
-      gross, net, strokesUsed, thru, toPar: parP ? (gross - parP) : null,
-      sf, puttPts, holeWins, birdies, ph, ch: ph,
-      creativePts: Number(p.creativePts) || 0,
-      puttsTotal, puttsHoles: puttN || (p.totalsPutts != null ? maxH : 0),
-      totalsOnly
-    };
-  });
-  // me = host Miguel if present else first active
-  rows.forEach(r => { r.me = (r.p.id === PLAYERS[0].id); });
-  attachModeScores(rows, list, HOLES, maxH, (state.setup && state.setup.courseId) || "fairway", function (p, h) {
-    return strokesOnHole(playerCourseHcp(p), h.hcp);
-  });
-  return { rows, maxH, mods };
-}
-function pickWinner(rows, key, preferLow) {
-  const pool = rows.filter(r => r.thru > 0 && r[key] != null && !Number.isNaN(r[key]));
-  if (!pool.length) return null;
-  pool.sort((a, b) => preferLow
-    ? ((a[key] - b[key]) || (a.gross - b.gross) || a.name.localeCompare(b.name))
-    : ((b[key] - a[key]) || (a.gross - b.gross) || a.name.localeCompare(b.name)));
-  return pool[0];
-}
+
+
+
+
+
+
 
 
 function setLbRound(id) {
@@ -8358,29 +7413,9 @@ function leaderboardRows() {
   return { rows, meta: null, live: true };
 }
 
-function modeRankCmp(id) {
-  return function (a, b) {
-    if (!a.thru && b.thru) return 1;
-    if (a.thru && !b.thru) return -1;
-    if (id === "stroke") return (a.net - b.net) || (a.gross - b.gross) || String(a.name).localeCompare(String(b.name));
-    if (id === "stableford") return (b.sf - a.sf) || (a.gross - b.gross) || String(a.name).localeCompare(String(b.name));
-    if (id === "putting") return (b.puttPts - a.puttPts) || ((b.onePutts || 0) - (a.onePutts || 0)) || ((a.threePutts || 0) - (b.threePutts || 0)) || String(a.name).localeCompare(String(b.name));
-    if (id === "gir") return ((b.girPts || 0) - (a.girPts || 0)) || ((b.girYes || 0) - (a.girYes || 0)) || ((b.girBirdies || 0) - (a.girBirdies || 0)) || String(a.name).localeCompare(String(b.name));
-    if (id === "birdie") return ((b.birdiePts || 0) - (a.birdiePts || 0)) || ((b.eagleN || 0) - (a.eagleN || 0)) || ((b.birdieN || 0) - (a.birdieN || 0)) || String(a.name).localeCompare(String(b.name));
-    if (id === "rey") return ((b.reyPts || 0) - (a.reyPts || 0)) || ((b.reyHoles || 0) - (a.reyHoles || 0)) || ((b.reyDefenses || 0) - (a.reyDefenses || 0)) || String(a.name).localeCompare(String(b.name));
-    if (id === "chaos") return ((b.chaosPts || 0) - (a.chaosPts || 0)) || (a.gross - b.gross) || String(a.name).localeCompare(String(b.name));
-    if (id === "brawl") return ((b.brawlPts || 0) - (a.brawlPts || 0)) || ((b.brawlWins || 0) - (a.brawlWins || 0)) || ((a.brawlGross || 0) - (b.brawlGross || 0)) || String(a.name).localeCompare(String(b.name));
-    if (id === "last") return ((b.lastPts || 0) - (a.lastPts || 0)) || ((a.lastToPar || 0) - (b.lastToPar || 0)) || ((b.lastBirdies || 0) - (a.lastBirdies || 0)) || String(a.name).localeCompare(String(b.name));
-    if (id === "nobogey") return ((b.noBogeyPts || 0) - (a.noBogeyPts || 0)) || ((b.bestClean || 0) - (a.bestClean || 0)) || ((a.doubles || 0) - (b.doubles || 0)) || String(a.name).localeCompare(String(b.name));
-    if (id === "creative") return ((b.creativePts || 0) - (a.creativePts || 0)) || (a.gross - b.gross) || String(a.name).localeCompare(String(b.name));
-    return 0;
-  };
-}
 
-function modeTie(id, a, b) {
-  const named = modeRankCmp(id)(Object.assign({}, a, { name: "" }), Object.assign({}, b, { name: "" }));
-  return named === 0;
-}
+
+
 
 function modeSubline(d, id) {
   if (id === "stroke") {
@@ -8789,12 +7824,7 @@ function plaqueMeta() {
   };
 }
 
-function plaqueIsHerreria(meta) {
-  if (!meta) return false;
-  if (meta.courseId === "la-herreria") return true;
-  const club = String(meta.club || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-  return club.indexOf("la herreria") !== -1;
-}
+
 
 let _escorialImg = null;
 let _escorialLoading = null;
@@ -11200,7 +10230,9 @@ document.addEventListener("click", function (ev) {
 
 loadEscorialMonastery();
 loadHostHcp();
-(function bootMemory() {
+function fairwayApplyStoredRound() {
+  // restoreActiveRound arrives from fairway/js/rounds-boot.js after this classic script.
+  if (typeof restoreActiveRound !== "function") return false;
   const restored = restoreActiveRound();
   refreshPlayerHandicaps();
   if (restored) {
@@ -11222,9 +10254,32 @@ loadHostHcp();
   try { updateClubCalls(); } catch (e) {}
   try { if (typeof bindActiveRoundLifecycle === "function") bindActiveRoundLifecycle(); } catch (e) {}
   try { if (typeof driveBoot === "function") driveBoot(); } catch (e) {}
+  return !!restored;
+}
+
+(function bootMemory() {
+  try { fairwayApplyStoredRound(); } catch (e) { console.warn("restoreActiveRound", e); }
   try { if (typeof fairwayNavBoot === "function") fairwayNavBoot(); } catch (e) {}
   try { if (typeof bindPlayerCarouselSwipe === "function") bindPlayerCarouselSwipe(); } catch (e) {}
 })();
+window.__fairwayScoringScope = {
+  get state() { return state; },
+  get PLAYERS() { return PLAYERS; },
+  get HOLES() { return HOLES; },
+  get FX() { return FX; },
+  get getSelectedCourse() { return getSelectedCourse; },
+  get recalculateAllCreativePts() { return recalculateAllCreativePts; }
+};
+window.__fairwayRoundsScope = {
+  get state() { return state; },
+  get PLAYERS() { return PLAYERS; },
+  get HOLES() { return HOLES; },
+  set HOLES(v) { HOLES = v; },
+  get FX() { return FX; },
+  get CLUB() { return CLUB; },
+  set CLUB(v) { CLUB = v; },
+  get COURSES() { return COURSES; }
+};
 </script>
 
 <script>
@@ -11276,6 +10331,8 @@ if ("serviceWorker" in navigator) {
   });
 }
 </script>
+<script type="module" src="fairway/js/scoring-boot.js"></script>
+<script type="module" src="fairway/js/rounds-boot.js"></script>
 <script type="module" src="fairway/js/persist-boot.js"></script>
 <script type="module" src="fairway/js/shared-boot.js"></script>
 </body>
