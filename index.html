@@ -3009,6 +3009,7 @@ function setupNext() {
       renderSetup();
       return;
     }
+    try { preloadCourseHoleMaps(state.setup && state.setup.courseId); } catch (e) {}
     go("hole");
   }
 }
@@ -3214,6 +3215,39 @@ function holeMapConfig(courseId) {
 
 function courseHasHoleMaps(courseId) {
   return !!(holeMapConfig(courseId) || courseGeo(courseId));
+}
+
+function holeMapRequestUrl(path) {
+  if (!path) return "";
+  if (path.indexOf("?") >= 0 || path.indexOf("data:") === 0) return path;
+  return path + "?v=3";
+}
+
+/** Mapas de un solo campo al empezar la ronda: como mucho 18, nunca todo /holes/. */
+function courseHolePreloadList(courseId) {
+  const cfg = holeMapConfig(courseId);
+  if (!cfg || !cfg.dir) return [];
+  const dir = String(cfg.dir).replace(/\/+$/, "");
+  if (dir.indexOf("holes/") !== 0) return [];
+  if (cfg.overviewOnly) return [holeMapRequestUrl(dir + "/overview.webp")];
+  const urls = [];
+  for (let n = 1; n <= 18; n++) {
+    urls.push(holeMapRequestUrl(dir + "/" + String(n).padStart(2, "0") + ".webp"));
+  }
+  return urls.slice(0, 18);
+}
+
+function preloadCourseHoleMaps(courseId) {
+  const urls = courseHolePreloadList(courseId).slice(0, 18);
+  if (typeof Image !== "function") return urls;
+  urls.forEach(function (src) {
+    try {
+      const img = new Image();
+      img.decoding = "async";
+      img.src = src;
+    } catch (e) {}
+  });
+  return urls;
 }
 
 function courseManifestHole(courseId, n) {
@@ -7277,7 +7311,6 @@ document.addEventListener("click", function (ev) {
       }));
 })();
 
-loadEscorialMonastery();
 loadHostHcp();
 function fairwayApplyStoredRound() {
   // restoreActiveRound arrives from fairway/js/rounds-boot.js after this classic script.

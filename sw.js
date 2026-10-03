@@ -9,7 +9,6 @@ const ASSETS = [
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./icons/apple-touch-icon.png",
-  "./icons/escorial-monasterio.png",
   "./fairway/js/keys.js",
   "./fairway/js/persistence.js",
   "./fairway/js/idb.js",
@@ -37,6 +36,7 @@ function isShellUrl(url) {
     || file === "icon-192.png"
     || file === "icon-512.png"
     || file === "apple-touch-icon.png"
+    // Not precached. Fetched only when the La Herrería plaque is drawn.
     || file === "escorial-monasterio.png";
 }
 
