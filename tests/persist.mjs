@@ -328,4 +328,94 @@ function runFinishEarly(answers, inProgress) {
   assert.strictEqual(closed[2][1], "close");
 }
 
+function loadClose(scope) {
+  const names = ["readRoundList", "loadRounds", "saveRounds", "clearActiveRound", "endActiveRoundMemory", "persistCompletedRound"];
+  const code = names.map(n => extractFunction(html, n)).join("\n");
+  const fn = new Function("scope", [
+    "var state = scope.state;",
+    "var PLAYERS = scope.PLAYERS;",
+    "var localStorage = scope.localStorage;",
+    "var toasts = scope.toasts;",
+    "var touches = scope.touches;",
+    "var ACTIVE_KEY = 'fairway.activeRound.v1';",
+    "var ACTIVE_BAK_KEY = 'fairway.activeRound.bak.v1';",
+    "var ROUNDS_KEY = 'fairway.rounds.v1';",
+    "var ROUNDS_BAK_KEY = 'fairway.rounds.bak.v1';",
+    "var ROUNDS_MAX = 99999;",
+    "var _roundsUnreadable = false;",
+    "function touchDataUpdated() { touches.n++; return ''; }",
+    "function queueDriveSync() {}",
+    "function showToast(msg) { toasts.push(msg); }",
+    "function liveStandings() { return { rows: [{ thru: 1 }] }; }",
+    "function buildRoundRecord() { return { id: 'r-close', dateISO: '2026-10-03', date: '3 oct 2026', players: [{ id: 'me', scores: { 1: 5 } }] }; }",
+    code,
+    "return { " + names.join(",") + " };"
+  ].join("\n"));
+  return fn(scope);
+}
+
+function closeStorage(blockRounds) {
+  const data = {};
+  return {
+    data,
+    blockRounds: !!blockRounds,
+    getItem(k) { return Object.prototype.hasOwnProperty.call(data, k) ? data[k] : null; },
+    setItem(k, v) {
+      if (this.blockRounds && k === "fairway.rounds.v1") {
+        const err = new Error("quota");
+        err.name = "QuotaExceededError";
+        throw err;
+      }
+      data[k] = String(v);
+    },
+    removeItem(k) { delete data[k]; }
+  };
+}
+
+{
+  const storage = closeStorage(true);
+  storage.setItem("fairway.activeRound.v1", JSON.stringify({ hole: 4, players: [{ id: "me", scores: { 1: 5 } }] }));
+  storage.setItem("fairway.activeRound.bak.v1", JSON.stringify({ hole: 3, players: [{ id: "me", scores: { 1: 4 } }] }));
+  const scope = {
+    state: { _roundSaved: null, _activeRoundLive: true, editingRoundId: null, hole: 4, activePlayer: 0 },
+    PLAYERS: [{ id: "me", scores: { 1: 5 }, putts: {}, fir: {}, gir: {}, totalsGross: null }],
+    localStorage: storage,
+    toasts: [],
+    touches: { n: 0 }
+  };
+  scope.api = loadClose(scope);
+  assert.strictEqual(scope.api.persistCompletedRound(), null);
+  assert.strictEqual(scope.state._roundSaved, null);
+  assert.ok(storage.getItem("fairway.activeRound.v1"));
+  assert.ok(storage.getItem("fairway.activeRound.bak.v1"));
+  assert.strictEqual(scope.PLAYERS[0].scores[1], 5);
+  storage.blockRounds = false;
+  assert.strictEqual(scope.api.persistCompletedRound(), "r-close");
+  assert.strictEqual(scope.state._roundSaved, "r-close");
+  assert.strictEqual(storage.getItem("fairway.activeRound.v1"), null);
+  assert.strictEqual(storage.getItem("fairway.activeRound.bak.v1"), null);
+  const history = JSON.parse(storage.getItem("fairway.rounds.v1"));
+  assert.strictEqual(history[0].id, "r-close");
+}
+
+{
+  const storage = closeStorage(false);
+  storage.setItem("fairway.rounds.v1", "{bad");
+  storage.setItem("fairway.activeRound.v1", JSON.stringify({ hole: 4, players: [{ id: "me", scores: { 1: 5 } }] }));
+  storage.setItem("fairway.activeRound.bak.v1", JSON.stringify({ hole: 2, players: [{ id: "me", scores: { 1: 3 } }] }));
+  const scope = {
+    state: { _roundSaved: null, _activeRoundLive: true, editingRoundId: null, hole: 4, activePlayer: 0 },
+    PLAYERS: [{ id: "me", scores: { 1: 5 }, putts: {}, fir: {}, gir: {}, totalsGross: null }],
+    localStorage: storage,
+    toasts: [],
+    touches: { n: 0 }
+  };
+  scope.api = loadClose(scope);
+  assert.strictEqual(scope.api.persistCompletedRound(), null);
+  assert.strictEqual(scope.state._roundSaved, null);
+  assert.ok(storage.getItem("fairway.activeRound.v1"));
+  assert.ok(storage.getItem("fairway.activeRound.bak.v1"));
+  assert.strictEqual(storage.getItem("fairway.rounds.v1"), "{bad");
+}
+
 console.log("persist ok");

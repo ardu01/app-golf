@@ -1,19 +1,30 @@
 /**
  * Shared-round queue and merge. No network, no DOM.
- * A field changes only when the incoming timestamp is strictly newer.
+ * Order is a monotonic per-device seq, then deviceId. Not a wall clock.
  * A missing remote field never clears a local score.
+ * An unsequenced local stroke is not replaced and is not given a new seq here.
  */
 
 export const ROOM_SCHEMA = 1;
 export const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 export const HOLE_FIELDS = ["scores", "putts", "fir", "gir"];
 export const PLAYER_FIELDS = ["ball", "withdrawn"];
+/** Per-edit counters only. Wall clocks and hostile stamps sit above this. */
+export const SEQ_MAX = 1000000;
 
 const FIR = { hit: 1, miss: 1, na: 1 };
 const GIR = { yes: 1, no: 1, na: 1 };
 
+function cryptoUnit() {
+  const crypto = globalThis.crypto;
+  if (!crypto || typeof crypto.getRandomValues !== "function") throw new Error("crypto");
+  const buf = new Uint32Array(1);
+  crypto.getRandomValues(buf);
+  return buf[0] / 4294967296;
+}
+
 export function makeCode(rng, length) {
-  const rand = rng || Math.random;
+  const rand = rng || cryptoUnit;
   const n = length || 6;
   let s = "";
   for (let i = 0; i < n; i++) {
@@ -24,6 +35,30 @@ export function makeCode(rng, length) {
 
 export function makeDeviceId(rng) {
   return "d" + makeCode(rng, 8);
+}
+
+/** Same -10..54 band as manual handicap entry. Null stays null. */
+export function clampSharedHcp(value) {
+  if (value == null || value === "") return null;
+  let n = Number(String(value).replace(",", "."));
+  if (!Number.isFinite(n)) return null;
+  if (n < -10) n = -10;
+  if (n > 54) n = 54;
+  return Math.round(n * 10) / 10;
+}
+
+/** Clamp before course handicap. A remote 1000 must not become playing handicap. */
+export function sharedPlayingHcp(raw, courseHcpFor) {
+  const hcp = clampSharedHcp(raw);
+  if (hcp == null) return { hcp: null, ch: null, ph: null };
+  let ch = Math.round(hcp);
+  if (typeof courseHcpFor === "function") {
+    try {
+      const next = courseHcpFor({ hcp: hcp });
+      if (Number.isFinite(Number(next))) ch = next;
+    } catch (e) {}
+  }
+  return { hcp: hcp, ch: ch, ph: ch };
 }
 
 export function normalizeCode(raw) {
@@ -55,13 +90,16 @@ export function emptyShared(deviceId) {
     role: "",
     createdBy: "",
     joinedForeign: false,
+    seq: 0,
     stamps: {},
+    marks: {},
     pending: [],
     status: "idle",
     lastError: "",
     lastSyncAt: 0,
     transport: "",
     seal: false,
+    leaving: false,
     driveFileId: ""
   };
 }
@@ -79,13 +117,16 @@ export function loadShared(raw, deviceId) {
   base.role = data.role === "host" || data.role === "join" ? data.role : "";
   base.createdBy = safeId(data.createdBy);
   base.joinedForeign = !!data.joinedForeign;
+  base.seq = validSeq(data.seq) || 0;
   base.stamps = sanitizeStamps(data.stamps);
+  base.marks = sanitizeMarks(data.marks);
   base.pending = sanitizePending(data.pending);
   base.status = clipToken(data.status, 16) || "idle";
   base.lastError = clipToken(data.lastError, 24);
   base.lastSyncAt = finiteAt(data.lastSyncAt) || 0;
   base.transport = data.transport === "drive" || data.transport === "http" || data.transport === "mqtt" ? data.transport : "";
   base.seal = !!data.seal;
+  base.leaving = !!data.leaving;
   base.driveFileId = safeDriveId(data.driveFileId);
   if (!base.code) {
     base.role = "";
@@ -115,12 +156,89 @@ function finiteAt(value) {
   return Math.round(n);
 }
 
+/** Monotonic edit counter. Rejects wall clocks and absurd stamps such as 1e15. */
+export function validSeq(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return 0;
+  const rounded = Math.round(n);
+  if (rounded < 1 || rounded > SEQ_MAX) return 0;
+  return rounded;
+}
+
+export function allocSeq(shared) {
+  const cur = validSeq(shared && shared.seq) || 0;
+  const next = cur + 1;
+  if (!shared || next > SEQ_MAX) return 0;
+  shared.seq = next;
+  return next;
+}
+
+export function observeSeq(shared, seq) {
+  const n = validSeq(seq);
+  if (!shared || !n) return;
+  const cur = validSeq(shared.seq) || 0;
+  if (n > cur) shared.seq = n;
+}
+
+function orderBy(id) {
+  const s = String(id || "");
+  return /^[a-zA-Z0-9_-]{1,40}$/.test(s) ? s : "";
+}
+
+function orderSeq(row) {
+  if (row == null) return 0;
+  if (typeof row === "number" || typeof row === "string") return validSeq(row);
+  return validSeq(row.seq) || validSeq(row.at);
+}
+
+/**
+ * Single total order on every phone.
+ * Higher seq wins. If seq ties, the greater deviceId in lexicographic order wins.
+ * Same seq and same deviceId is one op, not a cross-phone tie.
+ */
+export function fieldOrderWins(candidate, current) {
+  const cs = orderSeq(candidate);
+  const us = orderSeq(current);
+  if (cs !== us) return cs > us;
+  const cb = orderBy(candidate && candidate.by);
+  const ub = orderBy(current && current.by);
+  if (cb === ub) return false;
+  return cb > ub;
+}
+
+export function opId(deviceId, seq) {
+  const id = safeId(deviceId);
+  const n = validSeq(seq);
+  if (!id || !n) return "";
+  return id + "-" + n;
+}
+
+function sanitizeOp(op) {
+  const s = String(op || "");
+  return /^[a-zA-Z0-9_-]{1,80}$/.test(s) ? s : "";
+}
+
+function sanitizeMarks(marks) {
+  const out = {};
+  if (!marks || typeof marks !== "object" || Array.isArray(marks)) return out;
+  Object.keys(marks).forEach((key) => {
+    if (!parseFieldKey(key)) return;
+    const row = marks[key];
+    if (!row || typeof row !== "object") return;
+    const by = orderBy(row.by);
+    const op = sanitizeOp(row.op);
+    if (!by && !op) return;
+    out[key] = { by: by, op: op };
+  });
+  return out;
+}
+
 function sanitizeStamps(stamps) {
   const out = {};
   if (!stamps || typeof stamps !== "object" || Array.isArray(stamps)) return out;
   Object.keys(stamps).forEach((key) => {
     if (!parseFieldKey(key)) return;
-    const at = finiteAt(stamps[key]);
+    const at = validSeq(stamps[key]);
     if (at) out[key] = at;
   });
   return out;
@@ -134,7 +252,8 @@ function sanitizePending(list) {
     if (!delta) return;
     const key = fieldKey(delta.playerId, delta.hole, delta.field);
     const prev = byKey[key];
-    if (!prev || delta.at >= prev.at) byKey[key] = delta;
+    if (!prev || fieldOrderWins(delta, prev)) byKey[key] = delta;
+    else if (orderSeq(delta) === orderSeq(prev) && orderBy(delta.by) === orderBy(prev.by)) byKey[key] = delta;
   });
   return Object.keys(byKey).map((k) => byKey[k]);
 }
@@ -145,7 +264,7 @@ export function sanitizeDelta(item) {
   const field = String(item.field || "");
   if (!playerId) return null;
   if (HOLE_FIELDS.indexOf(field) < 0 && PLAYER_FIELDS.indexOf(field) < 0) return null;
-  const at = finiteAt(item.at);
+  const at = validSeq(item.seq) || validSeq(item.at);
   if (!at) return null;
   let hole = "";
   if (HOLE_FIELDS.indexOf(field) >= 0) {
@@ -154,13 +273,16 @@ export function sanitizeDelta(item) {
   }
   const value = sanitizeValue(field, item.value);
   if (value === undefined) return null;
+  const by = orderBy(item.by);
   return {
     playerId: playerId,
     hole: hole,
     field: field,
     value: value,
     at: at,
-    by: safeId(item.by)
+    seq: at,
+    by: by,
+    op: sanitizeOp(item.op) || opId(by, at)
   };
 }
 
@@ -245,7 +367,8 @@ function writeField(player, field, hole, value) {
 
 export function stampExisting(players, stamps, at) {
   const next = Object.assign({}, stamps || {});
-  const when = finiteAt(at) || 1;
+  const when = validSeq(at);
+  if (!when) return { stamps: next };
   (players || []).forEach((player) => {
     const id = safeId(player && player.id);
     if (!id) return;
@@ -270,7 +393,7 @@ export function stampExisting(players, stamps, at) {
 }
 
 export function diffPlayers(before, after, at, deviceId) {
-  const when = finiteAt(at);
+  const when = validSeq(at);
   if (!when) return [];
   const prev = indexPlayers(before);
   const next = indexPlayers(after);
@@ -323,22 +446,32 @@ export function queueDeltas(pending, deltas) {
     if (!delta) return;
     const key = fieldKey(delta.playerId, delta.hole, delta.field);
     const prev = byKey[key];
-    if (!prev || delta.at >= prev.at) byKey[key] = delta;
+    if (!prev || fieldOrderWins(delta, prev)) byKey[key] = delta;
+    else if (orderSeq(delta) === orderSeq(prev) && orderBy(delta.by) === orderBy(prev.by)) byKey[key] = delta;
   });
   return Object.keys(byKey).map((k) => byKey[k]);
 }
 
 export function noteLocalDeltas(shared, before, after, now) {
-  const deltas = diffPlayers(before, after, now, shared.deviceId);
+  if (!shared.marks || typeof shared.marks !== "object") shared.marks = {};
+  let when = validSeq(now);
+  if (!when) when = allocSeq(shared);
+  if (!when) return [];
+  observeSeq(shared, when);
+  const deltas = diffPlayers(before, after, when, shared.deviceId);
   deltas.forEach((delta) => {
-    shared.stamps[fieldKey(delta.playerId, delta.hole, delta.field)] = delta.at;
+    delta.seq = when;
+    delta.op = opId(shared.deviceId, when) || delta.op || "";
+    const key = fieldKey(delta.playerId, delta.hole, delta.field);
+    shared.stamps[key] = delta.at;
+    shared.marks[key] = { by: shared.deviceId, op: delta.op };
   });
   shared.pending = queueDeltas(shared.pending, deltas);
   if (deltas.length && shared.code && !shared.seal) shared.status = "pending";
   return deltas;
 }
 
-export function playersToFields(players, stamps, deviceId) {
+export function playersToFields(players, stamps, deviceId, marks) {
   const fields = {};
   (players || []).forEach((player) => {
     const id = safeId(player && player.id);
@@ -348,9 +481,11 @@ export function playersToFields(players, stamps, deviceId) {
         const value = sanitizeValue(field, readField(player, field, hole));
         if (value === undefined) continue;
         const key = fieldKey(id, hole, field);
-        const at = finiteAt(stamps && stamps[key]) || 0;
+        const at = validSeq(stamps && stamps[key]) || 0;
         if (!at) continue;
-        fields[key] = { v: value, at: at, by: deviceId || "" };
+        const mark = marks && marks[key];
+        const by = orderBy(mark && mark.by) || orderBy(deviceId) || "";
+        fields[key] = { v: value, at: at, seq: at, by: by, op: sanitizeOp(mark && mark.op) };
       }
     });
     PLAYER_FIELDS.forEach((field) => {
@@ -358,9 +493,11 @@ export function playersToFields(players, stamps, deviceId) {
       if (field === "ball" && !value) return;
       if (field === "withdrawn" && !value) return;
       const key = fieldKey(id, "", field);
-      const at = finiteAt(stamps && stamps[key]) || 0;
+      const at = validSeq(stamps && stamps[key]) || 0;
       if (!at) return;
-      fields[key] = { v: value, at: at, by: deviceId || "" };
+      const mark = marks && marks[key];
+      const by = orderBy(mark && mark.by) || orderBy(deviceId) || "";
+      fields[key] = { v: value, at: at, seq: at, by: by, op: sanitizeOp(mark && mark.op) };
     });
   });
   return fields;
@@ -370,7 +507,7 @@ export function pendingToFields(pending) {
   const fields = {};
   sanitizePending(pending).forEach((delta) => {
     const key = fieldKey(delta.playerId, delta.hole, delta.field);
-    fields[key] = { v: delta.value, at: delta.at, by: delta.by || "" };
+    fields[key] = { v: delta.value, at: delta.at, seq: delta.at, by: delta.by || "", op: delta.op || "" };
   });
   return fields;
 }
@@ -386,7 +523,7 @@ export function mergeFields(primary, incoming) {
     const clean = sanitizeField(key, incoming[key]);
     if (!clean) return;
     const cur = out[key];
-    if (!cur || clean.at > cur.at) out[key] = clean;
+    if (!cur || fieldOrderWins(clean, cur)) out[key] = clean;
   });
   return out;
 }
@@ -395,20 +532,21 @@ function sanitizeField(key, field) {
   if (!parseFieldKey(key) || !field || typeof field !== "object") return null;
   const parsed = parseFieldKey(key);
   const value = sanitizeValue(parsed.field, field.v != null ? field.v : field.value);
-  const at = finiteAt(field.at);
+  const at = validSeq(field.seq) || validSeq(field.at);
   if (value === undefined || !at) return null;
-  return { v: value, at: at, by: safeId(field.by) };
+  return { v: value, at: at, seq: at, by: orderBy(field.by), op: sanitizeOp(field.op) };
 }
 
 /**
  * Write merged fields onto players.
- * Remote wins only when its timestamp is strictly newer than the local stamp,
- * or the local hole has no value yet.
- * Fields absent from `fields` are left untouched.
+ * Higher seq wins. Equal seq: greater deviceId wins.
+ * An unsequenced local stroke is kept and is not given a seq here.
+ * A stamp above SEQ_MAX is not an order key.
  */
-export function applyFieldsToPlayers(players, fields, stamps) {
+export function applyFieldsToPlayers(players, fields, stamps, marks) {
   const next = clonePlayers(players);
   const nextStamps = Object.assign({}, stamps || {});
+  const nextMarks = Object.assign({}, marks || {});
   const byId = indexPlayers(next);
   let changed = false;
   Object.keys(fields || {}).forEach((key) => {
@@ -418,16 +556,18 @@ export function applyFieldsToPlayers(players, fields, stamps) {
     const player = byId[parsed.playerId];
     if (!player) return;
     const local = sanitizeValue(parsed.field, readField(player, parsed.field, parsed.hole));
-    const localAt = finiteAt(nextStamps[key]) || 0;
+    const localAt = validSeq(nextStamps[key]) || 0;
+    const localBy = orderBy(nextMarks[key] && nextMarks[key].by);
     const hasLocal = local !== undefined && !(parsed.field === "ball" && local === "") && !(parsed.field === "withdrawn" && local === false);
-    if (hasLocal && field.at <= localAt) return;
-    if (!hasLocal && field.at < localAt) return;
+    if (hasLocal && !localAt) return;
+    if (localAt && !fieldOrderWins(field, { at: localAt, seq: localAt, by: localBy })) return;
     if (sameValue(local, field.v) && field.at === localAt) return;
     writeField(player, parsed.field, parsed.hole, field.v);
     nextStamps[key] = field.at;
+    nextMarks[key] = { by: field.by, op: field.op || "" };
     changed = true;
   });
-  return { players: next, stamps: nextStamps, changed: changed };
+  return { players: next, stamps: nextStamps, marks: nextMarks, changed: changed };
 }
 
 export function ackPending(pending, remoteFields) {
@@ -435,7 +575,9 @@ export function ackPending(pending, remoteFields) {
     const key = fieldKey(delta.playerId, delta.hole, delta.field);
     const remote = sanitizeField(key, remoteFields && remoteFields[key]);
     if (!remote) return true;
-    if (remote.at < delta.at) return true;
+    if (fieldOrderWins(delta, remote)) return true;
+    if (fieldOrderWins(remote, delta)) return false;
+    if (delta.op && remote.op && delta.op !== remote.op) return true;
     return !sameValue(remote.v, delta.value);
   });
 }
@@ -594,19 +736,14 @@ export function sanitizeRoom(raw) {
 }
 
 export function sharedStatus(shared, online) {
-  if (!shared || !shared.code) return { id: "idle", label: "Solo en este móvil" };
-  if (shared.syncing) return { id: "syncing", label: "Sincronizando" };
+  if (!shared || !shared.code) return { id: "idle", label: "sin compartir" };
+  if (shared.syncing) return { id: "syncing", label: "conectando" };
   const pending = shared.pending && shared.pending.length;
-  if (!online) {
-    return {
-      id: "offline",
-      label: pending ? "Pendiente · sin conexión" : "Sin conexión · la partida sigue aquí"
-    };
-  }
-  if (shared.status === "conflict") return { id: "conflict", label: "Código ocupado" };
-  if (pending && shared.lastError) return { id: "error", label: "Pendiente · se reintenta" };
-  if (pending) return { id: "pending", label: "Pendiente de enviar" };
-  return { id: "synced", label: "Al día" };
+  if (!online) return { id: "offline", label: "sin conexión" };
+  if (shared.status === "conflict") return { id: "conflict", label: "conflicto" };
+  if (shared.status === "error" || shared.lastError) return { id: "error", label: "error" };
+  if (pending) return { id: "pending", label: "cambios pendientes" };
+  return { id: "synced", label: "sincronizado" };
 }
 
 export function transportLabel(transport) {
@@ -616,48 +753,71 @@ export function transportLabel(transport) {
   return "";
 }
 
+function emptySync(shared, players, extra) {
+  return Object.assign({
+    shared: shared,
+    players: players,
+    changed: false,
+    doc: null,
+    http: false,
+    confirmed: false,
+    confirmedOps: [],
+    conflict: false
+  }, extra || {});
+}
+
 /**
- * Pull the room, merge by timestamp, push the union back.
- * Offline or a failed mailbox leaves local scores and the queue in place.
+ * Pull the HTTPS room, merge by seq then deviceId, push the union, then GET again.
+ * A stroke is acked only when that following GET still shows it as the winner.
+ * Drive and MQTT are not the room. A failed POST leaves the queue in place.
  */
 export async function syncShared(opts) {
   const shared = loadShared(opts.shared, opts.shared && opts.shared.deviceId);
   let players = clonePlayers(opts.players);
   const now = finiteAt(opts.now) || Date.now();
-  if (!shared.code) return { shared: shared, players: players, changed: false };
+  const confirmedOps = [];
+  if (!shared.code) return emptySync(shared, players);
   if (opts.online === false) {
     shared.status = "offline";
     shared.syncing = false;
-    return { shared: shared, players: players, changed: false };
+    return emptySync(shared, players);
   }
   const mailbox = opts.mailbox;
-  let remoteRaw;
+  const boxKind = mailbox && mailbox.transport;
+  if (!mailbox || typeof mailbox.get !== "function" || typeof mailbox.put !== "function" || boxKind === "drive" || boxKind === "mqtt" || opts.transport === "drive") {
+    shared.status = "error";
+    shared.lastError = "room";
+    shared.syncing = false;
+    return emptySync(shared, players);
+  }
+  let remote = null;
   try {
-    remoteRaw = await mailbox.get(shared.code);
+    const remoteRaw = await mailbox.get(shared.code);
+    remote = remoteRaw ? sanitizeRoom(remoteRaw) : null;
   } catch (e) {
     shared.status = "error";
     shared.lastError = "get";
     shared.syncing = false;
-    return { shared: shared, players: players, changed: false };
+    return emptySync(shared, players);
   }
-  let remote = remoteRaw ? sanitizeRoom(remoteRaw) : null;
   if (remote && shared.role === "host" && !shared.joinedForeign && remote.createdBy && remote.createdBy !== shared.deviceId) {
     shared.status = "conflict";
     shared.lastError = "code";
-    return { shared: shared, players: players, changed: false, conflict: true };
+    shared.syncing = false;
+    return emptySync(shared, players, { conflict: true });
   }
-  const stamped = stampExisting(players, shared.stamps, now);
-  shared.stamps = stamped.stamps;
   let changed = false;
   let doc = null;
-  for (let pass = 0; pass < 2; pass++) {
-    const localFields = playersToFields(players, shared.stamps, shared.deviceId);
+  let httpOk = false;
+  for (let pass = 0; pass < 4; pass++) {
+    const localFields = playersToFields(players, shared.stamps, shared.deviceId, shared.marks);
     const ours = mergeFields(localFields, pendingToFields(shared.pending));
     const merged = mergeFields(ours, remote && remote.fields);
     if (!shared.seal) {
-      const applied = applyFieldsToPlayers(players, merged, shared.stamps);
+      const applied = applyFieldsToPlayers(players, merged, shared.stamps, shared.marks);
       players = applied.players;
       shared.stamps = applied.stamps;
+      shared.marks = applied.marks || shared.marks;
       if (applied.changed) changed = true;
     }
     const signals = []
@@ -678,27 +838,83 @@ export async function syncShared(opts) {
       shared.status = "error";
       shared.lastError = "put";
       shared.syncing = false;
-      return { shared: shared, players: players, changed: changed };
+      return emptySync(shared, players, { changed: changed, doc: remote });
     }
     let again = null;
-    try { again = sanitizeRoom(await mailbox.get(shared.code)); } catch (e) { again = doc; }
-    const echoed = (again && again.fields) || {};
+    try { again = sanitizeRoom(await mailbox.get(shared.code)); } catch (e) { again = null; }
+    if (!again) {
+      if (pass < 3) continue;
+      shared.status = "error";
+      shared.lastError = "get";
+      shared.syncing = false;
+      return emptySync(shared, players, { changed: changed, doc: remote });
+    }
+    httpOk = true;
+    const before = shared.pending.slice();
+    const echoed = again.fields || {};
     shared.pending = ackPending(shared.pending, echoed);
-    const lost = shared.pending.some((delta) => {
-      const key = fieldKey(delta.playerId, delta.hole, delta.field);
-      const seen = echoed[key];
-      return !seen || seen.at < delta.at;
+    before.forEach((delta) => {
+      const id = delta.op || opId(delta.by, delta.at);
+      const kept = shared.pending.some((item) => (item.op || opId(item.by, item.at)) === id);
+      if (id && !kept) confirmedOps.push(id);
     });
-    remote = again || remote;
-    if (!lost) break;
+    remote = again;
+    if (!shared.pending.length) break;
   }
-  shared.pending = ackPending(shared.pending, remote && remote.fields);
   shared.status = shared.pending.length ? "pending" : "synced";
-  shared.lastError = shared.pending.length ? shared.lastError : "";
+  shared.lastError = "";
   shared.lastSyncAt = now;
   shared.syncing = false;
-  if (opts.transport) shared.transport = opts.transport;
-  return { shared: shared, players: players, changed: changed, doc: remote || doc };
+  if (opts.transport && opts.transport !== "drive") shared.transport = opts.transport;
+  return {
+    shared: shared,
+    players: players,
+    changed: changed,
+    doc: remote || doc,
+    http: httpOk,
+    confirmed: shared.pending.length === 0,
+    confirmedOps: confirmedOps,
+    conflict: false
+  };
+}
+
+/** Keep strokes queued during the await. Ack only ops the follow-up GET confirmed. */
+export function adoptSyncResult(live, result) {
+  const next = loadShared(live, live && live.deviceId);
+  const remoteShared = (result && result.shared) || {};
+  if (result && result.http !== false) {
+    const confirmed = {};
+    (result.confirmedOps || []).forEach((id) => { if (id) confirmed[id] = true; });
+    next.pending = sanitizePending(next.pending).filter((delta) => {
+      const id = delta.op || opId(delta.by, delta.at);
+      return !(id && confirmed[id]);
+    });
+  }
+  const liveSeq = validSeq(next.seq) || 0;
+  const remoteSeq = validSeq(remoteShared.seq) || 0;
+  if (remoteSeq > liveSeq) next.seq = remoteSeq;
+  next.stamps = sanitizeStamps(live && live.stamps);
+  next.marks = sanitizeMarks(live && live.marks);
+  next.seal = !!(live && live.seal);
+  next.leaving = !!(live && live.leaving);
+  next.code = normalizeCode(live && live.code) || next.code;
+  if (remoteShared.status === "conflict") next.status = "conflict";
+  else if (remoteShared.status === "offline") next.status = "offline";
+  else if (result && result.http === false) next.status = remoteShared.status || "error";
+  else if (next.pending.length) next.status = "pending";
+  else next.status = "synced";
+  next.lastError = clipToken(remoteShared.lastError, 24);
+  next.lastSyncAt = finiteAt(remoteShared.lastSyncAt) || finiteAt(live && live.lastSyncAt) || 0;
+  if (remoteShared.transport === "http") next.transport = "http";
+  next.syncing = false;
+  return next;
+}
+
+export function mayDetachShared(shared) {
+  if (!shared || !shared.code) return false;
+  if (!shared.seal && !shared.leaving) return false;
+  if (shared.pending && shared.pending.length) return false;
+  return shared.status === "synced";
 }
 
 export function createMemoryMailbox(seed) {

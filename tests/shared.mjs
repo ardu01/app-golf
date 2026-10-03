@@ -2,20 +2,26 @@ import assert from "assert";
 import { readFileSync } from "fs";
 import {
   ackPending,
+  adoptSyncResult,
   applyFieldsToPlayers,
+  clampSharedHcp,
   createMemoryMailbox,
   diffPlayers,
   loadShared,
+  makeCode,
   makeDeviceId,
+  mayDetachShared,
   mergeFields,
   normalizeCode,
   noteLocalDeltas,
   queueDeltas,
   sanitizeValue,
+  sharedPlayingHcp,
   sharedStatus,
   mergeRoomPlayers,
   stampExisting,
-  syncShared
+  syncShared,
+  CODE_ALPHABET
 } from "../fairway/js/shared-round.js";
 import { createMqttMailbox, createRoomMailbox, encodePublish, parsePublish } from "../fairway/js/shared-mail.js";
 import { pickPeer } from "../fairway/js/shared-rtc.js";
@@ -64,7 +70,7 @@ const merged = mergeFields(
   { "p1|3|scores": { v: 5, at: 100, by: "a" } },
   { "p1|3|scores": { v: 6, at: 100, by: "b" }, "p1|4|scores": { v: 4, at: 90, by: "b" } }
 );
-assert.strictEqual(merged["p1|3|scores"].v, 5);
+assert.strictEqual(merged["p1|3|scores"].v, 6);
 assert.strictEqual(merged["p1|4|scores"].v, 4);
 
 const kept = applyFieldsToPlayers(
@@ -110,11 +116,12 @@ assert.strictEqual(still.length, 1);
 const acked = ackPending(noted.pending, { "p1|7|scores": { v: 5, at: 400, by: "dLOCAL000" } });
 assert.strictEqual(acked.length, 0);
 
-assert.strictEqual(sharedStatus(session("d1"), false).label, "Solo en este móvil");
+assert.strictEqual(sharedStatus(session("d1"), false).label, "sin compartir");
 const pending = session("d1", "K7NQ4P", "join");
 pending.pending = noted.pending.slice();
-assert.strictEqual(sharedStatus(pending, false).label, "Pendiente · sin conexión");
+assert.strictEqual(sharedStatus(pending, false).label, "sin conexión");
 assert.strictEqual(sharedStatus(pending, true).id, "pending");
+assert.strictEqual(sharedStatus(pending, true).label, "cambios pendientes");
 
 const box = createMemoryMailbox();
 const host = session("dHOST0001", "K7NQ4P", "host");
@@ -416,7 +423,19 @@ const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const boot = readFileSync(new URL("../fairway/js/shared-boot.js", import.meta.url), "utf8");
 const sw = readFileSync(new URL("../sw.js", import.meta.url), "utf8");
 assert.ok(boot.includes("Partida compartida"));
-assert.ok(readFileSync(new URL("../fairway/js/shared-round.js", import.meta.url), "utf8").includes("Pendiente · sin conexión"));
+const roundSrc = readFileSync(new URL("../fairway/js/shared-round.js", import.meta.url), "utf8");
+assert.ok(roundSrc.includes("sin conexión"));
+assert.ok(roundSrc.includes("crypto.getRandomValues"));
+assert.ok(!roundSrc.includes("Math.random"));
+assert.ok(boot.includes("adoptSyncResult"));
+assert.ok(boot.includes("mayDetachShared"));
+assert.ok(boot.includes("sharedPlayingHcp"));
+assert.ok(!boot.includes("function ingest"));
+assert.ok(!boot.includes("fallbackMailbox"));
+assert.ok(!boot.includes("Vía "));
+assert.ok(!boot.includes("Drive"));
+assert.ok(!boot.includes("MQTT"));
+assert.ok(!boot.includes("IndexedDB"));
 assert.ok(html.includes('id="sharedRoundHome"'));
 assert.ok(html.includes("fairwaySharedAfterPersist"));
 assert.ok(html.includes("fairway/js/shared-boot.js"));
@@ -435,6 +454,254 @@ assert.ok(mailSrc.includes("https://mantledb.sh/v2"));
 assert.ok(mailSrc.includes('cache: "no-store"'));
 assert.ok(!mailSrc.includes("/claim"));
 assert.ok(!mailSrc.includes("@"));
+assert.ok(mailSrc.includes("{ wake: 1 }"));
+assert.ok(!mailSrc.includes("mirror.put(code, doc)"));
 assert.ok(readFileSync(new URL("../fairway/js/shared-boot.js", import.meta.url), "utf8").includes("ensureRemotePlayers"));
+
+const rolled = makeCode();
+assert.strictEqual(rolled.length, 6);
+assert.ok(rolled.split("").every((ch) => CODE_ALPHABET.indexOf(ch) >= 0));
+assert.strictEqual(makeCode(() => 0), CODE_ALPHABET[0].repeat(6));
+
+const hostileStamp = applyFieldsToPlayers(
+  [player("p1", { 3: 4 })],
+  { "p1|3|scores": { v: 9, at: 1e15, by: "zzzzzzzz" } },
+  { "p1|3|scores": 2 }
+);
+assert.strictEqual(hostileStamp.players[0].scores[3], 4);
+const hostileMerge = mergeFields(
+  { "p1|3|scores": { v: 4, at: 2, by: "phoneA" } },
+  { "p1|3|scores": { v: 9, at: 1e15, by: "phoneB" } }
+);
+assert.strictEqual(hostileMerge["p1|3|scores"].v, 4);
+
+const tieLeft = mergeFields(
+  { "p1|3|scores": { v: 5, at: 100, by: "phoneA" } },
+  { "p1|3|scores": { v: 6, at: 100, by: "phoneB" } }
+);
+const tieRight = mergeFields(
+  { "p1|3|scores": { v: 6, at: 100, by: "phoneB" } },
+  { "p1|3|scores": { v: 5, at: 100, by: "phoneA" } }
+);
+assert.strictEqual(tieLeft["p1|3|scores"].v, tieRight["p1|3|scores"].v);
+assert.strictEqual(tieLeft["p1|3|scores"].v, 6);
+const skewed = mergeFields(
+  { "p1|3|scores": { v: 4, at: 5, by: "phoneA" } },
+  { "p1|3|scores": { v: 8, at: Date.now() + 999999, by: "phoneB" } }
+);
+assert.strictEqual(skewed["p1|3|scores"].v, 4);
+
+const unsequenced = applyFieldsToPlayers(
+  [player("p1", { 3: 5 })],
+  { "p1|3|scores": { v: 9, at: 50, by: "phoneB" } },
+  {}
+);
+assert.strictEqual(unsequenced.players[0].scores[3], 5);
+
+let seenHcp = null;
+const playing = sharedPlayingHcp(1000, (p) => { seenHcp = p.hcp; return 40; });
+assert.strictEqual(clampSharedHcp(1000), 54);
+assert.strictEqual(clampSharedHcp(-40), -10);
+assert.strictEqual(seenHcp, 54);
+assert.strictEqual(playing.hcp, 54);
+assert.strictEqual(playing.ph, 40);
+
+const noStamp = session("dHOST0001", "K7NQ4P", "host");
+noStamp.createdBy = "dHOST0001";
+noStamp.stamps = { "p1|1|scores": 4 };
+noStamp.pending = [{ playerId: "p1", hole: 1, field: "scores", value: 4, at: 4, by: "dHOST0001" }];
+const noStampBox = createMemoryMailbox();
+const noStampSync = await syncShared({
+  shared: noStamp,
+  players: [player("p1", { 1: 4, 2: 5 })],
+  mailbox: noStampBox,
+  online: true,
+  now: Date.now(),
+  meta: meta
+});
+assert.strictEqual(noStampSync.shared.stamps["p1|1|scores"], 4);
+assert.ok(!noStampSync.shared.stamps["p1|2|scores"]);
+assert.ok(!(await noStampBox.get("K7NQ4P")).fields["p1|2|scores"]);
+
+const overlap = {
+  nput: 0,
+  room: null,
+  async get() {
+    if (this.nput === 1) throw new Error("readback");
+    return this.room ? JSON.parse(JSON.stringify(this.room)) : null;
+  },
+  async put(code, doc) {
+    this.nput++;
+    const copy = JSON.parse(JSON.stringify(doc));
+    if (this.nput === 1) {
+      this.room = Object.assign({}, copy, { fields: {} });
+      return;
+    }
+    this.room = copy;
+  }
+};
+const overlapHost = session("dHOST0001", "K7NQ4P", "host");
+overlapHost.createdBy = "dHOST0001";
+overlapHost.stamps = { "p1|1|scores": 7 };
+overlapHost.pending = [{ playerId: "p1", hole: 1, field: "scores", value: 4, at: 7, by: "dHOST0001", op: "dHOST0001-7" }];
+const overlapSync = await syncShared({
+  shared: overlapHost,
+  players: [player("p1", { 1: 4 })],
+  mailbox: overlap,
+  online: true,
+  now: 7,
+  meta: meta
+});
+assert.strictEqual(overlapSync.shared.pending.length, 0);
+assert.strictEqual(overlap.room.fields["p1|1|scores"].v, 4);
+
+const leak = {
+  async get() {
+    return {
+      v: 1,
+      code: "K7NQ4P",
+      createdBy: "dHOST0001",
+      updatedAt: 1,
+      updatedBy: "dOTHER999",
+      meta: { holes: 18, players: [{ id: "p1", name: "p1" }] },
+      fields: {},
+      presence: {},
+      signals: []
+    };
+  },
+  async put() {}
+};
+const sealed = session("dHOST0001", "K7NQ4P", "host");
+sealed.createdBy = "dHOST0001";
+sealed.seal = true;
+sealed.stamps = { "p1|4|scores": 8 };
+sealed.pending = [{ playerId: "p1", hole: 4, field: "scores", value: 5, at: 8, by: "dHOST0001", op: "dHOST0001-8" }];
+const sealedSync = await syncShared({
+  shared: sealed,
+  players: [player("p1", { 4: 5 })],
+  mailbox: leak,
+  online: true,
+  now: 8,
+  meta: meta
+});
+assert.strictEqual(sealedSync.shared.pending.length, 1);
+assert.notStrictEqual(sealedSync.shared.status, "synced");
+assert.strictEqual(mayDetachShared(sealedSync.shared), false);
+
+const postFail = {
+  async get() { return null; },
+  async put() { throw new Error("http 500"); }
+};
+const failing = session("dHOST0001", "K7NQ4P", "host");
+failing.createdBy = "dHOST0001";
+failing.seal = true;
+failing.leaving = true;
+failing.pending = [{ playerId: "p1", hole: 6, field: "scores", value: 4, at: 6, by: "dHOST0001" }];
+const failedPut = await syncShared({
+  shared: failing,
+  players: [player("p1", { 6: 4 })],
+  mailbox: postFail,
+  online: true,
+  now: 6,
+  meta: meta
+});
+assert.strictEqual(failedPut.shared.pending.length, 1);
+assert.strictEqual(failedPut.http, false);
+assert.strictEqual(failedPut.confirmed, false);
+assert.strictEqual(mayDetachShared(failedPut.shared), false);
+
+const driveBox = createMemoryMailbox();
+driveBox.transport = "drive";
+const driveHost = session("dHOST0001", "K7NQ4P", "host");
+driveHost.createdBy = "dHOST0001";
+driveHost.pending = [{ playerId: "p1", hole: 1, field: "scores", value: 4, at: 4, by: "dHOST0001" }];
+const driveSync = await syncShared({
+  shared: driveHost,
+  players: [player("p1", { 1: 4 })],
+  mailbox: driveBox,
+  online: true,
+  now: 4,
+  meta: meta,
+  transport: "drive"
+});
+assert.strictEqual(driveSync.http, false);
+assert.strictEqual(driveSync.confirmed, false);
+assert.notStrictEqual(driveSync.shared.status, "synced");
+assert.strictEqual(driveSync.shared.pending.length, 1);
+assert.strictEqual(driveBox.rooms.size, 0);
+
+const mqttBox = createMemoryMailbox();
+mqttBox.transport = "mqtt";
+const mqttSync = await syncShared({
+  shared: driveHost,
+  players: [player("p1", { 1: 4 })],
+  mailbox: mqttBox,
+  online: true,
+  now: 4,
+  meta: meta
+});
+assert.strictEqual(mqttSync.http, false);
+assert.strictEqual(mqttBox.rooms.size, 0);
+
+const live = session("dHOST0001", "K7NQ4P", "host");
+live.seq = 11;
+live.stamps = { "p1|1|scores": 10, "p1|2|scores": 11 };
+live.marks = {
+  "p1|1|scores": { by: "dHOST0001", op: "dHOST0001-10" },
+  "p1|2|scores": { by: "dHOST0001", op: "dHOST0001-11" }
+};
+live.pending = [
+  { playerId: "p1", hole: 1, field: "scores", value: 4, at: 10, by: "dHOST0001", op: "dHOST0001-10" },
+  { playerId: "p1", hole: 2, field: "scores", value: 5, at: 11, by: "dHOST0001", op: "dHOST0001-11" }
+];
+const snap = loadShared(JSON.parse(JSON.stringify(live)), live.deviceId);
+snap.pending = snap.pending.filter((d) => d.op === "dHOST0001-10");
+snap.seq = 10;
+snap.status = "synced";
+const adopted = adoptSyncResult(live, {
+  shared: snap,
+  confirmedOps: ["dHOST0001-10"],
+  http: true,
+  confirmed: true
+});
+assert.strictEqual(adopted.pending.length, 1);
+assert.strictEqual(adopted.pending[0].value, 5);
+assert.strictEqual(adopted.stamps["p1|2|scores"], 11);
+assert.strictEqual(adopted.status, "pending");
+assert.strictEqual(mayDetachShared(Object.assign({}, adopted, { seal: true })), false);
+const during = applyFieldsToPlayers(
+  [player("p1", { 1: 4, 2: 5 })],
+  { "p1|2|scores": { v: 3, at: 9, by: "dOTHER999" } },
+  adopted.stamps
+);
+assert.strictEqual(during.players[0].scores[2], 5);
+
+const hostileRoom = createMemoryMailbox();
+hostileRoom.rooms.set("K7NQ4P", {
+  v: 1,
+  code: "K7NQ4P",
+  createdBy: "dHOST0001",
+  updatedAt: 10,
+  updatedBy: "dBAD99999",
+  meta: { holes: 18, players: [{ id: "p1", name: "p1" }] },
+  fields: { "p1|3|scores": { v: 4, at: 1e15, by: "dBAD99999" } },
+  presence: {},
+  signals: []
+});
+const honest = session("dHONEST01", "K7NQ4P", "join");
+honest.createdBy = "dHOST0001";
+honest.stamps = { "p1|3|scores": 3 };
+honest.pending = [{ playerId: "p1", hole: 3, field: "scores", value: 5, at: 3, by: "dHONEST01" }];
+const honestSync = await syncShared({
+  shared: honest,
+  players: [player("p1", { 3: 5 })],
+  mailbox: hostileRoom,
+  online: true,
+  now: 50,
+  meta: meta
+});
+assert.strictEqual(honestSync.players[0].scores[3], 5);
+assert.strictEqual((await hostileRoom.get("K7NQ4P")).fields["p1|3|scores"].v, 5);
+assert.ok((await hostileRoom.get("K7NQ4P")).fields["p1|3|scores"].at < 1000);
 
 console.log("shared ok");

@@ -1,5 +1,6 @@
 import { SHARED_KEY } from "./keys.js";
 import {
+  adoptSyncResult,
   applyFieldsToPlayers,
   clonePlayers,
   emptyShared,
@@ -7,14 +8,13 @@ import {
   loadShared,
   makeCode,
   makeDeviceId,
+  mayDetachShared,
   normalizeCode,
   noteLocalDeltas,
-  playersToFields,
   sanitizeDelta,
+  sharedPlayingHcp,
   sharedStatus,
-  stampExisting,
-  syncShared,
-  transportLabel
+  syncShared
 } from "./shared-round.js";
 import { createRoomMailbox, FAIRWAY_ROOM_HTTP } from "./shared-mail.js";
 import { createFastPath } from "./shared-rtc.js";
@@ -79,61 +79,17 @@ function ensureMailbox() {
   if (mailbox) return mailbox;
   mailbox = createRoomMailbox({ httpBase: FAIRWAY_ROOM_HTTP });
   if (mailbox.subscribe) {
-    mailbox.subscribe((topic, doc) => {
-      if (!shared.code || !doc || doc.code !== shared.code) return;
-      ingest(doc);
+    mailbox.subscribe(() => {
+      if (!shared.code) return;
+      schedule();
     });
   }
   return mailbox;
 }
 
-function driveMailbox() {
-  return {
-    transport: "drive",
-    async get(code) {
-      if (typeof root.fairwayDriveRoomGet !== "function") throw new Error("drive");
-      const res = await root.fairwayDriveRoomGet(code, shared.driveFileId);
-      if (!res || res.skipped) throw new Error("drive");
-      if (res.fileId) shared.driveFileId = res.fileId;
-      return res.doc || null;
-    },
-    async put(code, doc) {
-      if (typeof root.fairwayDriveRoomPut !== "function") throw new Error("drive");
-      const res = await root.fairwayDriveRoomPut(code, doc, shared.driveFileId);
-      if (!res || res.skipped) throw new Error("drive");
-      if (res.fileId) shared.driveFileId = res.fileId;
-    },
-    subscribe() { return function () {}; },
-    close() {}
-  };
-}
-
-function fallbackMailbox(primary) {
-  let useDrive = false;
-  const state = { transport: primary.transport || "mqtt" };
-  return {
-    get transport() { return state.transport; },
-    async get(code) {
-      if (useDrive) return driveMailbox().get(code);
-      try { return await primary.get(code); }
-      catch (e) {
-        useDrive = true;
-        state.transport = "drive";
-        return driveMailbox().get(code);
-      }
-    },
-    async put(code, doc) {
-      if (useDrive) return driveMailbox().put(code, doc);
-      try { return await primary.put(code, doc); }
-      catch (e) {
-        useDrive = true;
-        state.transport = "drive";
-        return driveMailbox().put(code, doc);
-      }
-    },
-    subscribe(fn) { return primary.subscribe ? primary.subscribe(fn) : function () {}; },
-    close() { if (primary.close) primary.close(); }
-  };
+function hcpOf(raw) {
+  const course = typeof root.courseHandicapFor === "function" ? root.courseHandicapFor : null;
+  return sharedPlayingHcp(raw, course);
 }
 
 function paintScores(next, changed) {
@@ -181,16 +137,16 @@ function adoptRoom(doc) {
   if (!roster.length || !Array.isArray(root.PLAYERS)) return;
   root.PLAYERS.length = 0;
   roster.forEach((p) => {
-    const hcp = p.hcp == null ? null : Number(p.hcp);
+    const hcp = hcpOf(p.hcp);
     root.PLAYERS.push({
       id: p.id,
       rp: "rp-" + p.id,
       name: p.name || "",
       short: p.short || (p.name || "?").slice(0, 3),
       initials: p.initials || (p.name || "?").slice(0, 2).toUpperCase(),
-      hcp: Number.isFinite(hcp) ? hcp : null,
-      ph: Number.isFinite(hcp) ? Math.round(hcp) : null,
-      ch: Number.isFinite(hcp) ? Math.round(hcp) : null,
+      hcp: hcp.hcp,
+      ph: hcp.ph,
+      ch: hcp.ch,
       avatar: "",
       guest: !!p.guest,
       ball: "",
@@ -216,16 +172,16 @@ function ensureRemotePlayers(doc) {
   doc.meta.players.forEach((p) => {
     if (!p || !p.id || root.PLAYERS.some((x) => x && x.id === p.id)) return;
     if (root.PLAYERS.length >= 8) return;
-    const hcp = p.hcp == null ? null : Number(p.hcp);
+    const hcp = hcpOf(p.hcp);
     root.PLAYERS.push({
       id: p.id,
       rp: "rp-" + p.id,
       name: p.name || "",
       short: p.short || (p.name || "?").slice(0, 3),
       initials: p.initials || (p.name || "?").slice(0, 2).toUpperCase(),
-      hcp: Number.isFinite(hcp) ? hcp : null,
-      ph: Number.isFinite(hcp) ? Math.round(hcp) : null,
-      ch: Number.isFinite(hcp) ? Math.round(hcp) : null,
+      hcp: hcp.hcp,
+      ph: hcp.ph,
+      ch: hcp.ch,
       avatar: "",
       guest: p.guest !== false,
       ball: "",
@@ -245,15 +201,6 @@ function ensureRemotePlayers(doc) {
   return added;
 }
 
-function laterStamps(primary, extra) {
-  const out = Object.assign({}, primary || {});
-  Object.keys(extra || {}).forEach((key) => {
-    const at = Number(extra[key]) || 0;
-    if (at && (!out[key] || at > out[key])) out[key] = at;
-  });
-  return out;
-}
-
 function refreshSurfaces() {
   try { if (typeof root.renderHole === "function" && root.state && root.state.screen === "hole") root.renderHole(); } catch (e) {}
   try { if (typeof root.updateHomeThru === "function") root.updateHomeThru(); } catch (e) {}
@@ -268,12 +215,11 @@ async function flush() {
   flushing = true;
   shared.syncing = true;
   render();
-  const box = fallbackMailbox(ensureMailbox());
+  const box = ensureMailbox();
   try {
     let attempts = 0;
     while (attempts < 4) {
       attempts++;
-      const stampSnap = Object.assign({}, shared.stamps);
       const result = await syncShared({
         shared: shared,
         players: players(),
@@ -281,7 +227,6 @@ async function flush() {
         online: online(),
         now: now(),
         meta: meta(),
-        transport: box.transport,
         signals: signals
       });
       if (result.conflict && shared.role === "host" && !shared.joinedForeign) {
@@ -292,17 +237,15 @@ async function flush() {
         toast("Ese código ya existía. Hay uno nuevo: " + shared.code);
         continue;
       }
-      shared = result.shared;
-      if (box.transport) shared.transport = box.transport;
-      if (!shared.seal && result.doc) {
+      shared = adoptSyncResult(shared, result);
+      if (!shared.seal && result.http && result.doc) {
         if (!localHasMarks() && shared.joinedForeign) adoptRoom(result.doc);
-        if (result.changed) paintScores(result.players, true);
         const added = ensureRemotePlayers(result.doc);
-        const applied = applyFieldsToPlayers(players(), result.doc.fields || {}, stampSnap);
-        if (applied.changed) {
-          shared.stamps = laterStamps(shared.stamps, applied.stamps);
-          paintScores(applied.players, true);
-        } else if (added) {
+        const applied = applyFieldsToPlayers(players(), result.doc.fields || {}, shared.stamps, shared.marks);
+        shared.stamps = applied.stamps;
+        shared.marks = applied.marks || shared.marks;
+        if (applied.changed) paintScores(applied.players, true);
+        else if (added) {
           shadow = clonePlayers(players());
           root.__fairwaySharedApplying = true;
           try {
@@ -312,16 +255,17 @@ async function flush() {
           }
           refreshSurfaces();
         }
-      } else if (result.changed && !shared.seal) {
-        paintScores(result.players, true);
       }
       save();
-      if (result.doc) armFast(result.doc);
+      if (result.http && result.doc) armFast(result.doc);
       break;
     }
-    if (shared.seal && shared.code && !(shared.pending && shared.pending.length) && shared.status === "synced") {
+    if (mayDetachShared(shared)) {
+      const sealed = shared.seal;
       detach();
-      toast("La sala se cerró con la ronda. Los golpes siguen en este móvil.");
+      toast(sealed
+        ? "La sala se cerró con la ronda. Los golpes siguen en este móvil."
+        : "Sala cerrada en este móvil.");
     }
   } catch (e) {
     shared.status = "error";
@@ -342,27 +286,6 @@ async function flush() {
 function schedule() {
   if (timer) clearTimeout(timer);
   timer = setTimeout(() => { timer = 0; flush(); }, 400);
-}
-
-function ingest(doc) {
-  if (!doc || shared.seal || !shared.code || doc.code !== shared.code) return;
-  const hadMarks = localHasMarks();
-  if (!hadMarks && shared.joinedForeign) adoptRoom(doc);
-  if (hadMarks) shared.stamps = stampExisting(players(), shared.stamps, now()).stamps;
-  const added = ensureRemotePlayers(doc);
-  const applied = applyFieldsToPlayers(players(), doc.fields || {}, shared.stamps);
-  if (applied.changed) {
-    shared.stamps = laterStamps(shared.stamps, applied.stamps);
-    paintScores(applied.players, true);
-    save();
-    render();
-  } else if (added) {
-    shadow = clonePlayers(players());
-    save();
-    refreshSurfaces();
-    render();
-  }
-  armFast(doc);
 }
 
 function armFast(doc) {
@@ -391,11 +314,14 @@ function armFast(doc) {
             [fieldKey(delta.playerId, delta.hole, delta.field)]: {
               v: delta.value,
               at: delta.at,
-              by: delta.by
+              seq: delta.seq || delta.at,
+              by: delta.by,
+              op: delta.op || ""
             }
-          }, shared.stamps);
+          }, shared.stamps, shared.marks);
           if (!applied.changed) return;
           shared.stamps = applied.stamps;
+          shared.marks = applied.marks || shared.marks;
           paintScores(applied.players, true);
           save();
           schedule();
@@ -413,8 +339,7 @@ function pushFast(deltas) {
 
 function render() {
   const status = sharedStatus(shared, online());
-  const via = transportLabel(shared.transport);
-  const html = panelHtml(status, via);
+  const html = panelHtml(status);
   ["sharedRoundHome", "sharedRoundAjustes", "sharedRoundInvite"].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.innerHTML = html;
@@ -431,7 +356,7 @@ function render() {
   }
 }
 
-function panelHtml(status, via) {
+function panelHtml(status) {
   if (!shared.code) {
     return `
       <div class="card shared-card" data-shared-panel>
@@ -444,13 +369,12 @@ function panelHtml(status, via) {
         </div>
       </div>`;
   }
-  const viaLine = via ? `<p class="micro">Vía ${esc(via)}. Otro móvil con el código recibe los mismos golpes.</p>` : `<p class="micro">Otro móvil con el código recibe los mismos golpes.</p>`;
   return `
     <div class="card shared-card" data-shared-panel>
       <div class="eyebrow">Partida compartida</div>
       <div class="shared-code" aria-label="Código">${esc(shared.code)}</div>
       <p class="shared-status" data-shared-status="${esc(status.id)}">${esc(status.label)}</p>
-      ${viaLine}
+      <p class="micro">Otro móvil con el mismo código ve los mismos golpes.</p>
       <div class="row" style="gap:8px;margin-top:12px;">
         <button type="button" class="btn btn-ghost" style="flex:1" onclick="fairwaySharedCopy()">Copiar código</button>
         <button type="button" class="btn btn-ghost" style="flex:1" onclick="fairwaySharedFlush()">Reintentar</button>
@@ -466,6 +390,7 @@ function detach() {
   shared.joinedForeign = false;
   shared.pending = [];
   shared.seal = false;
+  shared.leaving = false;
   shared.status = "idle";
   shared.lastError = "";
   shared.transport = "";
@@ -479,20 +404,6 @@ function detach() {
   render();
 }
 
-function fieldsToPending(fields) {
-  return Object.keys(fields).map((key) => {
-    const parts = key.split("|");
-    return {
-      playerId: parts[0],
-      hole: parts[1] === "" ? "" : Number(parts[1]),
-      field: parts[2],
-      value: fields[key].v,
-      at: fields[key].at,
-      by: shared.deviceId
-    };
-  });
-}
-
 async function createRoom() {
   if (!shared.deviceId) shared.deviceId = makeDeviceId();
   shared = loadShared(shared, shared.deviceId);
@@ -501,10 +412,19 @@ async function createRoom() {
   shared.createdBy = shared.deviceId;
   shared.joinedForeign = false;
   shared.seal = false;
-  const snap = clonePlayers(players());
-  shared.stamps = stampExisting(snap, {}, now()).stamps;
-  shared.pending = fieldsToPending(playersToFields(snap, shared.stamps, shared.deviceId));
-  shared.status = online() ? "pending" : "offline";
+  shared.leaving = false;
+  const current = players();
+  const blank = clonePlayers(current).map((p) => {
+    p.scores = {};
+    p.putts = {};
+    p.fir = {};
+    p.gir = {};
+    p.ball = "";
+    p.withdrawn = false;
+    return p;
+  });
+  noteLocalDeltas(shared, blank, current, 0);
+  shared.status = shared.pending.length ? "pending" : "idle";
   shadow = clonePlayers(players());
   save();
   render();
@@ -519,7 +439,7 @@ async function joinRoom(raw) {
     return;
   }
   if (!shared.deviceId) shared.deviceId = makeDeviceId();
-  const box = fallbackMailbox(ensureMailbox());
+  const box = ensureMailbox();
   let remote = null;
   try {
     if (!online()) throw new Error("offline");
@@ -535,14 +455,12 @@ async function joinRoom(raw) {
   const hadMarks = localHasMarks();
   adoptRoom(remote);
   ensureRemotePlayers(remote);
-  if (hadMarks) shared.stamps = stampExisting(players(), shared.stamps, now()).stamps;
-  const applied = applyFieldsToPlayers(players(), remote.fields || {}, shared.stamps);
+  const applied = applyFieldsToPlayers(players(), remote.fields || {}, shared.stamps, shared.marks);
   if (applied.changed) {
-    shared.stamps = laterStamps(shared.stamps, applied.stamps);
+    shared.stamps = applied.stamps;
+    shared.marks = applied.marks || shared.marks;
     paintScores(applied.players, true);
   }
-  shared.stamps = stampExisting(players(), shared.stamps, hadMarks ? now() : 1).stamps;
-  if (applied.changed) shared.stamps = laterStamps(shared.stamps, applied.stamps);
   shared.code = code;
   shared.role = "join";
   shared.createdBy = remote.createdBy || "";
@@ -576,29 +494,8 @@ function afterPersist() {
 function roundClosed() {
   if (!shared.code) return;
   shared.seal = true;
-  const snap = clonePlayers(players());
   save();
-  const box = fallbackMailbox(ensureMailbox());
-  syncShared({
-    shared: shared,
-    players: snap,
-    mailbox: box,
-    online: online(),
-    now: now(),
-    meta: meta(),
-    transport: box.transport,
-    signals: signals
-  }).then((result) => {
-    shared = result.shared;
-    shared.seal = true;
-    save();
-    if (!shared.pending.length && shared.status === "synced") {
-      detach();
-      toast("La sala se cerró con la ronda. Los golpes siguen en este móvil.");
-    } else {
-      render();
-    }
-  }).catch(() => { render(); });
+  flush();
 }
 
 function boot() {
@@ -618,8 +515,9 @@ function boot() {
   root.fairwaySharedLeave = function () {
     const ok = root.confirm ? root.confirm("Se deja la sala. Los golpes de este móvil no se borran.") : true;
     if (!ok) return;
-    detach();
-    toast("Sala cerrada en este móvil.");
+    shared.leaving = true;
+    save();
+    flush();
   };
   root.fairwaySharedCopy = async function () {
     if (!shared.code) return;
@@ -636,19 +534,10 @@ function boot() {
   root.fairwayRenderShared = render;
   render();
   if (shared.code) schedule();
-  setTimeout(() => {
-    if (!shared.code || shared.seal) return;
-    const deltas = noteLocalDeltas(shared, shadow, players(), now());
-    shadow = clonePlayers(players());
-    if (!deltas.length) return;
-    save();
-    render();
-    schedule();
-  }, 1500);
   root.addEventListener("online", () => { render(); if (shared.code) flush(); });
   root.addEventListener("offline", () => { render(); });
   setInterval(() => {
-    if (shared.code && !shared.seal && online()) flush();
+    if (shared.code && online()) flush();
   }, 8000);
 }
 

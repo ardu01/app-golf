@@ -5239,7 +5239,7 @@ function saveRounds(list) {
   if (_roundsUnreadable) {
     console.warn("saveRounds blocked: stored history is unreadable");
     if (typeof showToast === "function") showToast("No se guarda encima de un historial dañado");
-    return;
+    return false;
   }
   try {
     const prev = localStorage.getItem(ROUNDS_KEY);
@@ -5248,13 +5248,19 @@ function saveRounds(list) {
       try { localStorage.setItem(ROUNDS_BAK_KEY, prev); } catch (e) {}
     }
     localStorage.setItem(ROUNDS_KEY, next);
+    if (localStorage.getItem(ROUNDS_KEY) !== next) {
+      console.warn("saveRounds short write");
+      if (typeof showToast === "function") showToast("No se pudo guardar el historial en este dispositivo");
+      return false;
+    }
     if (prev !== next) touchDataUpdated();
   } catch (e) {
     console.warn("saveRounds", e);
     if (typeof showToast === "function") showToast("No se pudo guardar el historial en este dispositivo");
-    return;
+    return false;
   }
   if (typeof queueDriveSync === "function") queueDriveSync();
+  return true;
 }
 function formatRoundDate(iso) {
   try {
@@ -5649,6 +5655,10 @@ function persistCompletedRound() {
   }
   const rec = buildRoundRecord();
   const list = loadRounds();
+  if (_roundsUnreadable) {
+    if (typeof showToast === "function") showToast("No se pudo guardar el historial. La ronda sigue en este móvil.");
+    return null;
+  }
   if (state.editingRoundId) {
     const idx = list.findIndex(r => r.id === state.editingRoundId);
     if (idx >= 0) {
@@ -5657,7 +5667,10 @@ function persistCompletedRound() {
       rec.dateISO = prev.dateISO || rec.dateISO;
       rec.date = prev.date || rec.date;
       list[idx] = rec;
-      saveRounds(list.slice(0, ROUNDS_MAX));
+      if (saveRounds(list.slice(0, ROUNDS_MAX)) !== true) {
+        if (typeof showToast === "function") showToast("No se pudo guardar el historial. La ronda sigue en este móvil.");
+        return null;
+      }
       state._roundSaved = rec.id;
       state.editingRoundId = null;
       endActiveRoundMemory();
@@ -5666,7 +5679,10 @@ function persistCompletedRound() {
     }
   }
   list.unshift(rec);
-  saveRounds(list.slice(0, ROUNDS_MAX));
+  if (saveRounds(list.slice(0, ROUNDS_MAX)) !== true) {
+    if (typeof showToast === "function") showToast("No se pudo guardar el historial. La ronda sigue en este móvil.");
+    return null;
+  }
   state._roundSaved = rec.id;
   state.editingRoundId = null;
   endActiveRoundMemory();
@@ -10103,12 +10119,22 @@ function driveRefreshOpenScreens() {
   } catch (e) {}
 }
 
+function driveRoundClosedDuringRead(before, after) {
+  const beforeIds = {};
+  ((before && before.rounds) || []).forEach(r => { if (r && r.id) beforeIds[r.id] = true; });
+  const added = ((after && after.rounds) || []).some(r => r && r.id && !beforeIds[r.id]);
+  const hadActive = !!(before && before.activeRound && before.activeRound.players && before.activeRound.players.length);
+  const hasActive = !!(after && after.activeRound && after.activeRound.players && after.activeRound.players.length);
+  return !!(added || (hadActive && !hasActive));
+}
+
 async function driveReconcile() {
   if (!getDataUpdatedAt() && typeof seedDataUpdatedAt === "function") seedDataUpdatedAt();
   const folderId = await driveEnsureFolder();
   let found = await driveFindDataFile(folderId);
   let fileId = found && found.fileId;
-  const local = collectFairwayBackup();
+  let local = collectFairwayBackup();
+  const localBeforeRead = local;
   if (!local.updatedAt && driveBackupHasData(local)) local.updatedAt = touchDataUpdated();
   let remoteRaw = null;
   let remoteModified = "";
@@ -10127,6 +10153,9 @@ async function driveReconcile() {
     } else if (got && got.corrupt) remoteCorrupt = true;
     else if (got && got.json) { remoteRaw = got.json; remoteModified = got.modifiedTime || ""; }
   }
+  const localAfterRead = collectFairwayBackup();
+  const closedDuringRead = driveRoundClosedDuringRead(localBeforeRead, localAfterRead);
+  if (closedDuringRead) local = localAfterRead;
   const accepted = remoteRaw ? driveAcceptRemote(remoteRaw) : { ok: true, data: null };
   if (remoteRaw && !accepted.ok) remoteCorrupt = true;
   const remote = accepted.ok ? accepted.data : null;
@@ -10177,7 +10206,8 @@ async function driveReconcile() {
   const keepLocalActive = choice === "local" ? true : (choice === "remote" ? driveActiveRoundDirty(localActive) : plan.keepLocalActive);
   const mergeRounds = plan.mergeRounds || choice === "local" || choice === "remote";
   let rounds = local.rounds || [];
-  if (mergeRounds && remote) rounds = driveMergeRounds(local.rounds || [], remote.rounds || []);
+  if (closedDuringRead) rounds = driveMergeRounds(local.rounds || [], (remote && remote.rounds) || []);
+  else if (mergeRounds && remote) rounds = driveMergeRounds(local.rounds || [], remote.rounds || []);
   else if (plan.action === "download" && remote) rounds = remote.rounds || [];
   const remoteWins = choice === "remote" || (plan.action === "download" && !keepLocalActive) || (remoteUpdatedAt > (local.updatedAt || ""));
   const host = choice === "local" ? local.host : (remote && remoteWins ? (remote.host || local.host) : local.host);
@@ -10192,7 +10222,7 @@ async function driveReconcile() {
     roster = Object.keys(map).map(k => map[k]);
   }
   const active = drivePickActiveRound(localActive, remoteActive, keepLocalActive || driveActiveRoundDirty(localActive));
-  const writeActive = !driveActiveRoundDirty(localActive) && !drivePlayScreen() && active && active !== localActive;
+  const writeActive = !closedDuringRead && !driveActiveRoundDirty(localActive) && !drivePlayScreen() && active && active !== localActive;
   const kind = (choice || plan.action === "merge" || plan.mergeRounds) ? "merge" : (plan.action === "download" ? "download" : "upload");
   const stamp = driveResultStamp(local.updatedAt || "", remoteUpdatedAt, kind);
   if (kind !== "upload") {
@@ -10206,7 +10236,7 @@ async function driveReconcile() {
   }
   const payload = collectFairwayBackup();
   if (!payload.updatedAt) payload.updatedAt = touchDataUpdated(stamp, true);
-  const shouldUpload = plan.action === "upload" || plan.action === "merge" || choice === "local" || choice === "remote" || (plan.action === "download" && (keepLocalActive || mergeRounds));
+  const shouldUpload = closedDuringRead || plan.action === "upload" || plan.action === "merge" || choice === "local" || choice === "remote" || (plan.action === "download" && (keepLocalActive || mergeRounds));
   if (shouldUpload) {
     const id = await driveUploadJson(payload, fileId, folderId);
     driveRememberSync(payload, remoteModified);
