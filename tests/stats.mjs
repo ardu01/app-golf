@@ -1,4 +1,5 @@
 import assert from "assert";
+import { readFileSync } from "fs";
 import { extractFunction, readApp } from "./extract.mjs";
 
 const html = readApp();
@@ -53,6 +54,6 @@ function round(holes, gross) {
 assert.ok(html.includes("Gross · 9"));
 assert.ok(html.includes("Gross · 18"));
 assert.ok(html.includes("no se mezclan"));
-assert.ok(html.includes("hi * (Number(tee.slope) / 113)"));
+assert.ok(readFileSync(new URL("../fairway/js/scoring.js", import.meta.url), "utf8").includes("hi * (Number(tee.slope) / 113)"));
 
 console.log("stats ok");

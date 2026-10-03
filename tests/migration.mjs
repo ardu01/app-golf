@@ -101,7 +101,8 @@ function localsOf(local) {
   const sw = readFileSync(new URL("../sw.js", import.meta.url), "utf8");
   assert.ok(html.includes('appVersion: "4.2.6"'));
   assert.ok(html.includes("version: 3"));
-  assert.ok(html.includes("hi * (Number(tee.slope) / 113)"));
+  const scoring = readFileSync(new URL("../fairway/js/scoring.js", import.meta.url), "utf8");
+  assert.ok(scoring.includes("hi * (Number(tee.slope) / 113)"));
   assert.ok(html.includes('src="fairway/js/persist-boot.js"'));
   assert.ok(sw.includes('const SHELL = "fairway-v4-426"'));
   assert.ok(MIRRORED_KEYS.indexOf("fairway.bag.v1") < 0);
