@@ -11,12 +11,12 @@ for (const block of html.matchAll(/<script>([\s\S]*?)<\/script>/g)) {
   new Function(block[1]);
 }
 
-assert.ok(html.includes('appVersion: "5.0.1"'));
+assert.ok(html.includes('appVersion: "5.0.2"'));
 assert.ok(!html.includes('appVersion: "4.0.0-alpha"'));
 assert.ok(!html.includes('appVersion: "3.0.3"'));
 assert.ok(!html.includes('appVersion: "3.0.2"'));
 assert.ok(!html.includes('appVersion: "3.0.0"'));
-assert.ok(sw.includes('const SHELL = "fairway-v5-501"'));
+assert.ok(sw.includes('const SHELL = "fairway-v5-502"'));
 assert.ok(!sw.includes("fairway-v4-400a"));
 assert.ok(roundsSrc.includes("pagehide"));
 assert.ok(roundsSrc.includes("visibilitychange"));
@@ -400,6 +400,58 @@ function closeStorage(blockRounds) {
   assert.ok(storage.getItem("fairway.activeRound.v1"));
   assert.ok(storage.getItem("fairway.activeRound.bak.v1"));
   assert.strictEqual(storage.getItem("fairway.rounds.v1"), "{bad");
+}
+
+{
+  // A missing history key must come back from the .bak. A valid empty list must not.
+  const storage = closeStorage(false);
+  const oldCard = {
+    id: "r-old",
+    players: [{ id: "me", name: "Miguel", scores: { 1: 4, 2: 5 } }]
+  };
+  storage.setItem("fairway.rounds.bak.v1", JSON.stringify([oldCard]));
+  const scope = {
+    state: { _roundSaved: null, _activeRoundLive: true, editingRoundId: null, hole: 4, activePlayer: 0 },
+    PLAYERS: [{ id: "me", name: "Miguel", scores: { 1: 5 }, putts: {}, fir: {}, gir: {}, totalsGross: null }],
+    localStorage: storage,
+    toasts: [],
+    touches: { n: 0 }
+  };
+  scope.api = loadClose(scope);
+  assert.strictEqual(scope.api.loadRounds()[0].id, "r-old");
+  assert.strictEqual(scope.api.loadRounds()[0].players[0].scores["2"], 5);
+  const savedId = scope.api.persistCompletedRound();
+  assert.ok(savedId);
+  const history = JSON.parse(storage.getItem("fairway.rounds.v1"));
+  assert.ok(history.some(r => r.id === "r-old"));
+  assert.ok(history.some(r => r.id === savedId));
+  assert.strictEqual(history.find(r => r.id === "r-old").players[0].scores["1"], 4);
+  assert.strictEqual(history.find(r => r.id === "r-old").players[0].scores["2"], 5);
+
+  const empty = closeStorage(false);
+  empty.setItem("fairway.rounds.v1", "[]");
+  empty.setItem("fairway.rounds.bak.v1", JSON.stringify([oldCard]));
+  const emptyScope = {
+    state: { _roundSaved: null, _activeRoundLive: false, editingRoundId: null, hole: 1, activePlayer: 0 },
+    PLAYERS: [{ id: "me", scores: {}, putts: {}, fir: {}, gir: {} }],
+    localStorage: empty,
+    toasts: [],
+    touches: { n: 0 }
+  };
+  emptyScope.api = loadClose(emptyScope);
+  assert.deepStrictEqual(emptyScope.api.loadRounds(), []);
+  assert.strictEqual(empty.getItem("fairway.rounds.v1"), "[]");
+}
+
+{
+  // An unreadable primary must not replace a good history .bak.
+  const s = fresh();
+  const good = JSON.stringify([{ id: "r-old", players: [{ id: "me", scores: { 1: 4, 2: 5 } }] }]);
+  s.localStorage.setItem("fairway.rounds.v1", "{bad");
+  s.localStorage.setItem("fairway.rounds.bak.v1", good);
+  assert.strictEqual(s.api.saveRounds([{ id: "r-new", players: [{ id: "me", scores: { 3: 6 } }] }]), true);
+  assert.strictEqual(s.localStorage.getItem("fairway.rounds.bak.v1"), good);
+  assert.strictEqual(JSON.parse(s.localStorage.getItem("fairway.rounds.v1"))[0].players[0].scores["3"], 6);
 }
 
 console.log("persist ok");

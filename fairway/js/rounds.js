@@ -2,7 +2,7 @@
  * Round persistence from index.html (Fairway 4.2.6).
  * localStorage is the score. IndexedDB stays a mirror in persistence.js.
  * scope is read on every call so a later HOLES or CLUB assignment stays visible.
- * Backup schema stays 3. Product version is 5.0.1.
+ * Backup schema stays 3. Product version is 5.0.2.
  */
 import {
   ACTIVE_BAK_KEY,
@@ -99,21 +99,33 @@ function createApi(scope) {
     } catch (e) { return null; }
   }
 
+  function historyBak() {
+    return readRoundList(localStorage.getItem(ROUNDS_BAK_KEY));
+  }
+
+  function adoptHistoryBak(bak) {
+    _roundsUnreadable = false;
+    try { localStorage.setItem(ROUNDS_KEY, JSON.stringify(bak)); } catch (e) {}
+    console.warn("loadRounds: recovered history from local backup");
+    if (pageFn("showToast")) callPage("showToast", ["Historial recuperado de la copia local"]);
+    return bak;
+  }
+
   function loadRounds() {
     sync();
     try {
       const raw = localStorage.getItem(ROUNDS_KEY);
-      if (!raw) { _roundsUnreadable = false; return []; }
+      // A missing primary is not an empty history. The .bak is the last good list.
+      if (!raw) {
+        const bak = historyBak();
+        if (bak && bak.length) return adoptHistoryBak(bak);
+        _roundsUnreadable = false;
+        return [];
+      }
       const data = readRoundList(raw);
       if (data) { _roundsUnreadable = false; return data; }
-      const bak = readRoundList(localStorage.getItem(ROUNDS_BAK_KEY));
-      if (bak) {
-        _roundsUnreadable = false;
-        try { localStorage.setItem(ROUNDS_KEY, JSON.stringify(bak)); } catch (e) {}
-        console.warn("loadRounds: recovered history from local backup");
-        if (pageFn("showToast")) callPage("showToast", ["Historial recuperado de la copia local"]);
-        return bak;
-      }
+      const bak = historyBak();
+      if (bak) return adoptHistoryBak(bak);
       _roundsUnreadable = true;
       console.warn("loadRounds: stored history is not a list");
       if (pageFn("showToast")) callPage("showToast", ["El historial guardado no se pudo leer. No se ha borrado."]);
@@ -136,7 +148,8 @@ function createApi(scope) {
     try {
       const prev = localStorage.getItem(ROUNDS_KEY);
       const next = JSON.stringify(list);
-      if (prev && prev !== next) {
+      // Only a readable list may become the .bak. A corrupt primary must not erase it.
+      if (prev && prev !== next && readRoundList(prev)) {
         try { localStorage.setItem(ROUNDS_BAK_KEY, prev); } catch (e) {}
       }
       localStorage.setItem(ROUNDS_KEY, next);
