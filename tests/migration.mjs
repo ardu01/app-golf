@@ -233,12 +233,37 @@ function localsOf(local) {
   const local = memLocal(sample());
   const idb = memIdb();
   await migrateLocalToIdb(local, idb);
+  const goodActive = await idb.get(ACTIVE_KEY);
+  const goodBak = await idb.get(ACTIVE_BAK_KEY);
   local.removeItem(ACTIVE_KEY);
   local.removeItem(ACTIVE_BAK_KEY);
+  const before = localsOf(local);
   const next = await migrateLocalToIdb(local, idb);
   assert.strictEqual(next.ok, true);
-  assert.strictEqual(await idb.get(ACTIVE_KEY), undefined);
+  assert.strictEqual(next.deletedLocal, false);
+  assert.deepStrictEqual(await idb.get(ACTIVE_KEY), goodActive);
+  assert.deepStrictEqual(await idb.get(ACTIVE_BAK_KEY), goodBak);
   assert.strictEqual((await idb.get(ROUNDS_KEY))[0].id, "r1");
+  assert.deepStrictEqual(localsOf(local), before);
+  assert.strictEqual(local.getItem(ACTIVE_KEY), null);
+  assert.ok(!idb.log.some((row) => row[0] === "del" && (row[1] === ACTIVE_KEY || row[1] === ACTIVE_BAK_KEY)));
+}
+
+{
+  const local = memLocal(sample());
+  const idb = memIdb();
+  await migrateLocalToIdb(local, idb);
+  const goodHost = await idb.get(HOST_KEY);
+  local.setItem(HOST_KEY, "");
+  const next = await migrateLocalToIdb(local, idb);
+  assert.strictEqual(next.ok, true);
+  assert.strictEqual(next.deletedLocal, false);
+  assert.deepStrictEqual(await idb.get(HOST_KEY), goodHost);
+  assert.strictEqual(local.getItem(HOST_KEY), "");
+  assert.strictEqual(local.getItem(ROUNDS_KEY).includes("r1"), true);
+  const backup = await idb.get(MIGRATION_BACKUP_KEY);
+  assert.strictEqual(backup.raw[HOST_KEY], "");
+  assert.ok(!idb.log.some((row) => row[0] === "del" && row[1] === HOST_KEY));
 }
 
 {

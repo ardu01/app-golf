@@ -18,7 +18,9 @@ Si el client id estuviera vacío, `driveConnect()` avisaría «Esta copia de Fai
 
 Si el client id está vacío, el panel dice **Sin configurar**. Un conflicto sigue ganando a esa etiqueta.
 
-Si hay conflicto, los botones siguen siendo «Usar este dispositivo» y «Usar Google Drive». El texto dice que la ronda en curso no se sustituye hasta que el jugador elija. Elegir Drive no pisa una ronda protegida ni una pantalla de juego: eso ya lo hace `driveApplyResolved`. El perfil (`fairway.host.v1`) sí se escribe con la copia que se aplica. No se ha cambiado esa fusión.
+Si hay conflicto, los botones siguen siendo «Usar este dispositivo» y «Usar Google Drive». El texto dice que la ronda en curso no se sustituye hasta que el jugador elija. Elegir Drive no pisa una ronda protegida ni una pantalla de juego. En ese caso `driveApplyResolved` tampoco escribe `fairway.host.v1` ni el hándicap en memoria: la tarjeta en curso sigue siendo la local.
+
+La misma partida, mismo `id`, se fusiona por hoyo. El sello (`updatedAt`, o `dateISO` si falta) decide el hoyo que está en los dos lados. El golpe que solo tiene un móvil se queda. Una descarga con `mergeRounds` en false no sustituye la lista: no tira la partida ni el hoyo que Drive no trae.
 
 ## Client id de producción
 

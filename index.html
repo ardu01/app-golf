@@ -5364,6 +5364,62 @@ function driveRoundStamp(r) {
   if (!r) return "";
   return String(r.updatedAt || r.dateISO || "");
 }
+function driveMergeHoleMap(winnerMap, loserMap) {
+  const out = {};
+  const win = winnerMap && typeof winnerMap === "object" && !Array.isArray(winnerMap) ? winnerMap : {};
+  const lose = loserMap && typeof loserMap === "object" && !Array.isArray(loserMap) ? loserMap : {};
+  Object.keys(win).forEach(k => {
+    if (win[k] != null && win[k] !== "") out[k] = win[k];
+  });
+  Object.keys(lose).forEach(k => {
+    if (out[k] == null && lose[k] != null && lose[k] !== "") out[k] = lose[k];
+  });
+  return out;
+}
+function drivePlayerMergeKey(p) {
+  if (!p || typeof p !== "object") return "";
+  if (p.id) return "id:" + p.id;
+  if (p.name) return "name:" + p.name;
+  return "";
+}
+function driveMergeRoundPlayers(winner, loser) {
+  const wp = Array.isArray(winner && winner.players) ? winner.players : [];
+  const lp = Array.isArray(loser && loser.players) ? loser.players : [];
+  const byKey = {};
+  lp.forEach(p => {
+    const key = drivePlayerMergeKey(p);
+    if (key && !byKey[key]) byKey[key] = p;
+  });
+  const seen = {};
+  const merged = wp.map(p => {
+    const key = drivePlayerMergeKey(p);
+    if (key) seen[key] = true;
+    const other = key ? byKey[key] : null;
+    if (!other) return p;
+    return Object.assign({}, p, {
+      scores: driveMergeHoleMap(p.scores, other.scores),
+      putts: driveMergeHoleMap(p.putts, other.putts),
+      fir: driveMergeHoleMap(p.fir, other.fir),
+      gir: driveMergeHoleMap(p.gir, other.gir)
+    });
+  });
+  lp.forEach(p => {
+    const key = drivePlayerMergeKey(p);
+    if (key && seen[key]) return;
+    if (key) seen[key] = true;
+    merged.push(p);
+  });
+  return merged;
+}
+function driveMergeOneRound(localRound, remoteRound) {
+  const remoteWins = driveRoundStamp(remoteRound) >= driveRoundStamp(localRound);
+  const winner = remoteWins ? remoteRound : localRound;
+  const loser = remoteWins ? localRound : remoteRound;
+  const winnerPlayers = Array.isArray(winner && winner.players) ? winner.players : [];
+  const loserPlayers = Array.isArray(loser && loser.players) ? loser.players : [];
+  if (!winnerPlayers.length && !loserPlayers.length) return winner;
+  return Object.assign({}, winner, { players: driveMergeRoundPlayers(winner, loser) });
+}
 function driveMergeRounds(localRounds, remoteRounds) {
   const byId = {};
   (localRounds || []).forEach(r => { if (r && r.id) byId[r.id] = r; });
@@ -5371,11 +5427,18 @@ function driveMergeRounds(localRounds, remoteRounds) {
     if (!r || !r.id) return;
     const cur = byId[r.id];
     if (!cur) { byId[r.id] = r; return; }
-    if (driveRoundStamp(r) >= driveRoundStamp(cur)) byId[r.id] = r;
+    byId[r.id] = driveMergeOneRound(cur, r);
   });
   return Object.keys(byId).map(k => byId[k]).sort((a, b) => {
     return String(b.dateISO || b.updatedAt || "").localeCompare(String(a.dateISO || a.updatedAt || ""));
   });
+}
+function driveResolveRounds(localRounds, remoteRounds, plan) {
+  const p = plan || {};
+  const local = localRounds || [];
+  if (remoteRounds == null) return local;
+  if (p.mergeRounds || p.action === "download") return driveMergeRounds(local, remoteRounds);
+  return local;
 }
 function driveActiveFingerprint(active) {
   if (!active || typeof active !== "object") return "";
@@ -6187,7 +6250,8 @@ function driveApplyResolved(remote, remoteUpdatedAt, opts) {
   try {
     if (Array.isArray(o.rounds)) saveRounds(o.rounds.slice(0, ROUNDS_MAX));
     if (Array.isArray(o.roster) && typeof saveRoster === "function") saveRoster(o.roster);
-    if (o.host && typeof o.host === "object") {
+    const keepLocalCard = drivePlayScreen() || (typeof localActiveRoundIsProtected === "function" && localActiveRoundIsProtected());
+    if (o.host && typeof o.host === "object" && !keepLocalCard) {
       try {
         localStorage.setItem(HOST_KEY, JSON.stringify(o.host));
         if (typeof PLAYERS !== "undefined" && PLAYERS[0]) {
@@ -6318,10 +6382,12 @@ async function driveReconcile() {
   const choice = plan.action === "conflict" ? meta.conflictChoice : "";
   const keepLocalActive = choice === "local" ? true : (choice === "remote" ? driveActiveRoundDirty(localActive) : plan.keepLocalActive);
   const mergeRounds = plan.mergeRounds || choice === "local" || choice === "remote";
-  let rounds = local.rounds || [];
-  if (closedDuringRead) rounds = driveMergeRounds(local.rounds || [], (remote && remote.rounds) || []);
-  else if (mergeRounds && remote) rounds = driveMergeRounds(local.rounds || [], remote.rounds || []);
-  else if (plan.action === "download" && remote) rounds = remote.rounds || [];
+  const rounds = closedDuringRead
+    ? driveMergeRounds(local.rounds || [], (remote && remote.rounds) || [])
+    : driveResolveRounds(local.rounds || [], remote ? (remote.rounds || []) : null, {
+        action: plan.action,
+        mergeRounds: !!mergeRounds
+      });
   const remoteWins = choice === "remote" || (plan.action === "download" && !keepLocalActive) || (remoteUpdatedAt > (local.updatedAt || ""));
   const host = choice === "local" ? local.host : (remote && remoteWins ? (remote.host || local.host) : local.host);
   let roster = local.roster || [];
