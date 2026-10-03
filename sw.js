@@ -1,5 +1,5 @@
-/* Shell cache: product version with the extra minor zero collapsed. 4.0.11 → 411, 4.1.0 → 410, 4.1.1 → 411, 4.1.2 → 412, 4.1.3 → 413, 4.1.3.1 → 4131, 4.2.1 → 421, 4.2.2 → 422, 4.2.3 → 423, 4.2.4 → 424, 4.2.5 → 425, 4.2.6 → 426, 5.0.0 → 500, 5.0.1 → 501, 5.0.2 → 502, 5.0.3 → 503. */
-const SHELL = "fairway-v5-503";
+/* Shell cache: product version with the extra minor zero collapsed. 4.0.11 → 411, 4.1.0 → 410, 4.1.1 → 411, 4.1.2 → 412, 4.1.3 → 413, 4.1.3.1 → 4131, 4.2.1 → 421, 4.2.2 → 422, 4.2.3 → 423, 4.2.4 → 424, 4.2.5 → 425, 4.2.6 → 426, 5.0.0 → 500, 5.0.1 → 501, 5.0.2 → 502, 5.0.3 → 503, 5.0.4 → 504. */
+const SHELL = "fairway-v5-504";
 const MAPS = "fairway-maps-v1";
 const MAPS_MAX = 120;
 const ASSETS = [
