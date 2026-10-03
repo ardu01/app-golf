@@ -291,7 +291,7 @@ assert.ok(css.includes("overscroll-behavior-x: none"));
 assert.ok(css.includes("html.fairway-edge-lock"));
 assert.ok(css.includes("touch-action: pan-y"));
 assert.ok(css.includes("touch-action: manipulation"));
-assert.ok(css.includes("padding: 6px 16px 22px 32px"));
+assert.ok(css.includes("padding: 6px 32px 22px 32px"));
 assert.ok(html.includes('addEventListener("touchstart", fairwayNavBlockEdgeTouch, { passive: false, capture: true })'));
 const blockSrc = extractFunction(html, "fairwayNavBlockEdgeTouch");
 const gateAt = blockSrc.indexOf("fairwayNavShouldBlockEdge");

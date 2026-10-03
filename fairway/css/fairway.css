@@ -226,7 +226,6 @@
     position: relative;
     z-index: 5;
     flex-shrink: 0;
-    padding-left: 32px;
   }
 
   /* Main screens: fit 100dvh — no vertical scroll */
@@ -2178,8 +2177,8 @@
   #screen-home .fit {
     position: relative;
     z-index: 1;
-    /* left clears .fairway-edge-guard (30px) so taps are not swallowed */
-    padding: 6px 16px 22px 32px;
+    /* Equal sides center the column. 32px still clears .fairway-edge-guard (30px). */
+    padding: 6px 32px 22px 32px;
     gap: 12px;
   }
   #screen-home .home-top {
