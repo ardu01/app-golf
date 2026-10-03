@@ -11,12 +11,12 @@ for (const block of html.matchAll(/<script>([\s\S]*?)<\/script>/g)) {
   new Function(block[1]);
 }
 
-assert.ok(html.includes('appVersion: "5.0.3"'));
+assert.ok(html.includes('appVersion: "5.0.4"'));
 assert.ok(!html.includes('appVersion: "4.0.0-alpha"'));
 assert.ok(!html.includes('appVersion: "3.0.3"'));
 assert.ok(!html.includes('appVersion: "3.0.2"'));
 assert.ok(!html.includes('appVersion: "3.0.0"'));
-assert.ok(sw.includes('const SHELL = "fairway-v5-503"'));
+assert.ok(sw.includes('const SHELL = "fairway-v5-504"'));
 assert.ok(!sw.includes("fairway-v4-400a"));
 assert.ok(roundsSrc.includes("pagehide"));
 assert.ok(roundsSrc.includes("visibilitychange"));
@@ -452,6 +452,33 @@ function closeStorage(blockRounds) {
   assert.strictEqual(s.api.saveRounds([{ id: "r-new", players: [{ id: "me", scores: { 3: 6 } }] }]), true);
   assert.strictEqual(s.localStorage.getItem("fairway.rounds.bak.v1"), good);
   assert.strictEqual(JSON.parse(s.localStorage.getItem("fairway.rounds.v1"))[0].players[0].scores["3"], 6);
+}
+
+{
+  // A closed round must stay in the history .bak. If the primary key then
+  // disappears, loadRounds still returns that round, not only the previous list.
+  const s = fresh();
+  const older = [{ id: "r-old", players: [{ id: "me", name: "Miguel", scores: { 1: 4 } }] }];
+  const closed = [
+    { id: "r-new", players: [{ id: "me", name: "Miguel", scores: { 1: 5, 2: 4 } }] },
+    older[0]
+  ];
+  assert.strictEqual(s.api.saveRounds(older), true);
+  assert.strictEqual(s.api.saveRounds(closed), true);
+  const bak = JSON.parse(s.localStorage.getItem("fairway.rounds.bak.v1"));
+  assert.ok(bak.some((r) => r.id === "r-new"));
+  assert.strictEqual(bak.find((r) => r.id === "r-new").players[0].scores["2"], 4);
+  assert.ok(bak.some((r) => r.id === "r-old"));
+  s.localStorage.removeItem("fairway.rounds.v1");
+  const recovered = s.api.loadRounds();
+  assert.ok(recovered.some((r) => r.id === "r-new"));
+  assert.strictEqual(recovered.find((r) => r.id === "r-new").players[0].scores["1"], 5);
+  assert.strictEqual(recovered.find((r) => r.id === "r-old").players[0].scores["1"], 4);
+
+  // Dropping an id must not erase that round from the .bak.
+  assert.strictEqual(s.api.saveRounds([older[0]]), true);
+  const afterDrop = JSON.parse(s.localStorage.getItem("fairway.rounds.bak.v1"));
+  assert.ok(afterDrop.some((r) => r.id === "r-new"));
 }
 
 console.log("persist ok");

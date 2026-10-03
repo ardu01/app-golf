@@ -2,7 +2,7 @@
  * Round persistence from index.html (Fairway 4.2.6).
  * localStorage is the score. IndexedDB stays a mirror in persistence.js.
  * scope is read on every call so a later HOLES or CLUB assignment stays visible.
- * Backup schema stays 3. Product version is 5.0.3.
+ * Backup schema stays 3. Product version is 5.0.4.
  */
 import {
   ACTIVE_BAK_KEY,
@@ -103,6 +103,23 @@ function createApi(scope) {
     return readRoundList(localStorage.getItem(ROUNDS_BAK_KEY));
   }
 
+  function roundIds(list) {
+    const ids = [];
+    (list || []).forEach((row) => {
+      if (row && row.id) ids.push(String(row.id));
+    });
+    return ids;
+  }
+
+  function listKeepsIds(list, ids) {
+    const have = {};
+    roundIds(list).forEach((id) => { have[id] = true; });
+    for (let i = 0; i < ids.length; i++) {
+      if (!have[ids[i]]) return false;
+    }
+    return true;
+  }
+
   function adoptHistoryBak(bak) {
     _roundsUnreadable = false;
     try { localStorage.setItem(ROUNDS_KEY, JSON.stringify(bak)); } catch (e) {}
@@ -148,8 +165,9 @@ function createApi(scope) {
     try {
       const prev = localStorage.getItem(ROUNDS_KEY);
       const next = JSON.stringify(list);
+      const prevList = readRoundList(prev);
       // Only a readable list may become the .bak. A corrupt primary must not erase it.
-      if (prev && prev !== next && readRoundList(prev)) {
+      if (prev && prev !== next && prevList) {
         try { localStorage.setItem(ROUNDS_BAK_KEY, prev); } catch (e) {}
       }
       localStorage.setItem(ROUNDS_KEY, next);
@@ -157,6 +175,14 @@ function createApi(scope) {
         console.warn("saveRounds short write");
         if (pageFn("showToast")) callPage("showToast", ["No se pudo guardar el historial en este dispositivo"]);
         return false;
+      }
+      // The .bak lagged one save, so a missing primary restored the previous
+      // list and dropped the round just closed. Copy this list only when it
+      // still contains every id already stored.
+      const committed = readRoundList(next);
+      const keptIds = prevList ? roundIds(prevList) : roundIds(historyBak() || []);
+      if (committed && listKeepsIds(committed, keptIds)) {
+        try { localStorage.setItem(ROUNDS_BAK_KEY, next); } catch (e) {}
       }
       if (prev !== next) callPage("touchDataUpdated");
     } catch (e) {

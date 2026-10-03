@@ -1,5 +1,15 @@
 # Changelog
 
+## 5.0.4
+
+Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 5.0.3 siguen entrando.
+
+- Al guardar el historial, la `.bak` se queda con la lista recién escrita si esa lista conserva cada id que ya estaba. Si falta la clave principal, la ronda recién cerrada vuelve con esa copia.
+- Una lista que pierde un id no pisa `fairway.rounds.bak.v1`. Una clave principal ilegible tampoco.
+- La versión de producto es 5.0.4: cabecera, perfil, manifiesto y `appVersion` del JSON.
+- El service worker pasa a `fairway-v5-504`. No hace `skipWaiting` al instalar y no recarga con una ronda abierta.
+- No hay release v5.0.4. La publicada sigue siendo v5.0.3, el 2026-10-03T22:40:43Z, sobre `a23a9b872d23928d29b31c6605ffdfdfb49e6700`, hasta que Lider publique la 5.0.4.
+
 ## 5.0.3
 
 Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 5.0.2 siguen entrando.
@@ -8,7 +18,7 @@ Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 5.0.2 siguen entrando
 - La fila del campo elegido no pinta un aro inset cuadrado sobre la lista. La banda del borde sigue en 30px. El padding de Inicio sigue en `6px 32px 22px 32px`.
 - La versión de producto es 5.0.3: cabecera, perfil, manifiesto y `appVersion` del JSON.
 - El service worker pasa a `fairway-v5-503`. No hace `skipWaiting` al instalar y no recarga con una ronda abierta.
-- No hay release v5.0.3. La publicada es v5.0.2, el 2026-10-03T22:20:03Z, sobre `6ed665959f19e5eaebc80ee510e40ffe63e9a989`.
+- Quedó publicada como v5.0.3, el 2026-10-03T22:40:43Z, sobre `a23a9b872d23928d29b31c6605ffdfdfb49e6700`.
 
 ## 5.0.2
 
