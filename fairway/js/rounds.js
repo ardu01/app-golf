@@ -2,7 +2,7 @@
  * Round persistence from index.html (Fairway 4.2.6).
  * localStorage is the score. IndexedDB stays a mirror in persistence.js.
  * scope is read on every call so a later HOLES or CLUB assignment stays visible.
- * Backup schema stays 3. Product version is 5.0.4.
+ * Backup schema stays 3. Product version is 5.0.5.
  */
 import {
   ACTIVE_BAK_KEY,
@@ -291,6 +291,53 @@ function createApi(scope) {
     return PLAYERS.some(playerHasMarks);
   }
 
+  function markMap(player, field) {
+    const bag = player && player[field];
+    if (!bag || typeof bag !== "object" || Array.isArray(bag)) return null;
+    return bag;
+  }
+
+  function mapKeepsKeys(nextMap, baseMap) {
+    if (!baseMap) return true;
+    const keys = Object.keys(baseMap);
+    for (let i = 0; i < keys.length; i++) {
+      if (!nextMap || !Object.prototype.hasOwnProperty.call(nextMap, keys[i])) return false;
+    }
+    return true;
+  }
+
+  function cardPlayer(players, player) {
+    if (!player || player.id == null) return null;
+    const id = String(player.id);
+    for (let i = 0; i < players.length; i++) {
+      const row = players[i];
+      if (row && row.id != null && String(row.id) === id) return row;
+    }
+    return null;
+  }
+
+  // The last good card is the previous primary when that primary was valid,
+  // otherwise the .bak. A card keeps it when every player is still there and
+  // every scores, putts, fir and gir key is still there. totalsGross and
+  // totalsPutts count only when the baseline value was not null.
+  function cardKeepsMarks(nextCard, baseCard) {
+    const basePlayers = baseCard && Array.isArray(baseCard.players) ? baseCard.players : [];
+    const nextPlayers = nextCard && Array.isArray(nextCard.players) ? nextCard.players : [];
+    for (let i = 0; i < basePlayers.length; i++) {
+      const prevP = basePlayers[i];
+      if (!prevP) return false;
+      const nextP = cardPlayer(nextPlayers, prevP);
+      if (!nextP) return false;
+      if (!mapKeepsKeys(markMap(nextP, "scores"), markMap(prevP, "scores"))) return false;
+      if (!mapKeepsKeys(markMap(nextP, "putts"), markMap(prevP, "putts"))) return false;
+      if (!mapKeepsKeys(markMap(nextP, "fir"), markMap(prevP, "fir"))) return false;
+      if (!mapKeepsKeys(markMap(nextP, "gir"), markMap(prevP, "gir"))) return false;
+      if (prevP.totalsGross != null && nextP.totalsGross == null) return false;
+      if (prevP.totalsPutts != null && nextP.totalsPutts == null) return false;
+    }
+    return true;
+  }
+
   function localActiveRoundIsProtected() {
     sync();
     if (!state) return false;
@@ -341,6 +388,21 @@ function createApi(scope) {
         storageSetItem(ACTIVE_BAK_KEY, prev, "No se pudo guardar la copia de seguridad");
       }
       if (!storageSetItem(ACTIVE_KEY, next, "No se pudo guardar la ronda en curso")) return false;
+      // The .bak lagged one save, so a missing primary restored the previous
+      // card and dropped the strokes just written. Copy this card only when
+      // it still has every mark from the last good card. The first save has
+      // no baseline and still writes the .bak. A failed copy must not fail
+      // the save.
+      const committed = inspectActiveRaw(next);
+      const prevCard = inspectActiveRaw(prev);
+      let baseline = prevCard.status === "ok" ? prevCard.data : null;
+      if (!baseline) {
+        const bakCard = inspectActiveKey(ACTIVE_BAK_KEY);
+        if (bakCard.status === "ok") baseline = bakCard.data;
+      }
+      if (committed.status === "ok" && (!baseline || cardKeepsMarks(committed.data, baseline))) {
+        try { localStorage.setItem(ACTIVE_BAK_KEY, next); } catch (e) {}
+      }
       _activeStorageError = "";
       state._activeRoundLive = true;
       if (changed) {

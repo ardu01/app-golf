@@ -11,12 +11,12 @@ for (const block of html.matchAll(/<script>([\s\S]*?)<\/script>/g)) {
   new Function(block[1]);
 }
 
-assert.ok(html.includes('appVersion: "5.0.4"'));
+assert.ok(html.includes('appVersion: "5.0.5"'));
 assert.ok(!html.includes('appVersion: "4.0.0-alpha"'));
 assert.ok(!html.includes('appVersion: "3.0.3"'));
 assert.ok(!html.includes('appVersion: "3.0.2"'));
 assert.ok(!html.includes('appVersion: "3.0.0"'));
-assert.ok(sw.includes('const SHELL = "fairway-v5-504"'));
+assert.ok(sw.includes('const SHELL = "fairway-v5-505"'));
 assert.ok(!sw.includes("fairway-v4-400a"));
 assert.ok(roundsSrc.includes("pagehide"));
 assert.ok(roundsSrc.includes("visibilitychange"));
@@ -125,11 +125,41 @@ const ACTIVE_BAK_KEY = "fairway.activeRound.bak.v1";
 {
   const s = fresh();
   s.api.persistActiveRound();
-  const first = s.localStorage.getItem(ACTIVE_KEY);
   s.PLAYERS[0].scores[2] = 4;
   assert.strictEqual(s.api.persistActiveRound(), true);
-  assert.strictEqual(s.localStorage.getItem(ACTIVE_BAK_KEY), first);
+  const written = s.localStorage.getItem(ACTIVE_KEY);
+  assert.strictEqual(s.localStorage.getItem(ACTIVE_BAK_KEY), written);
   assert.strictEqual(s.api.inspectActiveKey(ACTIVE_KEY).data.players[0].scores["2"], 4);
+  s.localStorage.removeItem(ACTIVE_KEY);
+  s.PLAYERS[0].scores = {};
+  assert.strictEqual(s.api.restoreActiveRound(), true);
+  assert.strictEqual(s.PLAYERS[0].scores["2"], 4);
+}
+
+{
+  // One save must create the .bak. If the primary then disappears, that 4 comes back.
+  const s = fresh();
+  s.PLAYERS[0].scores = { 1: 4 };
+  assert.strictEqual(s.api.persistActiveRound(), true);
+  assert.strictEqual(s.api.inspectActiveKey(ACTIVE_BAK_KEY).data.players[0].scores["1"], 4);
+  s.localStorage.removeItem(ACTIVE_KEY);
+  s.PLAYERS[0].scores = {};
+  assert.strictEqual(s.api.restoreActiveRound(), true);
+  assert.strictEqual(s.PLAYERS[0].scores["1"], 4);
+}
+
+{
+  // A card that drops a stroke must not replace the .bak.
+  const s = fresh();
+  s.PLAYERS[0].scores = { 1: 4, 2: 5 };
+  assert.strictEqual(s.api.persistActiveRound(), true);
+  const kept = s.localStorage.getItem(ACTIVE_BAK_KEY);
+  assert.strictEqual(JSON.parse(kept).players[0].scores["2"], 5);
+  delete s.PLAYERS[0].scores[2];
+  assert.strictEqual(s.api.persistActiveRound(), true);
+  assert.strictEqual(s.localStorage.getItem(ACTIVE_BAK_KEY), kept);
+  assert.strictEqual(JSON.parse(s.localStorage.getItem(ACTIVE_KEY)).players[0].scores["1"], 4);
+  assert.ok(!Object.prototype.hasOwnProperty.call(JSON.parse(s.localStorage.getItem(ACTIVE_KEY)).players[0].scores, "2"));
 }
 
 {

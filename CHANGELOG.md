@@ -1,5 +1,15 @@
 # Changelog
 
+## 5.0.5
+
+Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 5.0.4 siguen entrando.
+
+- Al guardar la ronda en curso, la `.bak` se queda con la tarjeta recién escrita si esa tarjeta conserva cada jugador y cada clave de scores, putts, fir y gir (y totalsGross / totalsPutts si no eran null) de la última tarjeta buena. El primer guardado también crea la `.bak`. Si falta la clave principal, los golpes del último guardado vuelven con esa copia.
+- Una tarjeta que pierde un golpe no pisa `fairway.activeRound.bak.v1`. Una clave principal ilegible con `.bak` buena tampoco.
+- La versión de producto es 5.0.5: cabecera, perfil, manifiesto y `appVersion` del JSON.
+- El service worker pasa a `fairway-v5-505`. No hace `skipWaiting` al instalar y no recarga con una ronda abierta.
+- No hay release v5.0.5. La publicada sigue siendo v5.0.4, el 2026-10-03T22:52:59Z, sobre `8b5752ffe311928458958e875f4b82e536fe732d`, hasta que Lider publique la 5.0.5.
+
 ## 5.0.4
 
 Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 5.0.3 siguen entrando.
@@ -8,7 +18,7 @@ Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 5.0.3 siguen entrando
 - Una lista que pierde un id no pisa `fairway.rounds.bak.v1`. Una clave principal ilegible tampoco.
 - La versión de producto es 5.0.4: cabecera, perfil, manifiesto y `appVersion` del JSON.
 - El service worker pasa a `fairway-v5-504`. No hace `skipWaiting` al instalar y no recarga con una ronda abierta.
-- No hay release v5.0.4. La publicada sigue siendo v5.0.3, el 2026-10-03T22:40:43Z, sobre `a23a9b872d23928d29b31c6605ffdfdfb49e6700`, hasta que Lider publique la 5.0.4.
+- Quedó publicada como v5.0.4, el 2026-10-03T22:52:59Z, sobre `8b5752ffe311928458958e875f4b82e536fe732d`.
 
 ## 5.0.3
 
