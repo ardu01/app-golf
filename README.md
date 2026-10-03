@@ -160,26 +160,26 @@ HTTP obligatorio para el service worker. Pages usa `.nojekyll`.
 
 ## Fairway 5.x
 
-Este árbol lleva la versión de producto **5.0.0** (`APP_VERSION`, cabecera, perfil y manifiesto) y el shell `fairway-v5-500`. No hay tag `v5.0.0` ni GitHub Release. Las capturas de más abajo son de borradores anteriores en Cursor: la cabecera que se ve dice 4.2.6.
+En `main` (`3bf8568`) la versión de producto es **5.0.0**: `APP_VERSION` en `fairway/js/keys.js`, la cabecera de Inicio, el perfil («Fairway 5.0.0»), el manifiesto («Marcador de golf personal · 5.0.0») y `appVersion` del JSON de copia. El shell es `fairway-v5-500`. El esquema de copia sigue en **3** (`BACKUP_SCHEMA` y `version: 3` en el JSON). La release publicada es [v5.0.0](https://github.com/ardu01/app-golf/releases/tag/v5.0.0), «Fairway 5.0.0», el 2026-10-03T21:21:47Z, sobre `3bf85688470e001c607830a61bf48ae6d512d183`. No es borrador ni prerelease. Las capturas de `docs/recorrido/cursor/` se tomaron cuando la cabecera decía 4.2.6. No son de la app 5.0.0.
 
-En `main`, `docs/fairway-5.0/` es la nota de la 4.2.6, no un producto nuevo: [`BASELINE.md`](docs/fairway-5.0/BASELINE.md) congela el commit de la release (`6ceef03`), [`AUDIT.md`](docs/fairway-5.0/AUDIT.md) es la auditoría de ese árbol, [`ADR-001.md`](docs/fairway-5.0/ADR-001.md) es el orden de la sala que el `56a2662` dejó en el código. El 3 oct 2026 el PR #57 quedó en `main` con ese commit. El mensaje dice «Fairway 5.0 baseline». La cabecera, el manifiesto y `APP_VERSION` no pasaron de 4.2.6. La release publicada sigue siendo [v4.2.6](https://github.com/ardu01/app-golf/releases/tag/v4.2.6) (29 sep 2026).
+En `main`, `docs/fairway-5.0/` sigue siendo la nota escrita sobre la 4.2.6: [`BASELINE.md`](docs/fairway-5.0/BASELINE.md) congela `6ceef03`, [`AUDIT.md`](docs/fairway-5.0/AUDIT.md) es la auditoría de ese árbol, [`ADR-001.md`](docs/fairway-5.0/ADR-001.md) es el orden de la sala que el `56a2662` dejó en el código. El 3 oct 2026 el PR #57 quedó en `main` con ese commit. El mensaje dice «Fairway 5.0 baseline». Esos markdown no se han reescrito y todavía dicen que 5.0 no está publicada. En el código, la cabecera, el perfil, el manifiesto y `APP_VERSION` son 5.0.0, y la release publicada es [v5.0.0](https://github.com/ardu01/app-golf/releases/tag/v5.0.0). [v4.2.6](https://github.com/ardu01/app-golf/releases/tag/v4.2.6) (29 sep 2026) queda en el historial.
 
-Lo que hay sin fusionar es el corte del `index.html` único. Sin bundler, sin React, Vue ni Angular. La versión de producto de esas ramas sigue en 4.2.6. El esquema del JSON sigue en 3.
+El corte del `index.html` único está en `main`. Sin bundler, sin React, Vue ni Angular. El esquema del JSON sigue en 3. Los PR #58 y #59 siguen abiertos; en esas ramas `APP_VERSION` sigue en 4.2.6.
 
-- [PR #60](https://github.com/ardu01/app-golf/pull/60) (`cursor/scoring-module-e67a`, encima de `56a2662`). El tanteo en vivo sale a `fairway/js/scoring.js`, módulo ES. `fairway/js/scoring-boot.js` publica en `window` las mismas funciones (`courseHandicapFor`, `liveStandings`, `stablefordHole`, …). `window.go` y `window.setScore` se quedan en el script clásico. El archivo trae `tests/golden.mjs`. `sw.js` no lista `scoring.js` en el precache de instalación.
-- [PR #59](https://github.com/ardu01/app-golf/pull/59) (`cursor/golden-card-tests-0946`). Solo los tests de la tarjeta (`tests/golden.mjs`) y su alta en `tests/run.mjs`, sobre `main`. Esos tests ya están dentro del #60. El #59 sigue abierto y no está en la app.
-- [PR #61](https://github.com/ardu01/app-golf/pull/61) (`cursor/rounds-module-214c`, encima del #60). La persistencia de la ronda pasa a `fairway/js/rounds.js`. `rounds-boot.js` publica `saveRounds`, `persistActiveRound`, `reopenRound` y el resto. `localStorage` sigue siendo la tarjeta. IndexedDB sigue de espejo. `sw.js` tampoco precarga `rounds.js` al instalar.
-- [PR #62](https://github.com/ardu01/app-golf/pull/62) (`cursor/courses-css-split-6b38`, encima del #61). El catálogo (`let COURSES`, 54 campos) pasa a `fairway/js/courses.js`, script clásico, no módulo. `index.html` sigue filtrando `club-ejemplo-norte`. El CSS pasa a `fairway/css/fairway.css` y el `<head>` lo enlaza. El shell sigue `fairway-v4-426`; el precache añade esos dos archivos.
-- [PR #63](https://github.com/ardu01/app-golf/pull/63) (`cursor/course-hole-preload-1422`, encima del #62). Al empezar la ronda precarga como mucho 18 planos de ese campo, no todo `holes/`. `icons/escorial-monasterio.png` sale del precache y solo se pide al pintar la placa de La Herrería. Sigue sin fusionar.
-- [PR #58](https://github.com/ardu01/app-golf/pull/58) (`cursor/fairway-data-guard-9c4b`). Borrador anterior, basado en `6ceef03` (la 4.2.6 del 29 sep, antes del #57). No está en la pila 60–63. La fusión de Drive une hoyo a hoyo en vez de sustituir la partida por el sello. Si la ronda local está protegida o hay pantalla de juego, no escribe `fairway.host.v1`. Una clave local en blanco no borra la copia de IndexedDB. `APP_VERSION` sigue en 4.2.6.
+- [PR #60](https://github.com/ardu01/app-golf/pull/60) (`cursor/scoring-module-e67a`). Fusionado en `main` el 2026-10-03T21:09:44Z (`dcf7aef`). El tanteo en vivo está en `fairway/js/scoring.js`, módulo ES. `fairway/js/scoring-boot.js` publica en `window` las mismas funciones (`courseHandicapFor`, `liveStandings`, `stablefordHole`, …). `window.go` y `window.setScore` se quedan en el script clásico. Ese squash trae `tests/golden.mjs`. `sw.js` no lista `scoring.js` en el precache de instalación.
+- [PR #59](https://github.com/ardu01/app-golf/pull/59) (`cursor/golden-card-tests-0946`). Sigue abierto. Su commit no está en `main`. Añade `tests/golden.mjs` y lo da de alta en `tests/run.mjs` sobre `56a2662`. El `tests/golden.mjs` de `main` llegó con el #60 y no es el mismo archivo.
+- [PR #61](https://github.com/ardu01/app-golf/pull/61) (`cursor/rounds-module-214c`). Fusionado el 2026-10-03T21:09:22Z en la rama del #60. En `main` entra con el squash `dcf7aef`: la persistencia está en `fairway/js/rounds.js`. `rounds-boot.js` publica `saveRounds`, `persistActiveRound`, `reopenRound` y el resto. `localStorage` sigue siendo la tarjeta. IndexedDB sigue de espejo. `sw.js` tampoco precarga `rounds.js` al instalar. El esquema sigue en 3.
+- [PR #62](https://github.com/ardu01/app-golf/pull/62) (`cursor/courses-css-split-6b38`). Fusionado en `main` el 2026-10-03T21:13:14Z (`15a45f1`). El catálogo (`let COURSES`, 54 campos) está en `fairway/js/courses.js`, script clásico, no módulo. `index.html` sigue filtrando `club-ejemplo-norte`. El CSS está en `fairway/css/fairway.css` y el `<head>` lo enlaza. Ese squash dejó el shell en `fairway-v4-426`; el commit `3bf8568` lo dejó en `fairway-v5-500`. El precache incluye `courses.js` y `fairway.css`.
+- [PR #63](https://github.com/ardu01/app-golf/pull/63) (`cursor/course-hole-preload-1422`). Fusionado el 2026-10-03T21:09:00Z en la rama del #62. En `main` entra con el squash `15a45f1`: al empezar la ronda precarga como mucho 18 planos de ese campo, no todo `holes/`. `icons/escorial-monasterio.png` no está en el precache y solo se pide al pintar la placa de La Herrería.
+- [PR #58](https://github.com/ardu01/app-golf/pull/58) (`cursor/fairway-data-guard-9c4b`). Sigue abierto. Parte de `6ceef03` (la 4.2.6 del 29 sep, antes del #57) y no incluye el #57. No está en la pila 60–63. En esa rama `APP_VERSION` sigue en 4.2.6 y el esquema en 3. La fusión de Drive por hoyo, el `fairway.host.v1` que no se escribe con ronda protegida o pantalla de juego, y la clave local en blanco que no borra IndexedDB, ya están en `main` por el [PR #66](https://github.com/ardu01/app-golf/pull/66) (`83c7b19`).
 
-El marcador (PR #60) y las rondas (PR #61) no dejaron captura ni vídeo en Cursor. Las fotos de 4.0.x que ya están más arriba no son esos dos borradores.
+El marcador (PR #60) y las rondas (PR #61) no dejaron captura ni vídeo en `docs/recorrido/cursor/`. Las fotos de 4.0.x que ya están más arriba no son esos dos cambios.
 
-### Borrador de catálogo y CSS (PR #62)
+### Catálogo y CSS (PR #62)
 
-Siguen en 4.2.6. Los archivos están en `docs/recorrido/cursor/`.
+El código está en `main`. Las fotos y el vídeo de `docs/recorrido/cursor/` se tomaron cuando la cabecera decía 4.2.6. No son capturas de la app 5.0.0.
 
-Inicio del borrador. La cabecera dice 4.2.6. «Buenas noches, Ana», ronda en curso en La Herrería (hoyo 18), Continuar, Ajustes, Cerrar ronda, y el campo del código de la partida compartida.
+Inicio. La cabecera dice 4.2.6. «Buenas noches, Ana», ronda en curso en La Herrería (hoyo 18), Continuar, Ajustes, Cerrar ronda, y el campo del código de la partida compartida.
 
 <img src="docs/recorrido/cursor/home_la_herreria.png" alt="Inicio 4.2.6, La Herrería, partida compartida" width="200">
 
@@ -193,9 +193,9 @@ Tarjeta bruta de La Herrería, 18 hoyos, tee Amarillas. La ida va al par: OUT 35
 
 [De la lista de campos a la tarjeta](docs/recorrido/cursor/course_list_and_scorecard.mp4). El paseo de ese paso Campo (La Herrería elegida) hasta la tarjeta bruta de La Herrería. En los tramos que se ven, la lista y luego la tarjeta con OUT 35 y TOT 71.
 
-### Borrador de precarga del plano (PR #63)
+### Precarga del plano (PR #63)
 
-Chrome de escritorio en `127.0.0.1`. Sigue siendo la 4.2.6. Al empezar se abre el plano de un solo campo, no el de todos.
+El código está en `main`. Chrome de escritorio en `127.0.0.1`. Estas capturas se tomaron cuando la cabecera decía 4.2.6. No son de la app 5.0.0. Al empezar se abre el plano de un solo campo, no el de todos.
 
 Inicio sin nombre todavía. La cabecera dice 4.2.6. La Herrería figura como tu campo. La partida compartida ofrece Crear código y Unirme.
 
