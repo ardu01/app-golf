@@ -17,7 +17,9 @@ const ASSETS = [
   "./fairway/js/shared-round.js",
   "./fairway/js/shared-mail.js",
   "./fairway/js/shared-rtc.js",
-  "./fairway/js/shared-boot.js"
+  "./fairway/js/shared-boot.js",
+  "./fairway/js/courses.js",
+  "./fairway/css/fairway.css"
 ];
 
 function isMapUrl(url) {
@@ -29,6 +31,7 @@ function isShellUrl(url) {
   const file = url.pathname.split("/").pop();
   if (!file) return true;
   if (url.pathname.indexOf("/fairway/js/") !== -1 && /\.js$/.test(file)) return true;
+  if (url.pathname.indexOf("/fairway/css/") !== -1 && /\.css$/.test(file)) return true;
   return file === "index.html"
     || file === "manifest.webmanifest"
     || file === "icon-192.png"

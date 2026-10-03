@@ -5,7 +5,10 @@ import { readApp } from "./extract.mjs";
 
 const root = new URL("..", import.meta.url);
 const html = readApp();
-const courses = JSON.parse(html.match(/let COURSES = (\[.*?\]);/)[1]);
+const coursesSrc = readFileSync(new URL("../fairway/js/courses.js", import.meta.url), "utf8");
+const courses = JSON.parse(coursesSrc.match(/let COURSES = (\[.*?\]);/)[1]);
+assert.ok(html.includes('src="fairway/js/courses.js"'));
+assert.ok(!html.includes("let COURSES = ["));
 const block = html.match(/const HOLE_MAP_COURSES = Object\.freeze\(\{([\s\S]*?)\}\);/)[1];
 const entries = [...block.matchAll(/"([^"]+)": \{ dir: "([^"]+)"(,\s*overviewOnly:\s*true)?/g)];
 
@@ -81,6 +84,8 @@ assert.ok(existsSync(new URL("holes/forus-las-rejas-pares-3/overview.webp", root
 
 const sw = readFileSync(new URL("../sw.js", import.meta.url), "utf8");
 assert.ok(sw.includes('const SHELL = "fairway-v4-426"'));
+assert.ok(sw.includes("./fairway/js/courses.js"));
+assert.ok(sw.includes("./fairway/css/fairway.css"));
 assert.ok(sw.includes("escorial-monasterio.png"));
 assert.ok(existsSync(new URL("icons/escorial-monasterio.png", root)));
 assert.ok(sw.includes('const MAPS = "fairway-maps-v1"'));
