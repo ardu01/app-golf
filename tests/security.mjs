@@ -35,13 +35,13 @@ assert.strictEqual(hostile.ok, true);
 assert.ok(!JSON.stringify(hostile.data).includes("<"));
 assert.ok(!JSON.stringify(hostile.data).includes(">"));
 
-assert.ok(html.includes('aria-label="Versión">5.0.0</span>'));
-assert.ok(html.includes('appVersion: "5.0.0"'));
+assert.ok(html.includes('aria-label="Versión">5.0.1</span>'));
+assert.ok(html.includes('appVersion: "5.0.1"'));
 assert.ok(html.includes("version: 3"));
 const manifest = readFileSync(new URL("../manifest.webmanifest", import.meta.url), "utf8");
 const sw = readFileSync(new URL("../sw.js", import.meta.url), "utf8");
-assert.ok(manifest.includes("5.0.0"));
-assert.ok(sw.includes('const SHELL = "fairway-v5-500"'));
+assert.ok(manifest.includes("5.0.1"));
+assert.ok(sw.includes('const SHELL = "fairway-v5-501"'));
 assert.ok(html.includes('const FAIRWAY_DRIVE_CLIENT_ID = "429682128465-06rq4tc60pmo6r0808a8b27itcp9v9dv.apps.googleusercontent.com"'));
 assert.ok(!html.includes("client_secret"));
 assert.ok(!html.includes("refresh_token"));

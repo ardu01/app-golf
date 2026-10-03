@@ -2,7 +2,7 @@
  * Round persistence from index.html (Fairway 4.2.6).
  * localStorage is the score. IndexedDB stays a mirror in persistence.js.
  * scope is read on every call so a later HOLES or CLUB assignment stays visible.
- * Backup schema stays 3. Product version stays 5.0.0.
+ * Backup schema stays 3. Product version is 5.0.1.
  */
 import {
   ACTIVE_BAK_KEY,
