@@ -11,6 +11,7 @@ Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 4.2.5 siguen entrando
 - Quien se une con la tarjeta vacía adopta jugadores, campo y golpes del anfitrión. Si los ids no coinciden, se suman los jugadores que faltan y se siguen aplicando los golpes remotos. Un móvil no borra el hoyo que solo tiene el otro.
 - El service worker pasa a `fairway-v4-426` y no recarga con una ronda abierta.
 - Siguen el esquema 3, el velo de Inicio de la 4.2.2, la selección al deslizar la ficha de la 4.2.4 y los mapas. No vuelven los workflows que hacían `git push`.
+- Drive no tira el golpe que el otro móvil no tiene: la misma partida se fusiona por hoyo, también cuando la descarga llevaría `mergeRounds` en false. Con la ronda protegida o en pantalla de juego no se escribe `fairway.host.v1` ni el hándicap en memoria. Una clave local vacía no borra la copia buena de IndexedDB. `deletedLocal` sigue en false.
 
 ## 4.2.5
 

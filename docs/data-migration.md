@@ -32,4 +32,4 @@ No se copian `fairway.drive.clientId` ni el access token. `drive.meta` se guarda
 
 Si `localStorage` llega vacío y IndexedDB ya tiene datos, no se vacía IndexedDB. La recuperación rellena solo las claves que faltan. Una ronda activa presente, o una ronda activa corrupta, no se sustituye. Si existe la `.bak` de la ronda activa, no se reescribe la clave principal desde IndexedDB.
 
-Quitar solo la ronda activa, con el historial todavía en el dispositivo, sí quita esa clave de IndexedDB. Un borrado total de las claves locales no vacía IndexedDB: el siguiente arranque puede recuperarlas.
+Una clave local vacía no borra la copia buena de IndexedDB, aunque el resto de claves locales sigan. Un borrado total de las claves locales tampoco vacía IndexedDB: el siguiente arranque puede recuperarlas.
