@@ -151,3 +151,214 @@ HTTP obligatorio para el service worker. Pages usa `.nojekyll`.
 <img src="docs/recorrido/marca/logo-f.png" alt="F" width="72">
 <img src="docs/recorrido/marca/icono-192.png" alt="192" width="72">
 <img src="docs/recorrido/marca/icono-512.png" alt="512" width="96">
+
+---
+
+## Fairway 5.x
+
+No está publicada y no está en Pages. No hay tag `v5.0.0`. `APP_VERSION` sigue en `4.2.6` en `main` y en los borradores de abajo. Las capturas de más abajo son de esos borradores en Cursor: la cabecera que se ve dice 4.2.6. No son una 5.0 publicada.
+
+En `main`, `docs/fairway-5.0/` es la nota de la 4.2.6, no un producto nuevo: [`BASELINE.md`](docs/fairway-5.0/BASELINE.md) congela el commit de la release (`6ceef03`), [`AUDIT.md`](docs/fairway-5.0/AUDIT.md) es la auditoría de ese árbol, [`ADR-001.md`](docs/fairway-5.0/ADR-001.md) es el orden de la sala que el `56a2662` dejó en el código. El 3 oct 2026 el PR #57 quedó en `main` con ese commit. El mensaje dice «Fairway 5.0 baseline». La cabecera, el manifiesto y `APP_VERSION` no pasaron de 4.2.6. La release publicada sigue siendo [v4.2.6](https://github.com/ardu01/app-golf/releases/tag/v4.2.6) (29 sep 2026).
+
+Lo que hay sin fusionar es el corte del `index.html` único. Sin bundler, sin React, Vue ni Angular. La versión de producto de esas ramas sigue en 4.2.6. El esquema del JSON sigue en 3.
+
+- [PR #60](https://github.com/ardu01/app-golf/pull/60) (`cursor/scoring-module-e67a`, encima de `56a2662`). El tanteo en vivo sale a `fairway/js/scoring.js`, módulo ES. `fairway/js/scoring-boot.js` publica en `window` las mismas funciones (`courseHandicapFor`, `liveStandings`, `stablefordHole`, …). `window.go` y `window.setScore` se quedan en el script clásico. El archivo trae `tests/golden.mjs`. `sw.js` no lista `scoring.js` en el precache de instalación.
+- [PR #59](https://github.com/ardu01/app-golf/pull/59) (`cursor/golden-card-tests-0946`). Solo los tests de la tarjeta (`tests/golden.mjs`) y su alta en `tests/run.mjs`, sobre `main`. Esos tests ya están dentro del #60. El #59 sigue abierto y no está en la app.
+- [PR #61](https://github.com/ardu01/app-golf/pull/61) (`cursor/rounds-module-214c`, encima del #60). La persistencia de la ronda pasa a `fairway/js/rounds.js`. `rounds-boot.js` publica `saveRounds`, `persistActiveRound`, `reopenRound` y el resto. `localStorage` sigue siendo la tarjeta. IndexedDB sigue de espejo. `sw.js` tampoco precarga `rounds.js` al instalar.
+- [PR #62](https://github.com/ardu01/app-golf/pull/62) (`cursor/courses-css-split-6b38`, encima del #61). El catálogo (`let COURSES`, 54 campos) pasa a `fairway/js/courses.js`, script clásico, no módulo. `index.html` sigue filtrando `club-ejemplo-norte`. El CSS pasa a `fairway/css/fairway.css` y el `<head>` lo enlaza. El shell sigue `fairway-v4-426`; el precache añade esos dos archivos.
+- [PR #63](https://github.com/ardu01/app-golf/pull/63) (`cursor/course-hole-preload-1422`, encima del #62). Al empezar la ronda precarga como mucho 18 planos de ese campo, no todo `holes/`. `icons/escorial-monasterio.png` sale del precache y solo se pide al pintar la placa de La Herrería. Sigue sin fusionar.
+- [PR #58](https://github.com/ardu01/app-golf/pull/58) (`cursor/fairway-data-guard-9c4b`). Borrador anterior, basado en `6ceef03` (la 4.2.6 del 29 sep, antes del #57). No está en la pila 60–63. La fusión de Drive une hoyo a hoyo en vez de sustituir la partida por el sello. Si la ronda local está protegida o hay pantalla de juego, no escribe `fairway.host.v1`. Una clave local en blanco no borra la copia de IndexedDB. `APP_VERSION` sigue en 4.2.6.
+
+El marcador (PR #60) y las rondas (PR #61) no dejaron captura ni vídeo en Cursor. Las fotos de 4.0.x que ya están más arriba no son esos dos borradores.
+
+### Borrador de catálogo y CSS (PR #62)
+
+Siguen en 4.2.6. Los archivos están en `docs/recorrido/cursor/`.
+
+Inicio del borrador. La cabecera dice 4.2.6. «Buenas noches, Ana», ronda en curso en La Herrería (hoyo 18), Continuar, Ajustes, Cerrar ronda, y el campo del código de la partida compartida.
+
+<img src="docs/recorrido/cursor/home_la_herreria.png" alt="Inicio 4.2.6, La Herrería, partida compartida" width="200">
+
+Paso Campo. La Herrería está seleccionada, Centro Nacional de Golf queda encima, y Siguiente está abajo.
+
+<img src="docs/recorrido/cursor/course_list.png" alt="Lista de campos, La Herrería seleccionada" width="200">
+
+Tarjeta bruta de La Herrería, 18 hoyos, tee Amarillas. La ida va al par: OUT 35, TOT 71, course handicap 13.
+
+<img src="docs/recorrido/cursor/scorecard_la_herreria.png" alt="Tarjeta bruta, La Herrería, 71" width="200">
+
+[De la lista de campos a la tarjeta](docs/recorrido/cursor/course_list_and_scorecard.mp4). El paseo de ese paso Campo (La Herrería elegida) hasta la tarjeta bruta de La Herrería. En los tramos que se ven, la lista y luego la tarjeta con OUT 35 y TOT 71.
+
+### Borrador de precarga del plano (PR #63)
+
+Chrome de escritorio en `127.0.0.1`. Sigue siendo la 4.2.6. Al empezar se abre el plano de un solo campo, no el de todos.
+
+Inicio sin nombre todavía. La cabecera dice 4.2.6. La Herrería figura como tu campo. La partida compartida ofrece Crear código y Unirme.
+
+<img src="docs/recorrido/cursor/home_version_4_2_6.webp" alt="Inicio 4.2.6 en el escritorio" width="280">
+
+El mismo escritorio, paso Campo, con Centro Nacional de Golf seleccionado.
+
+<img src="docs/recorrido/cursor/course_centro_nacional.webp" alt="Centro Nacional de Golf seleccionado" width="280">
+
+Hoyo 1 de Centro Nacional dentro de la app: par 5, 476 m, y las yardas escritas en el plano.
+
+<img src="docs/recorrido/cursor/hole_map_centro_nacional.webp" alt="Plano del hoyo 1 de Centro Nacional" width="280">
+
+[Empezar la ronda y abrir el plano](docs/recorrido/cursor/start_round_centro_nacional_map.mp4). Arranca en el paso Campo con Centro Nacional seleccionado y llega al plano del hoyo 1 (par 5, 476 m).
+
+## Capturas y vídeos que no estaban arriba
+
+Estos archivos ya estaban en `docs/` y `assets/`. No son de una 5.x.
+
+Inicio con una ronda a medias (La Herrería, 3/18) y el botón de continuar. En esta captura la cabecera marca 4.0.11.
+
+<img src="docs/recorrido/partida/inicio.webp" alt="Inicio con ronda en curso" width="200">
+
+Ajustes de la ronda abierta: campo, tee, hoyos y la bola de cada jugador. Abajo, cerrar la ronda.
+
+<img src="docs/recorrido/partida/ajustes.webp" alt="Ajustes de la ronda" width="200">
+
+La hoja de la bola, encima del marcador: se elige la bola del jugador que está en la ficha.
+
+<img src="docs/recorrido/partida/ajustes-bola.webp" alt="Hoja de la bola" width="200">
+
+Al volver a Inicio con la ronda todavía abierta, la pastilla ofrece seguir o cerrar.
+
+<img src="docs/recorrido/partida/continuar.webp" alt="Continuar la ronda" width="200">
+
+Reabrir una vuelta del historial: la hoja pide confirmar antes de cargar esa tarjeta.
+
+<img src="docs/recorrido/partida/reabrir.webp" alt="Reabrir una partida" width="200">
+
+Los tres iconos del perfil (exportar, importar, borrar) vistos de cerca.
+
+<img src="docs/recorrido/stats/perfil_iconos.png" alt="Iconos de la copia en el perfil" width="200">
+
+La pantalla de stats con el filtro de temporada (este año, el anterior, todas).
+
+<img src="docs/recorrido/stats/stats_temporada.png" alt="Estadísticas por temporada" width="200">
+
+El hoyo 2 de una vuelta de 18 con course handicap 10, sin punto: ahí no toca golpe. El hoyo 1 de esa misma serie ya está más arriba.
+
+<img src="docs/recorrido/handicap/hoyo-sin-golpe.webp" alt="Hoyo sin stroke" width="200">
+
+La misma salida recortada a 9 hoyos. El hándicap de campo baja (en la captura, de 10 a 5) y el hoyo 1 sigue llevando golpe.
+
+<img src="docs/recorrido/handicap/9-hoyos-hoyo-1.webp" alt="Nueve hoyos, hoyo 1 con golpe" width="200">
+
+En 9 hoyos, un hoyo que en 18 recibía golpe puede quedarse sin él. La captura es el hoyo 2, par 4, sin punto.
+
+<img src="docs/recorrido/handicap/9-hoyos-sin-golpe.webp" alt="Nueve hoyos, hoyo sin golpe" width="200">
+
+El reparto de 9 no es «los hoyos 1 a 9». El golpe va al índice de dificultad relativo de esos nueve. Aquí el hoyo 6, el más fácil de ese tramo, lleva el punto.
+
+<img src="docs/recorrido/handicap/9-hoyos-golpe-relativo.webp" alt="Golpe en el índice relativo de nueve hoyos" width="200">
+
+Vuelta de 18 con course handicap 10, vista en el marcador: diez hoyos con punto y el resto sin él.
+
+<img src="docs/recorrido/handicap/18-hoyos-ch10.webp" alt="Dieciocho hoyos, course handicap 10" width="200">
+
+La ficha Árbitro en el marcador del hoyo, junto a Hoyos y Mapa. Árbitro abre esa pantalla.
+
+<img src="docs/recorrido/reglas/boton-en-marcador.webp" alt="Ficha Árbitro en el marcador" width="200">
+
+El mismo acceso desde la clasificación: el botón Árbitro en la barra de arriba.
+
+<img src="docs/recorrido/reglas/boton-en-clasificacion.webp" alt="Botón Árbitro en la clasificación" width="200">
+
+Lista de modalidades. Stableford y Stroke Play van como oficiales; el resto, como juegos de la partida.
+
+<img src="docs/recorrido/reglas/todos-los-modos.webp" alt="Modalidades oficiales y sociales" width="200">
+
+La ficha Mapa del hoyo sigue en la app publicada. Los planos que carga están en `holes/`. Las fotos de abajo son las de `docs/recorrido/mapas/`: unas son la ficha dentro de la app, otras el plano o la foto del hoyo.
+
+La Herrería, hoyo 1, dentro de la ficha Mapa: el plano del hoyo a pantalla, con Marcador para volver.
+
+<img src="docs/recorrido/mapas/la-herreria-hoyo-1.webp" alt="Mapa del hoyo 1 de La Herrería" width="200">
+
+Las Rozas, hoyo 1, la misma ficha.
+
+<img src="docs/recorrido/mapas/las-rozas-hoyo-1.webp" alt="Mapa del hoyo 1 de Las Rozas en la app" width="200">
+
+[Mapas de Las Rozas](docs/recorrido/videos/mapas-las-rozas.mp4). La ficha Mapa del hoyo 1 (La Encina) y, en otro tramo, la tarjeta de esa vuelta.
+
+El Robledal, hoyo 1, ficha Mapa en la app. La cabecera de la captura es 4.0.11.
+
+<img src="docs/recorrido/mapas/robledal-en-la-app.webp" alt="El Robledal, mapa en la app" width="200">
+
+Foto del mismo hoyo 1, calle y green, aparte del plano.
+
+<img src="docs/recorrido/mapas/robledal-hoyo-1.webp" alt="Foto del hoyo 1 de El Robledal" width="280">
+
+Plano de trazo del Robledal, hoyo 1: salida, calle, green y la distancia de la barra de arriba.
+
+<img src="docs/recorrido/mapas/robledal-plano.png" alt="Plano del hoyo 1 de El Robledal" width="280">
+
+Golf Santander, ficha Mapa del hoyo 1 en la app.
+
+<img src="docs/recorrido/mapas/golf-santander-en-la-app.webp" alt="Golf Santander, mapa en la app" width="200">
+
+La foto de satélite de ese hoyo 1, la que la ficha enseña.
+
+<img src="docs/recorrido/mapas/golf-santander-satelite.webp" alt="Satélite del hoyo 1 de Golf Santander" width="280">
+
+Torrejón, hoyo 1, ficha Mapa en la app.
+
+<img src="docs/recorrido/mapas/torrejon-en-la-app.webp" alt="Torrejón, mapa en la app" width="200">
+
+Vista del hoyo 1 de Torrejón, green y bandera.
+
+<img src="docs/recorrido/mapas/torrejon-vista.webp" alt="Vista del hoyo 1 de Torrejón" width="280">
+
+RSHECC Norte, hoyo 1, ficha Mapa en la app.
+
+<img src="docs/recorrido/mapas/rshecc-norte-en-la-app.webp" alt="RSHECC Norte, mapa en la app" width="200">
+
+Foto aérea del hoyo 1 Norte.
+
+<img src="docs/recorrido/mapas/rshecc-norte-hoyo-1.webp" alt="Foto del hoyo 1 de RSHECC Norte" width="280">
+
+Plano del hoyo 1 Norte, con la distancia en el margen.
+
+<img src="docs/recorrido/mapas/rshecc-norte-plano.png" alt="Plano del hoyo 1 de RSHECC Norte" width="280">
+
+RSHECC Sur, foto del hoyo 1.
+
+<img src="docs/recorrido/mapas/rshecc-sur-hoyo-1.webp" alt="Foto del hoyo 1 de RSHECC Sur" width="280">
+
+Otra vista del Sur, calle hacia el green.
+
+<img src="docs/recorrido/mapas/rshecc-sur-vista.png" alt="Vista de un hoyo de RSHECC Sur" width="280">
+
+Aranjuez, hoyo 1: la foto de la calle.
+
+<img src="docs/recorrido/mapas/aranjuez-hoyo-1.webp" alt="Foto del hoyo 1 de Aranjuez" width="280">
+
+El plano de trazo de ese hoyo: salida, calle y green.
+
+<img src="docs/recorrido/mapas/aranjuez-hoyo-1-plano.webp" alt="Plano del hoyo 1 de Aranjuez" width="280">
+
+La Finca, hoyo 1, foto de la calle.
+
+<img src="docs/recorrido/mapas/la-finca-hoyo-1.webp" alt="Foto del hoyo 1 de La Finca" width="280">
+
+Plano del mismo hoyo de La Finca.
+
+<img src="docs/recorrido/mapas/la-finca-hoyo-1-plano.webp" alt="Plano del hoyo 1 de La Finca" width="280">
+
+El Encín, hoyo 1, foto aérea de la calle.
+
+<img src="docs/recorrido/mapas/el-encin-hoyo-1.webp" alt="Foto del hoyo 1 de El Encín" width="280">
+
+Hoja de referencia con el hoyo 1 de La Dehesa del Escorial (par, hándicap, metros por tee). No es una captura de la ficha Mapa.
+
+<img src="docs/recorrido/mapas/dehesa-escorial.png" alt="Hoyo 1 de La Dehesa del Escorial" width="280">
+
+Tres campos en una hoja: La Moraleja, Olivar de la Hinojosa y Torrejón. Tampoco es la ficha de la app.
+
+<img src="docs/recorrido/mapas/moraleja-olivar-torrejon.png" alt="La Moraleja, Olivar y Torrejón" width="280">
+
+Foto de la que sale la F de la marca: calle, hierba y la letra recortada. Está en `assets/`, no en la PWA.
+
+<img src="assets/fairway-icon-source.jpg" alt="Foto de origen del icono" width="200">
