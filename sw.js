@@ -18,6 +18,10 @@ const ASSETS = [
   "./fairway/js/shared-rtc.js",
   "./fairway/js/shared-boot.js",
   "./fairway/js/courses.js",
+  "./fairway/js/scoring-boot.js",
+  "./fairway/js/scoring.js",
+  "./fairway/js/rounds-boot.js",
+  "./fairway/js/rounds.js",
   "./fairway/css/fairway.css"
 ];
 
