@@ -156,7 +156,7 @@ HTTP obligatorio para el service worker. Pages usa `.nojekyll`.
 
 ## Fairway 5.x
 
-No está publicada y no está en Pages. No hay tag `v5.0.0`. `APP_VERSION` sigue en `4.2.6` en `main` y en los borradores de abajo. En el repo no hay capturas ni vídeos de 5.x.
+No está publicada y no está en Pages. No hay tag `v5.0.0`. `APP_VERSION` sigue en `4.2.6` en `main` y en los borradores de abajo. Las capturas de más abajo son de esos borradores en Cursor: la cabecera que se ve dice 4.2.6. No son una 5.0 publicada.
 
 En `main`, `docs/fairway-5.0/` es la nota de la 4.2.6, no un producto nuevo: [`BASELINE.md`](docs/fairway-5.0/BASELINE.md) congela el commit de la release (`6ceef03`), [`AUDIT.md`](docs/fairway-5.0/AUDIT.md) es la auditoría de ese árbol, [`ADR-001.md`](docs/fairway-5.0/ADR-001.md) es el orden de la sala que el `56a2662` dejó en el código. El 3 oct 2026 el PR #57 quedó en `main` con ese commit. El mensaje dice «Fairway 5.0 baseline». La cabecera, el manifiesto y `APP_VERSION` no pasaron de 4.2.6. La release publicada sigue siendo [v4.2.6](https://github.com/ardu01/app-golf/releases/tag/v4.2.6) (29 sep 2026).
 
@@ -168,6 +168,44 @@ Lo que hay sin fusionar es el corte del `index.html` único. Sin bundler, sin Re
 - [PR #62](https://github.com/ardu01/app-golf/pull/62) (`cursor/courses-css-split-6b38`, encima del #61). El catálogo (`let COURSES`, 54 campos) pasa a `fairway/js/courses.js`, script clásico, no módulo. `index.html` sigue filtrando `club-ejemplo-norte`. El CSS pasa a `fairway/css/fairway.css` y el `<head>` lo enlaza. El shell sigue `fairway-v4-426`; el precache añade esos dos archivos.
 - [PR #63](https://github.com/ardu01/app-golf/pull/63) (`cursor/course-hole-preload-1422`, encima del #62). Al empezar la ronda precarga como mucho 18 planos de ese campo, no todo `holes/`. `icons/escorial-monasterio.png` sale del precache y solo se pide al pintar la placa de La Herrería. Sigue sin fusionar.
 - [PR #58](https://github.com/ardu01/app-golf/pull/58) (`cursor/fairway-data-guard-9c4b`). Borrador anterior, basado en `6ceef03` (la 4.2.6 del 29 sep, antes del #57). No está en la pila 60–63. La fusión de Drive une hoyo a hoyo en vez de sustituir la partida por el sello. Si la ronda local está protegida o hay pantalla de juego, no escribe `fairway.host.v1`. Una clave local en blanco no borra la copia de IndexedDB. `APP_VERSION` sigue en 4.2.6.
+
+El marcador (PR #60) y las rondas (PR #61) no dejaron captura ni vídeo en Cursor. Las fotos de 4.0.x que ya están más arriba no son esos dos borradores.
+
+### Borrador de catálogo y CSS (PR #62)
+
+Siguen en 4.2.6. Los archivos están en `docs/recorrido/cursor/`.
+
+Inicio del borrador. La cabecera dice 4.2.6. «Buenas noches, Ana», ronda en curso en La Herrería (hoyo 18), Continuar, Ajustes, Cerrar ronda, y el campo del código de la partida compartida.
+
+<img src="docs/recorrido/cursor/home_la_herreria.png" alt="Inicio 4.2.6, La Herrería, partida compartida" width="200">
+
+Paso Campo. La Herrería está seleccionada, Centro Nacional de Golf queda encima, y Siguiente está abajo.
+
+<img src="docs/recorrido/cursor/course_list.png" alt="Lista de campos, La Herrería seleccionada" width="200">
+
+Tarjeta bruta de La Herrería, 18 hoyos, tee Amarillas. La ida va al par: OUT 35, TOT 71, course handicap 13.
+
+<img src="docs/recorrido/cursor/scorecard_la_herreria.png" alt="Tarjeta bruta, La Herrería, 71" width="200">
+
+[De la lista de campos a la tarjeta](docs/recorrido/cursor/course_list_and_scorecard.mp4). El paseo de ese paso Campo (La Herrería elegida) hasta la tarjeta bruta de La Herrería. En los tramos que se ven, la lista y luego la tarjeta con OUT 35 y TOT 71.
+
+### Borrador de precarga del plano (PR #63)
+
+Chrome de escritorio en `127.0.0.1`. Sigue siendo la 4.2.6. Al empezar se abre el plano de un solo campo, no el de todos.
+
+Inicio sin nombre todavía. La cabecera dice 4.2.6. La Herrería figura como tu campo. La partida compartida ofrece Crear código y Unirme.
+
+<img src="docs/recorrido/cursor/home_version_4_2_6.webp" alt="Inicio 4.2.6 en el escritorio" width="280">
+
+El mismo escritorio, paso Campo, con Centro Nacional de Golf seleccionado.
+
+<img src="docs/recorrido/cursor/course_centro_nacional.webp" alt="Centro Nacional de Golf seleccionado" width="280">
+
+Hoyo 1 de Centro Nacional dentro de la app: par 5, 476 m, y las yardas escritas en el plano.
+
+<img src="docs/recorrido/cursor/hole_map_centro_nacional.webp" alt="Plano del hoyo 1 de Centro Nacional" width="280">
+
+[Empezar la ronda y abrir el plano](docs/recorrido/cursor/start_round_centro_nacional_map.mp4). Arranca en el paso Campo con Centro Nacional seleccionado y llega al plano del hoyo 1 (par 5, 476 m).
 
 ## Capturas y vídeos que no estaban arriba
 
