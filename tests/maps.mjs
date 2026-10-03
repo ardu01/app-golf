@@ -1,11 +1,14 @@
 import assert from "assert";
 import { readFileSync, readdirSync, existsSync, statSync } from "fs";
 import { join } from "path";
-import { readApp } from "./extract.mjs";
+import { extractFunction, readApp } from "./extract.mjs";
 
 const root = new URL("..", import.meta.url);
 const html = readApp();
-const courses = JSON.parse(html.match(/let COURSES = (\[.*?\]);/)[1]);
+const coursesSrc = readFileSync(new URL("../fairway/js/courses.js", import.meta.url), "utf8");
+const courses = JSON.parse(coursesSrc.match(/let COURSES = (\[.*?\]);/)[1]);
+assert.ok(html.includes('src="fairway/js/courses.js"'));
+assert.ok(!html.includes("let COURSES = ["));
 const block = html.match(/const HOLE_MAP_COURSES = Object\.freeze\(\{([\s\S]*?)\}\);/)[1];
 const entries = [...block.matchAll(/"([^"]+)": \{ dir: "([^"]+)"(,\s*overviewOnly:\s*true)?/g)];
 
@@ -81,6 +84,8 @@ assert.ok(existsSync(new URL("holes/forus-las-rejas-pares-3/overview.webp", root
 
 const sw = readFileSync(new URL("../sw.js", import.meta.url), "utf8");
 assert.ok(sw.includes('const SHELL = "fairway-v4-426"'));
+assert.ok(sw.includes("./fairway/js/courses.js"));
+assert.ok(sw.includes("./fairway/css/fairway.css"));
 assert.ok(sw.includes("escorial-monasterio.png"));
 assert.ok(existsSync(new URL("icons/escorial-monasterio.png", root)));
 assert.ok(sw.includes('const MAPS = "fairway-maps-v1"'));
@@ -88,5 +93,80 @@ assert.ok(sw.includes("MAPS_MAX = 120"));
 const installPart = sw.split("activate")[0];
 assert.ok(!installPart.includes("skipWaiting"));
 assert.ok(sw.includes("migrateHoleMaps"));
+const assetsBlock = sw.slice(sw.indexOf("const ASSETS"), sw.indexOf("];", sw.indexOf("const ASSETS")) + 2);
+assert.ok(!assetsBlock.includes("escorial-monasterio.png"));
+assert.ok(!/^\s*loadEscorialMonastery\(\);\s*$/m.test(html));
+const escorialCalls = html.match(/loadEscorialMonastery\s*\(/g) || [];
+assert.strictEqual(escorialCalls.length, 3);
+const shareOne = extractFunction(html, "shareWinnerPlaque");
+const shareAll = extractFunction(html, "shareAllWinnerPlaques");
+assert.ok(shareOne.indexOf("await loadEscorialMonastery()") < shareOne.indexOf("drawWinnerPlaque("));
+assert.ok(shareOne.includes("plaqueIsHerreria(meta)"));
+assert.ok(shareAll.indexOf("await loadEscorialMonastery()") < shareAll.indexOf("drawWinnerPlaquesSheet("));
+assert.ok(shareAll.includes("plaqueIsHerreria(meta)"));
+
+const setupNext = extractFunction(html, "setupNext");
+const savedAt = setupNext.indexOf("persistActiveRound()");
+const preloadAt = setupNext.indexOf("preloadCourseHoleMaps(state.setup && state.setup.courseId)");
+const goAt = setupNext.lastIndexOf('go("hole")');
+assert.ok(savedAt > 0 && preloadAt > savedAt && goAt > preloadAt);
+assert.ok(!extractFunction(html, "setupStart").includes("preloadCourseHoleMaps"));
+
+const created = [];
+globalThis.Image = class HolePreloadImage {
+  set src(value) { created.push(value); this._src = value; }
+  get src() { return this._src; }
+};
+const preloadCourseHoleMaps = new Function(
+  html.match(/const HOLE_MAP_COURSES = Object\.freeze\(\{[\s\S]*?\}\);/)[0] + "\n" +
+  extractFunction(html, "holeMapConfig") + "\n" +
+  extractFunction(html, "holeMapRequestUrl") + "\n" +
+  extractFunction(html, "courseHolePreloadList") + "\n" +
+  extractFunction(html, "preloadCourseHoleMaps") + "\n" +
+  "return preloadCourseHoleMaps;"
+)();
+
+function assertCourseOnly(id, urls) {
+  assert.ok(urls.length > 0 && urls.length <= 18, id + " " + urls.length);
+  assert.ok(urls.every(u => u.startsWith("holes/" + id + "/")), id);
+  assert.ok(!urls.some(u => u.includes("manifest")), id);
+  const others = urls.filter(u => !u.startsWith("holes/" + id + "/"));
+  assert.deepStrictEqual(others, []);
+}
+
+created.length = 0;
+const herreria = preloadCourseHoleMaps("la-herreria");
+assert.strictEqual(herreria.length, 18);
+assertCourseOnly("la-herreria", herreria);
+assert.deepStrictEqual(created, herreria);
+assert.ok(herreria.every(u => /\/\d{2}\.webp\?v=3$/.test(u)));
+assert.ok(!herreria.some(u => u.includes("overview")));
+
+created.length = 0;
+const cng = preloadCourseHoleMaps("centro-nacional-de-golf");
+assertCourseOnly("centro-nacional-de-golf", cng);
+assert.strictEqual(cng.length, 18);
+assert.ok(!cng.some(u => u.includes("la-herreria") || u.includes("overview")));
+assert.deepStrictEqual(created, cng);
+
+created.length = 0;
+const overviewUrls = preloadCourseHoleMaps("forus-las-rejas-pares-3");
+assert.deepStrictEqual(overviewUrls, ["holes/forus-las-rejas-pares-3/overview.webp?v=3"]);
+assert.deepStrictEqual(created, overviewUrls);
+
+created.length = 0;
+assert.deepStrictEqual(preloadCourseHoleMaps("villa-el-escorial"), []);
+assert.deepStrictEqual(created, []);
+assert.deepStrictEqual(preloadCourseHoleMaps(""), []);
+
+for (const [, id] of entries) {
+  created.length = 0;
+  const urls = preloadCourseHoleMaps(id);
+  assertCourseOnly(id, urls);
+  assert.deepStrictEqual(created, urls);
+  assert.ok(urls.every(u => u.indexOf("holes/") === 0 && u.split("/").length === 3), id);
+}
+
+delete globalThis.Image;
 
 console.log("maps ok", { courses: courses.length, perHole, overview, images });

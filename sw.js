@@ -9,7 +9,6 @@ const ASSETS = [
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./icons/apple-touch-icon.png",
-  "./icons/escorial-monasterio.png",
   "./fairway/js/keys.js",
   "./fairway/js/persistence.js",
   "./fairway/js/idb.js",
@@ -17,7 +16,9 @@ const ASSETS = [
   "./fairway/js/shared-round.js",
   "./fairway/js/shared-mail.js",
   "./fairway/js/shared-rtc.js",
-  "./fairway/js/shared-boot.js"
+  "./fairway/js/shared-boot.js",
+  "./fairway/js/courses.js",
+  "./fairway/css/fairway.css"
 ];
 
 function isMapUrl(url) {
@@ -29,11 +30,13 @@ function isShellUrl(url) {
   const file = url.pathname.split("/").pop();
   if (!file) return true;
   if (url.pathname.indexOf("/fairway/js/") !== -1 && /\.js$/.test(file)) return true;
+  if (url.pathname.indexOf("/fairway/css/") !== -1 && /\.css$/.test(file)) return true;
   return file === "index.html"
     || file === "manifest.webmanifest"
     || file === "icon-192.png"
     || file === "icon-512.png"
     || file === "apple-touch-icon.png"
+    // Not precached. Fetched only when the La Herrería plaque is drawn.
     || file === "escorial-monasterio.png";
 }
 
