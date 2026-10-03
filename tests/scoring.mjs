@@ -1,7 +1,8 @@
 import assert from "assert";
-import { readApp, loadFunctions } from "./extract.mjs";
+import { readFileSync } from "fs";
+import { bindScoringScope } from "../fairway/js/scoring.js";
+import { APP_VERSION } from "../fairway/js/keys.js";
 
-const html = readApp();
 const state = { setup: { holes: 18, tee: "Amarillas", players: [true, true] } };
 const FX = { tee: "Amarillas" };
 const holes18 = Array.from({ length: 18 }, (_, i) => ({
@@ -16,20 +17,7 @@ const scope = {
   PLAYERS: [],
   getSelectedCourse: () => null
 };
-const api = loadFunctions(html, [
-  "stablefordHole",
-  "holesInRound",
-  "scaleHandicapForRound",
-  "resolveSetupTee",
-  "courseHandicapFor",
-  "playerCourseHcp",
-  "relativeStrokeIndex",
-  "strokesOnHole",
-  "modeRankCmp",
-  "modeTie",
-  "activePlayers",
-  "plaqueIsHerreria"
-], scope);
+const api = bindScoringScope(scope);
 
 const course = {
   id: "test",
@@ -147,5 +135,92 @@ assert.strictEqual(api.plaqueIsHerreria({ courseId: "la-herreria" }), true);
 assert.strictEqual(api.plaqueIsHerreria({ club: "La Herrería" }), true);
 assert.strictEqual(api.plaqueIsHerreria({ courseId: "las-rozas", club: "Las Rozas" }), false);
 assert.strictEqual(api.plaqueIsHerreria({ club: "CD Militar La Dehesa" }), false);
+
+// gross / net / sf / thru. pickWinner no los calcula: elige una fila.
+// liveStandings usa playerCourseHcp, que se queda con ch y no reescala el slope.
+// HI 10, slope 125, CR 71.5, par 72 → CH 11. En 9 hoyos ese CH escala a 6.
+function card(id, name, ch, scores) {
+  return {
+    id, name, initials: name.slice(0, 1), withdrawn: false,
+    ch, ph: ch, scores, putts: {}
+  };
+}
+function rowOf(player, holes) {
+  scope.PLAYERS.length = 0;
+  scope.PLAYERS.push(player);
+  state.setup.players = [true];
+  state.setup.holes = holes;
+  state.setup.modalities = [];
+  const { rows } = api.liveStandings();
+  if (rows.length !== 1) throw new Error("se esperaba una sola fila");
+  return rows[0];
+}
+
+const allPar18 = {};
+for (let i = 1; i <= 18; i++) allPar18[i] = 4;
+const r18 = rowOf(card("ana", "Ana", 11, allPar18), 18);
+assert.strictEqual(r18.gross, 72);
+assert.strictEqual(r18.net, 61);
+assert.strictEqual(r18.sf, 47);
+assert.strictEqual(r18.thru, 18);
+assert.strictEqual(r18.strokesUsed, 11);
+assert.strictEqual(api.pickWinner([r18], "net", true), r18);
+
+const allPar9 = {};
+for (let i = 1; i <= 9; i++) allPar9[i] = 4;
+const r9 = rowOf(card("ana", "Ana", 6, allPar9), 9);
+assert.strictEqual(r9.gross, 36);
+assert.strictEqual(r9.net, 30);
+assert.strictEqual(r9.sf, 24);
+assert.strictEqual(r9.thru, 9);
+
+const rPart = rowOf(card("ana", "Ana", 11, { 1: 4, 2: 5, 4: 3 }), 18);
+assert.strictEqual(rPart.gross, 12);
+assert.strictEqual(rPart.net, 9);
+assert.strictEqual(rPart.sf, 9);
+assert.strictEqual(rPart.thru, 4);
+
+const totalsPlayer = card("ana", "Ana", 11, {});
+totalsPlayer.totalsGross = 90;
+const totals = rowOf(totalsPlayer, 18);
+assert.strictEqual(totals.gross, 90);
+assert.strictEqual(totals.net, 79);
+assert.strictEqual(totals.sf, 0);
+assert.strictEqual(totals.thru, 18);
+assert.strictEqual(totals.strokesUsed, 11);
+
+// HI 10, slope 113, CR 71.5, tee par 71 → raw 10.5 → 11.
+// HI -1.5, slope 113, CR 72, par 72 → raw -1.5 → -1.
+// A course that is already 9 holes does not halve CH.
+assert.strictEqual(api.courseHandicapFor({ hcp: 10 }, {
+  course: { par: 71, holes: holes18, tees: [{ name: "Amarillas", slope: 113, cr: 71.5, par: 71 }] },
+  tee: "Amarillas",
+  holes: 18
+}), 11);
+assert.strictEqual(api.courseHandicapFor({ hcp: -1.5 }, {
+  course: { par: 72, holes: holes18, tees: [{ name: "Amarillas", slope: 113, cr: 72, par: 72 }] },
+  tee: "Amarillas",
+  holes: 18
+}), -1);
+assert.strictEqual(api.courseHandicapFor({ hcp: 10 }, {
+  course: { par: 36, holes: holes18.slice(0, 9), tees: [{ name: "Amarillas", slope: 113, cr: 71.5, par: 71 }] },
+  tee: "Amarillas",
+  holes: 9
+}), 11);
+
+// Replacing the hole list is visible. The page assigns HOLES when the tee changes.
+scope.HOLES = [{ n: 1, par: 5, hcp: 1 }, { n: 2, par: 3, hcp: 2 }];
+assert.strictEqual(api.playerParPlayed({ scores: { 1: 4 } }, 2), 5);
+scope.HOLES = holes18;
+
+const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+assert.strictEqual(APP_VERSION, "4.2.6");
+assert.ok(html.includes('appVersion: "4.2.6"'));
+assert.ok(html.includes("function go(name)"));
+assert.ok(html.includes("function setScore(idx, v)"));
+assert.ok(html.includes('src="fairway/js/scoring-boot.js"'));
+assert.ok(!/function\s+liveStandings\s*\(/.test(html));
+assert.ok(!/function\s+courseHandicapFor\s*\(/.test(html));
+assert.ok(!/function\s+stablefordHole\s*\(/.test(html));
 
 console.log("scoring ok");
