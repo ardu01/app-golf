@@ -1,9 +1,11 @@
 import assert from "assert";
 import { readFileSync } from "fs";
 import { readApp, extractFunction } from "./extract.mjs";
+import { bindRoundsScope } from "../fairway/js/rounds.js";
 
 const html = readApp();
 const sw = readFileSync(new URL("../sw.js", import.meta.url), "utf8");
+const roundsSrc = readFileSync(new URL("../fairway/js/rounds.js", import.meta.url), "utf8");
 
 for (const block of html.matchAll(/<script>([\s\S]*?)<\/script>/g)) {
   new Function(block[1]);
@@ -16,10 +18,14 @@ assert.ok(!html.includes('appVersion: "3.0.2"'));
 assert.ok(!html.includes('appVersion: "3.0.0"'));
 assert.ok(sw.includes('const SHELL = "fairway-v4-426"'));
 assert.ok(!sw.includes("fairway-v4-400a"));
-assert.ok(html.includes("pagehide"));
-assert.ok(html.includes("visibilitychange"));
-assert.ok(html.includes('document.addEventListener("freeze"'));
-assert.ok(html.includes("beforeunload"));
+assert.ok(roundsSrc.includes("pagehide"));
+assert.ok(roundsSrc.includes("visibilitychange"));
+assert.ok(roundsSrc.includes('document.addEventListener("freeze"'));
+assert.ok(roundsSrc.includes("beforeunload"));
+assert.ok(html.includes('src="fairway/js/rounds-boot.js"'));
+assert.ok(!/function\s+persistActiveRound\s*\(/.test(html));
+assert.ok(!/function\s+loadRounds\s*\(/.test(html));
+assert.ok(!/function\s+reopenRound\s*\(/.test(html));
 assert.ok(html.includes("data-recover-backup"));
 assert.ok(html.includes("Recuperar copia local"));
 assert.ok(html.includes("flushActiveRoundForLifecycle"));
@@ -32,52 +38,26 @@ assert.ok(setupNext.includes("persistActiveRound"));
 const setupStart = extractFunction(html, "setupStart");
 assert.ok(setupStart.indexOf("persistActiveRound") < setupStart.indexOf("_newRoundArmed = true"));
 
-const names = [
-  "playerHasMarks",
-  "inspectActiveRaw",
-  "inspectActiveKey",
-  "noteActiveStorageError",
-  "flushActiveStorageError",
-  "storageSetItem",
-  "activeBackupNeedsRecovery",
-  "roundWouldBeReplaced",
-  "localActiveRoundIsProtected",
-  "snapshotPlayers",
-  "persistActiveRound",
-  "applyActivePayload",
-  "restoreActiveRound",
-  "recoverActiveRoundFromBackup",
-  "isRoundInProgress",
-  "hasStoredActiveRound",
-  "flushActiveRoundForLifecycle"
-];
-
 function load(scope) {
-  const code = names.map(n => extractFunction(html, n)).join("\n");
-  const fn = new Function("scope", [
-    "var state = scope.state;",
-    "var PLAYERS = scope.PLAYERS;",
-    "var localStorage = scope.localStorage;",
-    "var toasts = scope.toasts;",
-    "var touches = scope.touches;",
-    "var ACTIVE_KEY = 'fairway.activeRound.v1';",
-    "var ACTIVE_BAK_KEY = 'fairway.activeRound.bak.v1';",
-    "var _activeStorageError = '';",
-    "var CLUB = 'Fairway';",
-    "var COURSES = [];",
-    "var FX = { tee: 'Amarillas' };",
-    "var HOLES = [];",
-    "function getSelectedCourse() { return null; }",
-    "function refreshPlayerHandicaps() {}",
-    "function updateClubCalls() {}",
-    "function touchDataUpdated() { touches.n++; return ''; }",
-    "function queueDriveSync() {}",
-    "function showToast(msg) { toasts.push(msg); }",
-    "function holesForTee() { return []; }",
-    code,
-    "return { " + names.join(",") + " };"
-  ].join("\n"));
-  return fn(scope);
+  return bindRoundsScope({
+    get state() { return scope.state; },
+    get PLAYERS() { return scope.PLAYERS; },
+    get HOLES() { return scope.HOLES || []; },
+    set HOLES(v) { scope.HOLES = v; },
+    get FX() { return scope.FX || { tee: "Amarillas" }; },
+    get CLUB() { return "Fairway"; },
+    set CLUB(v) {},
+    get COURSES() { return []; },
+    get localStorage() { return scope.localStorage; },
+    showToast(msg) { scope.toasts.push(msg); },
+    touchDataUpdated() { scope.touches.n++; return ""; },
+    queueDriveSync() {},
+    getSelectedCourse() { return null; },
+    refreshPlayerHandicaps() {},
+    updateClubCalls() {},
+    updateHomeThru() {},
+    holesForTee() { return []; }
+  });
 }
 
 function memoryStorage(mode) {
@@ -329,29 +309,32 @@ function runFinishEarly(answers, inProgress) {
 }
 
 function loadClose(scope) {
-  const names = ["readRoundList", "loadRounds", "saveRounds", "clearActiveRound", "endActiveRoundMemory", "persistCompletedRound"];
-  const code = names.map(n => extractFunction(html, n)).join("\n");
-  const fn = new Function("scope", [
-    "var state = scope.state;",
-    "var PLAYERS = scope.PLAYERS;",
-    "var localStorage = scope.localStorage;",
-    "var toasts = scope.toasts;",
-    "var touches = scope.touches;",
-    "var ACTIVE_KEY = 'fairway.activeRound.v1';",
-    "var ACTIVE_BAK_KEY = 'fairway.activeRound.bak.v1';",
-    "var ROUNDS_KEY = 'fairway.rounds.v1';",
-    "var ROUNDS_BAK_KEY = 'fairway.rounds.bak.v1';",
-    "var ROUNDS_MAX = 99999;",
-    "var _roundsUnreadable = false;",
-    "function touchDataUpdated() { touches.n++; return ''; }",
-    "function queueDriveSync() {}",
-    "function showToast(msg) { toasts.push(msg); }",
-    "function liveStandings() { return { rows: [{ thru: 1 }] }; }",
-    "function buildRoundRecord() { return { id: 'r-close', dateISO: '2026-10-03', date: '3 oct 2026', players: [{ id: 'me', scores: { 1: 5 } }] }; }",
-    code,
-    "return { " + names.join(",") + " };"
-  ].join("\n"));
-  return fn(scope);
+  if (!scope.state.setup) {
+    scope.state.setup = { courseId: "x", tee: "Amarillas", holes: 18, modalities: [], players: [true] };
+  }
+  return bindRoundsScope({
+    get state() { return scope.state; },
+    get PLAYERS() { return scope.PLAYERS; },
+    get HOLES() { return scope.HOLES || []; },
+    set HOLES(v) { scope.HOLES = v; },
+    get FX() { return scope.FX || { tee: "Amarillas" }; },
+    get CLUB() { return "Fairway"; },
+    set CLUB(v) {},
+    get COURSES() { return []; },
+    get localStorage() { return scope.localStorage; },
+    showToast(msg) { scope.toasts.push(msg); },
+    touchDataUpdated() { scope.touches.n++; return ""; },
+    queueDriveSync() {},
+    getSelectedCourse() { return null; },
+    refreshPlayerHandicaps() {},
+    updateClubCalls() {},
+    updateHomeThru() {},
+    liveStandings() { return { rows: [{ thru: 1, me: true, name: "Miguel", p: { id: "me" }, gross: 5, net: 4, toPar: 1, sf: 2, ch: 12 }], mods: [] }; },
+    creativeEnabled() { return false; },
+    countMarkedHoles() { return 1; },
+    roundLayoutLabel() { return "18 hoyos"; },
+    holesForTee() { return []; }
+  });
 }
 
 function closeStorage(blockRounds) {
@@ -390,12 +373,13 @@ function closeStorage(blockRounds) {
   assert.ok(storage.getItem("fairway.activeRound.bak.v1"));
   assert.strictEqual(scope.PLAYERS[0].scores[1], 5);
   storage.blockRounds = false;
-  assert.strictEqual(scope.api.persistCompletedRound(), "r-close");
-  assert.strictEqual(scope.state._roundSaved, "r-close");
+  const savedId = scope.api.persistCompletedRound();
+  assert.ok(savedId);
+  assert.strictEqual(scope.state._roundSaved, savedId);
   assert.strictEqual(storage.getItem("fairway.activeRound.v1"), null);
   assert.strictEqual(storage.getItem("fairway.activeRound.bak.v1"), null);
   const history = JSON.parse(storage.getItem("fairway.rounds.v1"));
-  assert.strictEqual(history[0].id, "r-close");
+  assert.strictEqual(history[0].id, savedId);
 }
 
 {

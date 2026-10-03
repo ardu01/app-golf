@@ -437,7 +437,7 @@ assert.ok(!boot.includes("Drive"));
 assert.ok(!boot.includes("MQTT"));
 assert.ok(!boot.includes("IndexedDB"));
 assert.ok(html.includes('id="sharedRoundHome"'));
-assert.ok(html.includes("fairwaySharedAfterPersist"));
+assert.ok(readFileSync(new URL("../fairway/js/rounds.js", import.meta.url), "utf8").includes("fairwaySharedAfterPersist"));
 assert.ok(html.includes("fairway/js/shared-boot.js"));
 assert.ok(html.includes('aria-label="Versión">4.2.6</span>'));
 assert.ok(html.includes("#screen-home .home-hero > #sharedRoundHome"));

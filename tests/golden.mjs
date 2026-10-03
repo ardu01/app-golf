@@ -1,8 +1,11 @@
 import assert from "assert";
+import { readFileSync } from "fs";
 import { readApp, extractFunction } from "./extract.mjs";
 import { bindScoringScope } from "../fairway/js/scoring.js";
+import { bindRoundsScope } from "../fairway/js/rounds.js";
 
 const html = readApp();
+const roundsSrc = readFileSync(new URL("../fairway/js/rounds.js", import.meta.url), "utf8");
 
 const names = [
   "clampHcp",
@@ -157,6 +160,24 @@ const scoringNames = [
   "liveStandings"
 ];
 
+const roundsNames = [
+  "snapshotPlayers",
+  "formatRoundDate",
+  "buildRoundRecord",
+  "readRoundList",
+  "loadRounds",
+  "saveRounds",
+  "playerHasMarks",
+  "inspectActiveRaw",
+  "inspectActiveKey",
+  "isRoundInProgress",
+  "clearActiveRound",
+  "endActiveRoundMemory",
+  "persistCompletedRound",
+  "getRoundById",
+  "reopenRound"
+];
+
 function load(scope) {
   const scoringApi = bindScoringScope({
     get state() { return scope.state; },
@@ -168,7 +189,9 @@ function load(scope) {
       return courses.find(function (c) { return c.id === scope.state.setup.courseId; }) || courses[0];
     }
   });
-  const htmlNames = names.filter(function (n) { return scoringNames.indexOf(n) === -1; });
+  const htmlNames = names.filter(function (n) {
+    return scoringNames.indexOf(n) === -1 && roundsNames.indexOf(n) === -1;
+  });
   const code = htmlNames.map(n => extractFunction(html, n)).join("\n");
   const roundsMax = html.match(/const ROUNDS_MAX = (\d+);/);
   const aliases = scoringNames.map(function (n) { return "var " + n + " = scoringApi." + n + ";"; }).join("\n");
@@ -181,12 +204,7 @@ function load(scope) {
     "var CLUB = 'Fairway';",
     "var localStorage = scope.localStorage;",
     "var toasts = scope.toasts;",
-    "var ACTIVE_KEY = 'fairway.activeRound.v1';",
-    "var ACTIVE_BAK_KEY = 'fairway.activeRound.bak.v1';",
-    "var ROUNDS_KEY = 'fairway.rounds.v1';",
-    "var ROUNDS_BAK_KEY = 'fairway.rounds.bak.v1';",
     "var ROUNDS_MAX = " + (roundsMax ? roundsMax[1] : "99999") + ";",
-    "var _roundsUnreadable = false;",
     "var document = { getElementById: function () { return null; }, querySelector: function () { return null; }, querySelectorAll: function () { return []; } };",
     "function getSelectedCourse() { return COURSES.find(function (c) { return c.id === state.setup.courseId; }) || COURSES[0]; }",
     "function showToast(msg) { toasts.push(msg); }",
@@ -194,13 +212,43 @@ function load(scope) {
     "function queueDriveSync() {}",
     "function updateHomeThru() {}",
     "function updateClubCalls() {}",
-    "function persistActiveRound() { return true; }",
     "function go() {}",
     aliases,
     code,
-    "return Object.assign({}, scoringApi, { " + htmlNames.join(",") + " });"
+    "return { " + htmlNames.join(",") + " };"
   ].join("\n"));
-  return fn(scope, scoringApi);
+  const htmlApi = fn(scope, scoringApi);
+  const roundsApi = bindRoundsScope({
+    get state() { return scope.state; },
+    get PLAYERS() { return scope.PLAYERS; },
+    get HOLES() { return scope.HOLES; },
+    set HOLES(v) { scope.HOLES = v; },
+    get FX() { return scope.FX; },
+    get CLUB() { return scope.CLUB || "Fairway"; },
+    set CLUB(v) { scope.CLUB = v; },
+    get COURSES() { return scope.COURSES; },
+    get localStorage() { return scope.localStorage; },
+    document: { getElementById: function () { return null; }, querySelector: function () { return null; }, querySelectorAll: function () { return []; } },
+    showToast(msg) { scope.toasts.push(msg); },
+    touchDataUpdated() { return ""; },
+    queueDriveSync() {},
+    updateHomeThru() {},
+    updateClubCalls() {},
+    getSelectedCourse() {
+      const courses = scope.COURSES || [];
+      return courses.find(function (c) { return c.id === scope.state.setup.courseId; }) || courses[0];
+    },
+    refreshPlayerHandicaps() { return htmlApi.refreshPlayerHandicaps(); },
+    holesForTee() { return htmlApi.holesForTee.apply(htmlApi, arguments); },
+    applyCourseData() { return htmlApi.applyCourseData.apply(htmlApi, arguments); },
+    guestInitials() { return htmlApi.guestInitials.apply(htmlApi, arguments); },
+    liveStandings() { return scoringApi.liveStandings(); },
+    countMarkedHoles() { return htmlApi.countMarkedHoles.apply(htmlApi, arguments); },
+    roundLayoutLabel() { return htmlApi.roundLayoutLabel(); },
+    creativeEnabled() { return htmlApi.creativeEnabled(); },
+    go() {}
+  });
+  return Object.assign({}, scoringApi, htmlApi, roundsApi);
 }
 
 scope.api = load(scope);
@@ -294,7 +342,7 @@ scope.localStorage.setItem("fairway.rounds.v1", JSON.stringify(checked.data.roun
 scope.state.setup.holes = 18;
 assert.strictEqual(api.reopenRound(savedId), true);
 assert.strictEqual(scope.state.setup.holes, 9);
-const reopenSrc = extractFunction(html, "reopenRound");
+const reopenSrc = extractFunction(roundsSrc, "reopenRound");
 const holesAt = reopenSrc.indexOf("holes: d.holes");
 const refreshAt = reopenSrc.indexOf("refreshPlayerHandicaps");
 assert.ok(holesAt > 0 && holesAt < refreshAt);

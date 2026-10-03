@@ -1,7 +1,9 @@
 import assert from "assert";
+import { readFileSync } from "fs";
 import { readApp, loadFunctions } from "./extract.mjs";
 
 const html = readApp();
+const roundsSrc = readFileSync(new URL("../fairway/js/rounds.js", import.meta.url), "utf8");
 const api = loadFunctions(html, [
   "clampHcp",
   "clipStr",
@@ -92,7 +94,8 @@ assert.ok(!html.includes("onclick=\"reopenRound('${d.id}'"));
 assert.ok(html.includes("data-open-detalle"));
 assert.ok(html.includes("data-round-action"));
 assert.ok(html.includes("const ROUNDS_MAX = 99999;"));
-assert.ok(html.includes("saveRounds(list.slice(0, ROUNDS_MAX))"));
+assert.ok(roundsSrc.includes("const ROUNDS_MAX = 99999;"));
+assert.ok(roundsSrc.includes("saveRounds(list.slice(0, ROUNDS_MAX))"));
 assert.ok(html.includes("data.rounds.length > ROUNDS_MAX"));
 assert.ok(html.includes(".slice(0, ROUNDS_MAX)"));
 assert.ok(!html.includes("saveRounds(list.slice(0, 50))"));
