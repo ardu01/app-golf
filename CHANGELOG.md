@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.0.0
+
+Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 4.2.6 siguen entrando.
+
+- La versión de producto es 5.0.0: cabecera, perfil, manifiesto y `appVersion` del JSON.
+- El service worker pasa a `fairway-v5-500`. No hace `skipWaiting` al instalar y no recarga con una ronda abierta.
+- Siguen las fórmulas de tanteo, el catálogo, la navegación, la partida compartida y Drive.
+
 ## 4.2.6
 
 Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 4.2.5 siguen entrando.

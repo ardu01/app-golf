@@ -109,6 +109,10 @@ History API: gesto atrás / botón Atrás cierra hoja de hoyo y pantallas dentro
 
 Ancla de historial en **Inicio** (intento inicial). Shell `fairway-v4-4131`. Media en [v4.1.3.1](https://github.com/ardu01/app-golf/releases/tag/v4.1.3.1).
 
+### 5.0.0
+
+La versión de producto pasa a 5.0.0 (cabecera, perfil, manifiesto y `appVersion`). El service worker es `fairway-v5-500`. No hace `skipWaiting` al instalar y no recarga con una ronda abierta. Esquema 3. Fórmulas, catálogo, navegación, partida compartida y Drive siguen igual.
+
 ### 4.2.6
 
 La ficha de la sala en Inicio deja 16px con la ronda. Dos móviles con el mismo código leen y escriben el mismo JSON público (`mantledb.sh`, sin clave). El MQTT de prueba sigue como aviso si Safari abre el socket; si no, la sala HTTPS converge igual. Drive no comparte la tarjeta entre cuentas. Quien entra vacío adopta la tarjeta del anfitrión. Shell `fairway-v4-426`. Esquema 3.
@@ -156,7 +160,7 @@ HTTP obligatorio para el service worker. Pages usa `.nojekyll`.
 
 ## Fairway 5.x
 
-No está publicada y no está en Pages. No hay tag `v5.0.0`. `APP_VERSION` sigue en `4.2.6` en `main` y en los borradores de abajo. Las capturas de más abajo son de esos borradores en Cursor: la cabecera que se ve dice 4.2.6. No son una 5.0 publicada.
+Este árbol lleva la versión de producto **5.0.0** (`APP_VERSION`, cabecera, perfil y manifiesto) y el shell `fairway-v5-500`. No hay tag `v5.0.0` ni GitHub Release. Las capturas de más abajo son de borradores anteriores en Cursor: la cabecera que se ve dice 4.2.6.
 
 En `main`, `docs/fairway-5.0/` es la nota de la 4.2.6, no un producto nuevo: [`BASELINE.md`](docs/fairway-5.0/BASELINE.md) congela el commit de la release (`6ceef03`), [`AUDIT.md`](docs/fairway-5.0/AUDIT.md) es la auditoría de ese árbol, [`ADR-001.md`](docs/fairway-5.0/ADR-001.md) es el orden de la sala que el `56a2662` dejó en el código. El 3 oct 2026 el PR #57 quedó en `main` con ese commit. El mensaje dice «Fairway 5.0 baseline». La cabecera, el manifiesto y `APP_VERSION` no pasaron de 4.2.6. La release publicada sigue siendo [v4.2.6](https://github.com/ardu01/app-golf/releases/tag/v4.2.6) (29 sep 2026).
 

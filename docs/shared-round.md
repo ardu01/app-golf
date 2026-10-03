@@ -1,6 +1,6 @@
 # Partida compartida
 
-Producto **4.2.6**. El esquema del JSON de copia sigue en **3**. Sin código, Fairway se juega como en la 4.2.4: el marcador lee la ronda de este móvil y no pregunta a nadie. El velo de Inicio de la 4.2.2 sigue. Deslizar la ficha selecciona al jugador, como en la 4.2.4.
+Producto **5.0.0**. El esquema del JSON de copia sigue en **3**. Sin código, Fairway se juega como en la 4.2.4: el marcador lee la ronda de este móvil y no pregunta a nadie. El velo de Inicio de la 4.2.2 sigue. Deslizar la ficha selecciona al jugador, como en la 4.2.4.
 
 En Inicio hay 16px entre la ronda y la ficha de la sala. No van pegadas.
 
