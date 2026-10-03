@@ -56,16 +56,16 @@ assert.strictEqual(gesture.moved, true);
 assert.strictEqual(api.carouselSwipeMarkGesture(null, 80), null);
 assert.strictEqual(api.carouselSwipeMarkGesture({ user: false, start: 0, moved: false }, 80).user, false);
 
-assert.strictEqual(APP_VERSION, "4.2.6");
+assert.strictEqual(APP_VERSION, "5.0.0");
 assert.strictEqual(BACKUP_SCHEMA, 3);
 assert.ok(html.includes('onclick="selectPlayer(${idx})"'));
 assert.ok(html.includes("function bindPlayerCarouselSwipe"));
 assert.ok(html.includes("bindPlayerCarouselSwipe()"));
 assert.ok(html.includes("fromSwipe: true, holdScroll: true"));
 assert.ok(html.includes('track.classList.toggle("solo", list.length === 1)'));
-assert.ok(html.includes('appVersion: "4.2.6"'));
+assert.ok(html.includes('appVersion: "5.0.0"'));
 assert.ok(html.includes("version: 3"));
 const sw = readFileSync(new URL("../sw.js", import.meta.url), "utf8");
-assert.ok(sw.includes('const SHELL = "fairway-v4-426"'));
+assert.ok(sw.includes('const SHELL = "fairway-v5-500"'));
 
 console.log("carousel ok");

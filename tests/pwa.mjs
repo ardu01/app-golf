@@ -44,7 +44,7 @@ assert.ok(swBoot.slice(activateAt, activateAt + 180).includes("holdUpdate()"));
 
 const shell = sw.match(/const SHELL = "([^"]+)"/);
 assert.ok(shell);
-assert.ok(/^fairway-v4-\d+$/.test(shell[1]));
+assert.ok(/^fairway-v5-\d+$/.test(shell[1]));
 const installPart = sw.split("activate")[0];
 assert.ok(!installPart.includes("skipWaiting"));
 assert.ok(sw.includes("fairway/js/persist-boot.js"));
