@@ -1,5 +1,15 @@
 # Changelog
 
+## 5.0.3
+
+Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 5.0.2 siguen entrando.
+
+- La lista del paso Campo y los paneles grandes usan `--glass-r-card` (16px). Las fichas de modalidad y los botones de golpe usan `--glass-r-chip` (12px). La hoja de invitar y la de elegir hoyo redondean arriba con `--glass-r-sheet` (20px).
+- La fila del campo elegido no pinta un aro inset cuadrado sobre la lista. La banda del borde sigue en 30px. El padding de Inicio sigue en `6px 32px 22px 32px`.
+- La versión de producto es 5.0.3: cabecera, perfil, manifiesto y `appVersion` del JSON.
+- El service worker pasa a `fairway-v5-503`. No hace `skipWaiting` al instalar y no recarga con una ronda abierta.
+- No hay release v5.0.3. La publicada es v5.0.2, el 2026-10-03T22:20:03Z, sobre `6ed665959f19e5eaebc80ee510e40ffe63e9a989`.
+
 ## 5.0.2
 
 Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 5.0.1 siguen entrando.
