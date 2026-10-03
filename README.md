@@ -6,6 +6,8 @@ PWA personal de golf para iPhone (Safari / pantalla de inicio): marcador offline
 **Copia de seguridad:** esquema JSON **3** (compatible a lo largo de 3.x / 4.x)  
 **Releases:** https://github.com/ardu01/app-golf/releases · [`CHANGELOG.md`](CHANGELOG.md)
 
+La release publicada sigue siendo [v4.2.6](https://github.com/ardu01/app-golf/releases/tag/v4.2.6) (29 sep 2026). `APP_VERSION` en `fairway/js/keys.js` es `4.2.6`. No hay tag ni release 5.0.0. Pages sirve `main`, que es esa 4.2.6 con el arreglo de sala del 3 oct 2026, no una 5.x.
+
 ---
 
 ## Fairway 3.x
@@ -22,38 +24,223 @@ La línea **3** consolida el producto como una sola app (`index.html`) pensada p
 
 ### Capturas y vídeos del núcleo (recorrido 3.x / base de partida)
 
-Setup y marcador:
+Estas fotos y clips están en `docs/recorrido/`. Son el recorrido de la app de esa época, no la 5.x.
+
+Inicio, con una ronda a medias (La Herrería, 3/18) y el botón de continuar. En esta captura la cabecera marca 4.0.11: es la piel de la línea 4 sobre el mismo flujo.
+
+<img src="docs/recorrido/partida/inicio.webp" alt="Inicio con ronda en curso" width="200">
+
+Lista de campos en el alta. Arriba el buscador; cada fila es un campo con su par.
 
 <img src="docs/recorrido/partida/campos.webp" alt="Lista de campos" width="200">
+
+Paso de tees. Cada salida enseña CR, Slope, par y metros. El punto negro es el tee elegido.
+
 <img src="docs/recorrido/partida/tees.webp" alt="Tees con CR y Slope" width="200">
+
+Jugadores de la partida. El hándicap de índice se edita en la fila; «Añadir jugador» abre otro.
+
 <img src="docs/recorrido/partida/jugadores.webp" alt="Jugadores" width="200">
 
+Marcador del hoyo, un dedo: golpes arriba, putts debajo, fichas de acceso (hoyos, árbitro, mapa) y el siguiente hoyo en negro.
+
 <img src="docs/recorrido/partida/marcador.webp" alt="Marcador del hoyo" width="200">
+
+Ajustes de la ronda abierta: campo, tee, hoyos y la bola de cada jugador. Abajo, cerrar la ronda.
+
+<img src="docs/recorrido/partida/ajustes.webp" alt="Ajustes de la ronda" width="200">
+
+La hoja de la bola, encima del marcador: se elige la bola del jugador que está en la ficha.
+
+<img src="docs/recorrido/partida/ajustes-bola.webp" alt="Hoja de la bola" width="200">
+
+Tarjeta bruta, hoyo a hoyo, con el color del resultado (birdie, par, bogey) y el total.
+
 <img src="docs/recorrido/partida/tarjeta-bruta.webp" alt="Tarjeta bruta" width="200">
+
+La misma tarjeta en neto: el punto del golpe recibido y la columna Net.
+
 <img src="docs/recorrido/partida/tarjeta-neta.webp" alt="Tarjeta neta" width="200">
+
+Clasificación de la vuelta. El segmento de arriba cambia la modalidad; el trofeo es el primero de esa lista.
+
 <img src="docs/recorrido/partida/clasificacion.webp" alt="Clasificación" width="200">
 
-Perfil, historial y stats:
+Al volver a Inicio con la ronda todavía abierta, la pastilla ofrece seguir o cerrar.
+
+<img src="docs/recorrido/partida/continuar.webp" alt="Continuar la ronda" width="200">
+
+Perfil: hándicap de índice, género y las acciones de la copia JSON (exportar, importar, borrar datos locales).
 
 <img src="docs/recorrido/partida/perfil.webp" alt="Perfil" width="200">
+
+Los tres iconos del perfil (exportar, importar, borrar) vistos de cerca.
+
+<img src="docs/recorrido/stats/perfil_iconos.png" alt="Iconos de la copia en el perfil" width="200">
+
+Historial de partidas guardadas. Cada fila es una vuelta; se puede volver a abrir.
+
 <img src="docs/recorrido/partida/historial.webp" alt="Historial" width="200">
+
+Reabrir una vuelta del historial: la hoja pide confirmar antes de cargar esa tarjeta.
+
+<img src="docs/recorrido/partida/reabrir.webp" alt="Reabrir una partida" width="200">
+
+Estadísticas con vueltas ya guardadas: bruto, neto, Stableford, putts, FIR y GIR, separados 18 y 9.
+
 <img src="docs/recorrido/stats/stats_con_vueltas.png" alt="Estadísticas" width="200">
+
+La misma pantalla de stats con el filtro de temporada (este año, el anterior, todas).
+
+<img src="docs/recorrido/stats/stats_temporada.png" alt="Estadísticas por temporada" width="200">
 
 Hándicap y árbitro:
 
+Tee del alta con CR y Slope a la vista. Es el dato que entra en el course handicap.
+
 <img src="docs/recorrido/handicap/tee-cr-slope.webp" alt="Tee CR Slope" width="200">
+
+Hoyo 1 de una vuelta de 18 con hándicap de campo 10. El punto junto al par es el golpe recibido en ese hoyo.
+
 <img src="docs/recorrido/handicap/hoyo-con-golpe.webp" alt="Hoyo con stroke" width="200">
+
+El hoyo 2 de la misma vuelta, sin punto: ahí no toca golpe.
+
+<img src="docs/recorrido/handicap/hoyo-sin-golpe.webp" alt="Hoyo sin stroke" width="200">
+
+La misma salida recortada a 9 hoyos. El hándicap de campo baja (en la captura, de 10 a 5) y el hoyo 1 sigue llevando golpe.
+
+<img src="docs/recorrido/handicap/9-hoyos-hoyo-1.webp" alt="Nueve hoyos, hoyo 1 con golpe" width="200">
+
+En 9 hoyos, un hoyo que en 18 recibía golpe puede quedarse sin él. La captura es el hoyo 2, par 4, sin punto.
+
+<img src="docs/recorrido/handicap/9-hoyos-sin-golpe.webp" alt="Nueve hoyos, hoyo sin golpe" width="200">
+
+El reparto de 9 no es «los hoyos 1 a 9». El golpe va al índice de dificultad relativo de esos nueve. Aquí el hoyo 6, el más fácil de ese tramo, lleva el punto.
+
+<img src="docs/recorrido/handicap/9-hoyos-golpe-relativo.webp" alt="Golpe en el índice relativo de nueve hoyos" width="200">
+
+Vuelta de 18 con course handicap 10, vista en el marcador: diez hoyos con punto y el resto sin él.
+
+<img src="docs/recorrido/handicap/18-hoyos-ch10.webp" alt="Dieciocho hoyos, course handicap 10" width="200">
+
+Árbitro, área de penalización roja: la pregunta del alivio y las opciones (un golpe, o jugarla como está).
+
 <img src="docs/recorrido/reglas/arbitro-area-roja.webp" alt="Árbitro" width="220">
 
-Vídeos:
+La ficha Árbitro en el marcador del hoyo, junto a Hoyos y Mapa. Árbitro abre esa pantalla.
 
-- [Elegir campo](docs/recorrido/videos/elegir-campo.mp4)
-- [Ajustes, tarjeta y continuar](docs/recorrido/videos/ajustes-tarjeta-continuar.mp4)
-- [Paseo por la interfaz](docs/recorrido/videos/recorrido-interfaz.mp4)
-- [Stats y perfil](docs/recorrido/videos/stats-perfil.mp4)
-- [Hándicap en nueve hoyos](docs/recorrido/videos/handicap-9-hoyos.mp4)
-- [Reglas](docs/recorrido/videos/reglas.mp4)
-- [Árbitro](docs/recorrido/videos/arbitro.mp4)
+<img src="docs/recorrido/reglas/boton-en-marcador.webp" alt="Ficha Árbitro en el marcador" width="200">
+
+El mismo acceso desde la clasificación: el botón Árbitro en la barra de arriba.
+
+<img src="docs/recorrido/reglas/boton-en-clasificacion.webp" alt="Botón Árbitro en la clasificación" width="200">
+
+Lista de modalidades. Stableford y Stroke Play van como oficiales; el resto, como juegos de la partida.
+
+<img src="docs/recorrido/reglas/todos-los-modos.webp" alt="Modalidades oficiales y sociales" width="200">
+
+Vídeos (el archivo está en el repo; GitHub lo abre como enlace):
+
+[Elegir campo](docs/recorrido/videos/elegir-campo.mp4). El alta en el paso Campo: la lista, el buscador y las filas con el par.
+
+[Ajustes, tarjeta y continuar](docs/recorrido/videos/ajustes-tarjeta-continuar.mp4). Ajustes de la ronda abierta (bola, cerrar), la tarjeta y seguir la vuelta.
+
+[Paseo por la interfaz](docs/recorrido/videos/recorrido-interfaz.mp4). Recorrido largo por las pantallas. En un tramo se ve la tarjeta bruta, con el color del score y el total.
+
+[Stats y perfil](docs/recorrido/videos/stats-perfil.mp4). Estadísticas y el perfil: hándicap de índice, género y los botones de exportar, importar y borrar la copia local.
+
+[Hándicap en nueve hoyos](docs/recorrido/videos/handicap-9-hoyos.mp4). Marcador de una vuelta de 9. El hándicap de campo es la mitad y el punto del golpe cae en el hoyo que toca dentro de esos nueve.
+
+[Reglas](docs/recorrido/videos/reglas.mp4). La lista de modalidades, con el texto de una de ellas abierto (en un tramo, Stableford).
+
+[Árbitro](docs/recorrido/videos/arbitro.mp4). La pantalla del árbitro. En un tramo pregunta por el alivio en área de penalización roja.
+
+### Mapas
+
+La ficha Mapa del hoyo sigue en la app publicada (la 4.2.3 la dejó; la 4.2.6 no la quita). Los planos que carga están en `holes/`. Las fotos de abajo son las de `docs/recorrido/mapas/`: unas son la ficha dentro de la app, otras el plano o la foto del hoyo.
+
+La Herrería, hoyo 1, dentro de la ficha Mapa: el plano del hoyo a pantalla, con Marcador para volver.
+
+<img src="docs/recorrido/mapas/la-herreria-hoyo-1.webp" alt="Mapa del hoyo 1 de La Herrería" width="200">
+
+Las Rozas, hoyo 1, la misma ficha. El vídeo de debajo recorre ese campo.
+
+<img src="docs/recorrido/mapas/las-rozas-hoyo-1.webp" alt="Mapa del hoyo 1 de Las Rozas en la app" width="200">
+
+[Mapas de Las Rozas](docs/recorrido/videos/mapas-las-rozas.mp4). La ficha Mapa del hoyo 1 (La Encina) y, en otro tramo, la tarjeta de esa vuelta.
+
+El Robledal, hoyo 1, ficha Mapa en la app. La cabecera de la captura es 4.0.11.
+
+<img src="docs/recorrido/mapas/robledal-en-la-app.webp" alt="El Robledal, mapa en la app" width="200">
+
+Foto del mismo hoyo 1, calle y green, aparte del plano.
+
+<img src="docs/recorrido/mapas/robledal-hoyo-1.webp" alt="Foto del hoyo 1 de El Robledal" width="280">
+
+Plano de trazo del Robledal, hoyo 1: salida, calle, green y la distancia de la barra de arriba.
+
+<img src="docs/recorrido/mapas/robledal-plano.png" alt="Plano del hoyo 1 de El Robledal" width="280">
+
+Golf Santander, ficha Mapa del hoyo 1 en la app.
+
+<img src="docs/recorrido/mapas/golf-santander-en-la-app.webp" alt="Golf Santander, mapa en la app" width="200">
+
+La foto de satélite de ese hoyo 1, la que la ficha enseña.
+
+<img src="docs/recorrido/mapas/golf-santander-satelite.webp" alt="Satélite del hoyo 1 de Golf Santander" width="280">
+
+Torrejón, hoyo 1, ficha Mapa en la app.
+
+<img src="docs/recorrido/mapas/torrejon-en-la-app.webp" alt="Torrejón, mapa en la app" width="200">
+
+Vista del hoyo 1 de Torrejón, green y bandera.
+
+<img src="docs/recorrido/mapas/torrejon-vista.webp" alt="Vista del hoyo 1 de Torrejón" width="280">
+
+RSHECC Norte, hoyo 1, ficha Mapa en la app.
+
+<img src="docs/recorrido/mapas/rshecc-norte-en-la-app.webp" alt="RSHECC Norte, mapa en la app" width="200">
+
+Foto aérea del hoyo 1 Norte.
+
+<img src="docs/recorrido/mapas/rshecc-norte-hoyo-1.webp" alt="Foto del hoyo 1 de RSHECC Norte" width="280">
+
+Plano del hoyo 1 Norte, con la distancia en el margen.
+
+<img src="docs/recorrido/mapas/rshecc-norte-plano.png" alt="Plano del hoyo 1 de RSHECC Norte" width="280">
+
+RSHECC Sur, foto del hoyo 1.
+
+<img src="docs/recorrido/mapas/rshecc-sur-hoyo-1.webp" alt="Foto del hoyo 1 de RSHECC Sur" width="280">
+
+Otra vista del Sur, calle hacia el green.
+
+<img src="docs/recorrido/mapas/rshecc-sur-vista.png" alt="Vista de un hoyo de RSHECC Sur" width="280">
+
+Aranjuez, hoyo 1: la foto de la calle y el plano de trazo al lado.
+
+<img src="docs/recorrido/mapas/aranjuez-hoyo-1.webp" alt="Foto del hoyo 1 de Aranjuez" width="280">
+
+<img src="docs/recorrido/mapas/aranjuez-hoyo-1-plano.webp" alt="Plano del hoyo 1 de Aranjuez" width="280">
+
+La Finca, hoyo 1: foto y plano.
+
+<img src="docs/recorrido/mapas/la-finca-hoyo-1.webp" alt="Foto del hoyo 1 de La Finca" width="280">
+
+<img src="docs/recorrido/mapas/la-finca-hoyo-1-plano.webp" alt="Plano del hoyo 1 de La Finca" width="280">
+
+El Encín, hoyo 1, foto aérea de la calle.
+
+<img src="docs/recorrido/mapas/el-encin-hoyo-1.webp" alt="Foto del hoyo 1 de El Encín" width="280">
+
+Hoja de referencia con el hoyo 1 de La Dehesa del Escorial (par, hándicap, metros por tee). No es una captura de la ficha Mapa.
+
+<img src="docs/recorrido/mapas/dehesa-escorial.png" alt="Hoyo 1 de La Dehesa del Escorial" width="280">
+
+Tres campos en una hoja: La Moraleja, Olivar de la Hinojosa y Torrejón. Tampoco es la ficha de la app.
+
+<img src="docs/recorrido/mapas/moraleja-olivar-torrejon.png" alt="La Moraleja, Olivar y Torrejón" width="280">
 
 ---
 
@@ -65,21 +252,23 @@ La línea **4** mantiene el mismo motor de partida y el mismo esquema de copia. 
 
 **4.1** — encima de esa piel: datos más robustos (espejo IndexedDB), Drive opcional, gestos atrás de iOS dentro de la app, y limpieza de funciones que no son de Fairway (bolsa / caddie digital).
 
-### Capturas y vídeo 4.1 (producción reciente)
+### Capturas y vídeo 4.1
 
-Inicio (versión en cabecera, CTA de partida, tab bar; service worker que no recarga con ronda abierta; en Inicio el historial se ancla para no salir de la PWA):
+Son de la 4.1, no de la app que Pages sirve hoy (esa es la 4.2.6).
+
+Inicio 4.1.2: versión en la cabecera, CTA de partida y la tab bar. El service worker no recarga con ronda abierta. En Inicio el historial se ancla para no salir de la PWA.
 
 <img src="docs/recorrido/4.1/inicio.png" alt="Inicio 4.1 — shell PWA" width="280">
 
-Perfil con copia JSON (esquema 3) y Google Drive (`drive.file`, token en memoria, `Fairway/fairway-data.json`):
+Perfil 4.1.2, con la copia JSON (esquema 3) y Google Drive conectado (`drive.file`, token en memoria, `Fairway/fairway-data.json`).
 
 <img src="docs/recorrido/4.1/perfil-drive.png" alt="Perfil — copia y Drive" width="280">
 
-Historial alimentado desde el dispositivo (localStorage + espejo IndexedDB):
+Historial 4.1.3, leído del dispositivo (localStorage + espejo IndexedDB). La fila es una vuelta ya cerrada.
 
 <img src="docs/recorrido/4.1/historial.png" alt="Historial" width="280">
 
-[Vídeo: Inicio → Perfil → Drive](docs/recorrido/4.1/tour-4.1.mp4)
+[Vídeo: Inicio → Perfil → Drive](docs/recorrido/4.1/tour-4.1.mp4). Arranca en Inicio 4.1.2 con una ronda en curso y pasa al perfil, donde Drive figura conectado y siguen exportar, importar y borrar la copia.
 
 ---
 
@@ -111,7 +300,9 @@ Ancla de historial en **Inicio** (intento inicial). Shell `fairway-v4-4131`. Med
 
 ### 4.2.6
 
-La ficha de la sala en Inicio deja 16px con la ronda. Dos móviles con el mismo código leen y escriben el mismo JSON público (`mantledb.sh`, sin clave). El MQTT de prueba sigue como aviso si Safari abre el socket; si no, la sala HTTPS converge igual. Drive no comparte la tarjeta entre cuentas. Quien entra vacío adopta la tarjeta del anfitrión. Shell `fairway-v4-426`. Esquema 3.
+La ficha de la sala en Inicio deja 16px con la ronda. Dos móviles con el mismo código leen y escriben el mismo JSON público (`https://mantledb.sh/v2/{código}/card`, sin clave). Quien entra vacío adopta campo, jugadores y golpes del anfitrión. Shell `fairway-v4-426`. Esquema 3. `APP_VERSION` sigue en 4.2.6. Es la release publicada.
+
+El 3 de octubre de 2026 el commit `56a2662` (PR #57, fusionado en `main`) no subió la versión y sí cambió la sala. El orden de cada campo es un `seq` de este móvil, con tope 1.000.000; si empatan, gana el `deviceId` mayor. Un sello de reloj, incluido uno cerca de `1e15`, no gana. El golpe sigue en la cola hasta que un GET posterior al PUT lo ve como ganador. El MQTT de `wss://test.mosquitto.org:8081/mqtt` solo despierta ese GET; no pinta la tarjeta. Si Safari no abre el socket, la sala HTTPS sigue. Drive no es la sala y no se da por sincronizado. Si al cerrar no se escribe el historial, la ronda sigue en el móvil.
 
 ### 4.2.5
 
@@ -135,10 +326,26 @@ Colchón de sentinels más robusto para iOS Safari/PWA en Inicio (`pushState` di
 
 ---
 
+## Fairway 5.x
+
+No está publicada y no está en Pages. No hay tag `v5.0.0`. `APP_VERSION` sigue en `4.2.6` en `main` y en los borradores de abajo. En el repo no hay capturas ni vídeos de 5.x: las de arriba son 3.x y 4.x.
+
+En `main`, `docs/fairway-5.0/` es la nota de la 4.2.6, no un producto nuevo: [`BASELINE.md`](docs/fairway-5.0/BASELINE.md) congela el commit de la release (`6ceef03`), [`AUDIT.md`](docs/fairway-5.0/AUDIT.md) es la auditoría de ese árbol, [`ADR-001.md`](docs/fairway-5.0/ADR-001.md) es el orden de la sala que el `56a2662` dejó en el código. El mensaje de ese commit dice «Fairway 5.0 baseline». La cabecera, el manifiesto y `APP_VERSION` no pasaron de 4.2.6.
+
+Lo que hay sin fusionar es el corte del `index.html` único. Sin bundler, sin React, Vue ni Angular. La versión de producto de esas ramas sigue en 4.2.6. El esquema del JSON sigue en 3.
+
+- [PR #60](https://github.com/ardu01/app-golf/pull/60) (`cursor/scoring-module-e67a`, encima de `56a2662`). El tanteo en vivo sale a `fairway/js/scoring.js`, módulo ES. `fairway/js/scoring-boot.js` publica en `window` las mismas funciones (`courseHandicapFor`, `liveStandings`, `stablefordHole`, …). `window.go` y `window.setScore` se quedan en el script clásico. El archivo trae `tests/golden.mjs`. `sw.js` no lista `scoring.js` en el precache de instalación.
+- [PR #59](https://github.com/ardu01/app-golf/pull/59) (`cursor/golden-card-tests-0946`). Solo los tests de la tarjeta (`tests/golden.mjs`) y su alta en `tests/run.mjs`, sobre `main`. Esos tests ya están dentro del #60. El #59 sigue abierto y no está en la app.
+- [PR #61](https://github.com/ardu01/app-golf/pull/61) (`cursor/rounds-module-214c`, encima del #60). La persistencia de la ronda pasa a `fairway/js/rounds.js`. `rounds-boot.js` publica `saveRounds`, `persistActiveRound`, `reopenRound` y el resto. `localStorage` sigue siendo la tarjeta. IndexedDB sigue de espejo. `sw.js` tampoco precarga `rounds.js` al instalar.
+- [PR #62](https://github.com/ardu01/app-golf/pull/62) (`cursor/courses-css-split-6b38`, encima del #61). El catálogo (`let COURSES`, 54 campos) pasa a `fairway/js/courses.js`, script clásico, no módulo. `index.html` sigue filtrando `club-ejemplo-norte`. El CSS pasa a `fairway/css/fairway.css` y el `<head>` lo enlaza. El shell sigue `fairway-v4-426`; el precache añade esos dos archivos.
+- [PR #63](https://github.com/ardu01/app-golf/pull/63) (`cursor/course-hole-preload-1422`, encima del #62). Al empezar la ronda precarga como mucho 18 planos de ese campo, no todo `holes/`. `icons/escorial-monasterio.png` sale del precache y solo se pide al pintar la placa de La Herrería. Sigue sin fusionar.
+- [PR #58](https://github.com/ardu01/app-golf/pull/58) (`cursor/fairway-data-guard-9c4b`). Borrador anterior, basado en `6ceef03` (la 4.2.6 del 29 sep, antes del #57). No está en la pila 60–63. La fusión de Drive une hoyo a hoyo en vez de sustituir la partida por el sello. Si la ronda local está protegida o hay pantalla de juego, no escribe `fairway.host.v1`. Una clave local en blanco no borra la copia de IndexedDB. `APP_VERSION` sigue en 4.2.6.
+
+---
+
 ## Datos, Drive y desarrollo
 
-La partida vive primero en el teléfono. Drive, si se conecta, es el Drive del usuario. La partida compartida no usa ese JSON: es un buzón aparte. Tests: `node tests/run.mjs`.
-
+La partida vive primero en el teléfono. Drive, si se conecta, es el Drive del usuario. La partida compartida no usa ese JSON: es un buzón aparte (`mantledb.sh`). Desde el 3 oct 2026 el orden de ese buzón es `seq` y `deviceId`, no la hora del móvil; el detalle está en el apartado 4.2.6. Tests: `node tests/run.mjs`.
 
 ```bash
 python3 -m http.server 8766
@@ -148,6 +355,12 @@ HTTP obligatorio para el service worker. Pages usa `.nojekyll`.
 
 ## Marca
 
+La F del perfil, el icono 192 y el 512.
+
 <img src="docs/recorrido/marca/logo-f.png" alt="F" width="72">
 <img src="docs/recorrido/marca/icono-192.png" alt="192" width="72">
 <img src="docs/recorrido/marca/icono-512.png" alt="512" width="96">
+
+Foto de la que sale la F: calle, hierba y la letra recortada. Está en `assets/`, no en la PWA.
+
+<img src="assets/fairway-icon-source.jpg" alt="Foto de origen del icono" width="200">
