@@ -4,10 +4,9 @@
  *   POST/GET https://mantledb.sh/v2/{code}/card
  * No account and no API key. Do not claim the namespace: that returns a
  * secret write key, and this file must not store one.
- * MQTT (wss://test.mosquitto.org:8081/mqtt, subprotocol "mqtt", retained)
- * is a best-effort mirror. Safari often fails that socket (iOS Private
- * Relay sends CONNECT instead of a WebSocket upgrade; the test broker
- * also drops WebSocket/TLS). A failed mirror must not block the HTTPS put.
+ * MQTT (wss://test.mosquitto.org:8081/mqtt, subprotocol "mqtt")
+ * may only wake an HTTPS GET. A retained payload is not the score.
+ * Safari often fails that socket. A failed wake must not block the HTTPS put.
  * Optional: HTTP GET/PUT {base}/{code} when FAIRWAY_ROOM_HTTP is set.
  * None of these URLs is a secret.
  */
@@ -388,10 +387,10 @@ export function createRoomMailbox(opts) {
   if (!store) return createMqttMailbox(o);
   const httpBox = createStoreMailbox(Object.assign({}, o, { base: store }));
   const mirror = o.mirrorMqtt === false ? null : createMqttMailbox(o);
-  function poke(code, doc) {
-    if (!mirror) return;
-    const job = doc ? mirror.put(code, doc) : mirror.get(code);
-    job.then(() => { if (doc) return mirror.get(code); }).catch(() => {});
+  function poke(code) {
+    if (!mirror || !mirror.put) return;
+    const job = mirror.put(code, { wake: 1 });
+    if (job && job.catch) job.catch(() => {});
   }
   return {
     transport: "http",
@@ -401,10 +400,11 @@ export function createRoomMailbox(opts) {
     },
     async put(code, doc) {
       await httpBox.put(code, doc);
-      poke(code, doc);
+      poke(code);
     },
     subscribe(fn) {
-      return mirror && mirror.subscribe ? mirror.subscribe(fn) : function () {};
+      if (!mirror || !mirror.subscribe) return function () {};
+      return mirror.subscribe(function () { fn(); });
     },
     close() {
       httpBox.close();

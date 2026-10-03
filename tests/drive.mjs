@@ -1,6 +1,6 @@
 import assert from "assert";
 import { readFileSync } from "fs";
-import { readApp, loadFunctions } from "./extract.mjs";
+import { readApp, loadFunctions, extractFunction } from "./extract.mjs";
 
 const html = readApp();
 const sw = readFileSync(new URL("../sw.js", import.meta.url), "utf8");
@@ -33,7 +33,8 @@ const api = loadFunctions(html, [
   "driveShouldFlushPending",
   "driveUiState",
   "driveSafeId",
-  "driveListedIds"
+  "driveListedIds",
+  "driveRoundClosedDuringRead"
 ]);
 
 const base = "2026-09-23T21:00:00.000Z";
@@ -240,5 +241,22 @@ assert.ok(sw.includes("fairway-maps-v1"));
 assert.ok(sw.includes("MAPS_MAX = 120"));
 const installPart = sw.split("activate")[0];
 assert.ok(!installPart.includes("skipWaiting"));
+
+assert.strictEqual(api.driveRoundClosedDuringRead(
+  { rounds: [{ id: "a" }], activeRound: { players: [{ id: "me" }] } },
+  { rounds: [{ id: "done" }, { id: "a" }], activeRound: null }
+), true);
+assert.strictEqual(api.driveRoundClosedDuringRead(
+  { rounds: [{ id: "a" }], activeRound: null },
+  { rounds: [{ id: "a" }], activeRound: null }
+), false);
+const reconcile = extractFunction(html, "driveReconcile");
+const readAt = reconcile.indexOf("await driveReadFile");
+assert.ok(readAt > 0);
+assert.ok(reconcile.indexOf("collectFairwayBackup", readAt) > readAt);
+assert.ok(reconcile.includes("driveRoundClosedDuringRead"));
+assert.ok(reconcile.includes("if (closedDuringRead) local = localAfterRead"));
+assert.ok(reconcile.includes("!closedDuringRead && !driveActiveRoundDirty"));
+assert.ok(reconcile.includes("shouldUpload = closedDuringRead"));
 
 console.log("drive ok");
