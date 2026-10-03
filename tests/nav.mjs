@@ -1,7 +1,9 @@
 import assert from "assert";
+import { readFileSync } from "fs";
 import { extractFunction, loadFunctions, readApp } from "./extract.mjs";
 
 const html = readApp();
+const css = readFileSync(new URL("../fairway/css/fairway.css", import.meta.url), "utf8");
 const api = loadFunctions(html, [
   "fairwayNavKnownScreen",
   "fairwayNavPlayScreen",
@@ -281,14 +283,15 @@ for (const screen of ["perfil", "setup", "hole", "scorecard", "leader", "reglas"
   assert.strictEqual(edge.fairwayNavEdgeBlockView(screen, false), false, screen);
 }
 
+assert.ok(html.includes('href="fairway/css/fairway.css"'));
 assert.ok(html.includes('id="fairwayEdgeGuard"'));
 assert.ok(html.includes('class="fairway-edge-guard" hidden'));
-assert.ok(html.includes("width: 30px"));
-assert.ok(html.includes("overscroll-behavior-x: none"));
-assert.ok(html.includes("html.fairway-edge-lock"));
-assert.ok(html.includes("touch-action: pan-y"));
-assert.ok(html.includes("touch-action: manipulation"));
-assert.ok(html.includes("padding: 6px 16px 22px 32px"));
+assert.ok(css.includes("width: 30px"));
+assert.ok(css.includes("overscroll-behavior-x: none"));
+assert.ok(css.includes("html.fairway-edge-lock"));
+assert.ok(css.includes("touch-action: pan-y"));
+assert.ok(css.includes("touch-action: manipulation"));
+assert.ok(css.includes("padding: 6px 16px 22px 32px"));
 assert.ok(html.includes('addEventListener("touchstart", fairwayNavBlockEdgeTouch, { passive: false, capture: true })'));
 const blockSrc = extractFunction(html, "fairwayNavBlockEdgeTouch");
 const gateAt = blockSrc.indexOf("fairwayNavShouldBlockEdge");

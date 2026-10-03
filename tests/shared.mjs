@@ -420,6 +420,7 @@ assert.strictEqual(hostSeesGuest.players.find((p) => p.id === "p9").scores[4], 6
 store.close();
 
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+const css = readFileSync(new URL("../fairway/css/fairway.css", import.meta.url), "utf8");
 const boot = readFileSync(new URL("../fairway/js/shared-boot.js", import.meta.url), "utf8");
 const sw = readFileSync(new URL("../sw.js", import.meta.url), "utf8");
 assert.ok(boot.includes("Partida compartida"));
@@ -440,8 +441,9 @@ assert.ok(html.includes('id="sharedRoundHome"'));
 assert.ok(readFileSync(new URL("../fairway/js/rounds.js", import.meta.url), "utf8").includes("fairwaySharedAfterPersist"));
 assert.ok(html.includes("fairway/js/shared-boot.js"));
 assert.ok(html.includes('aria-label="Versión">4.2.6</span>'));
-assert.ok(html.includes("#screen-home .home-hero > #sharedRoundHome"));
-assert.ok(/#screen-home \.home-hero > #sharedRoundHome \{\s*margin-top:\s*16px;/.test(html));
+assert.ok(html.includes('href="fairway/css/fairway.css"'));
+assert.ok(css.includes("#screen-home .home-hero > #sharedRoundHome"));
+assert.ok(/#screen-home \.home-hero > #sharedRoundHome \{\s*margin-top:\s*16px;/.test(css));
 assert.ok(html.includes("version: 3"));
 assert.ok(html.includes("function fairwayNavDecide"));
 assert.ok(!html.includes("client_secret"));
