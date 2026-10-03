@@ -3513,9 +3513,9 @@ function renderHole(opts) {
         <div class="entry-section golpes" onclick="event.stopPropagation()">
           <div class="entry-label">Golpes</div>
           <div class="stepper-row">
-            <button type="button" class="step-btn" onclick="adjScore(${idx},-1)" aria-label="Menos">−</button>
+            <button type="button" class="step-btn" onclick="adjScore(${idx},-1)" aria-label="Bajar golpes">−</button>
             <div class="step-val ${hasScore?"":"empty"}">${hasScore ? score : "—"}</div>
-            <button type="button" class="step-btn" onclick="adjScore(${idx},1)" aria-label="Más">+</button>
+            <button type="button" class="step-btn" onclick="adjScore(${idx},1)" aria-label="Subir golpes">+</button>
           </div>
           <div class="chip-row-entry">
             ${scoreChips.map(v =>
@@ -3526,9 +3526,9 @@ function renderHole(opts) {
         <div class="entry-section putts" onclick="event.stopPropagation()">
           <div class="entry-label">Putts</div>
           <div class="stepper-row putt-step">
-            <button type="button" class="step-btn" onclick="adjPutt(${idx},-1)" aria-label="Menos putts">−</button>
+            <button type="button" class="step-btn" onclick="adjPutt(${idx},-1)" aria-label="Bajar putts">−</button>
             <div class="step-val ${hasPutt?"":"empty"}">${hasPutt ? putt : "—"}</div>
-            <button type="button" class="step-btn" onclick="adjPutt(${idx},1)" aria-label="Más putts">+</button>
+            <button type="button" class="step-btn" onclick="adjPutt(${idx},1)" aria-label="Subir putts">+</button>
           </div>
           <div class="chip-row-entry">
             ${puttOpts.map(n =>
