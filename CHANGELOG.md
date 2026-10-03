@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.0.1
+
+Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 5.0.0 siguen entrando.
+
+- Inicio queda centrado: el mismo padding a izquierda y derecha. La banda del borde se queda.
+- La versión de producto es 5.0.1: cabecera, perfil, manifiesto y `appVersion` del JSON.
+- El service worker pasa a `fairway-v5-501`. No hace `skipWaiting` al instalar y no recarga con una ronda abierta.
+
 ## 5.0.0
 
 Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 4.2.6 siguen entrando.
