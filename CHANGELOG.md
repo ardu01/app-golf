@@ -1,5 +1,16 @@
 # Changelog
 
+## 5.0.6
+
+Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 5.0.5 siguen entrando.
+
+- Dos móviles con el mismo código ya no se pisan los golpes. La fusión sigue por campo. Un hoyo que el otro no manda no se borra. Gana el `seq` más alto; si empatan, el `deviceId` mayor. Ver el `seq` remoto sube el contador de este móvil.
+- Si el mapa de campos ya es el de la sala, este móvil no hace POST. Ese POST sustituye el JSON entero y una foto vieja borraba los hoyos del otro. Si el GET posterior no trae un campo local, el campo sigue en `fairway.sharedRound.v1`.
+- Sin red se sigue anotando en localStorage. La cola no se vacía y sale cuando hay red. No entra en el JSON de copia.
+- La versión de producto es 5.0.6: cabecera, perfil, manifiesto y `appVersion` del JSON.
+- El service worker pasa a `fairway-v5-506`. No hace `skipWaiting` al instalar y no recarga con una ronda abierta.
+- No hay release v5.0.6. La publicada sigue siendo v5.0.5, el 2026-10-04T15:37:03Z, sobre `0b961329dfdc5b0774896e5d1bf948761d8116fd`, hasta que Lider publique la 5.0.6.
+
 ## 5.0.5
 
 Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 5.0.4 siguen entrando.

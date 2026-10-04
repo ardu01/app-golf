@@ -50,7 +50,7 @@ function session(deviceId, code, role) {
 }
 
 assert.strictEqual(BACKUP_SCHEMA, 3);
-assert.strictEqual(APP_VERSION, "5.0.5");
+assert.strictEqual(APP_VERSION, "5.0.6");
 assert.strictEqual(SHARED_KEY, "fairway.sharedRound.v1");
 assert.strictEqual(normalizeCode("k7nq4p"), "K7NQ4P");
 assert.strictEqual(normalizeCode("K7NQ4O"), "");
@@ -440,7 +440,7 @@ assert.ok(!boot.includes("IndexedDB"));
 assert.ok(html.includes('id="sharedRoundHome"'));
 assert.ok(readFileSync(new URL("../fairway/js/rounds.js", import.meta.url), "utf8").includes("fairwaySharedAfterPersist"));
 assert.ok(html.includes("fairway/js/shared-boot.js"));
-assert.ok(html.includes('aria-label="Versión">5.0.5</span>'));
+assert.ok(html.includes('aria-label="Versión">5.0.6</span>'));
 assert.ok(html.includes('href="fairway/css/fairway.css"'));
 assert.ok(css.includes("#screen-home .home-hero > #sharedRoundHome"));
 assert.ok(/#screen-home \.home-hero > #sharedRoundHome \{\s*margin-top:\s*16px;/.test(css));
@@ -448,7 +448,7 @@ assert.ok(html.includes("version: 3"));
 assert.ok(html.includes("function fairwayNavDecide"));
 assert.ok(!html.includes("client_secret"));
 assert.ok(!html.includes('id="holeBagBtn"'));
-assert.ok(sw.includes('const SHELL = "fairway-v5-505"'));
+assert.ok(sw.includes('const SHELL = "fairway-v5-506"'));
 assert.ok(sw.includes("fairway/js/shared-boot.js"));
 const mailSrc = readFileSync(new URL("../fairway/js/shared-mail.js", import.meta.url), "utf8");
 assert.ok(mailSrc.includes("wss://test.mosquitto.org:8081/mqtt"));
@@ -705,5 +705,191 @@ const honestSync = await syncShared({
 assert.strictEqual(honestSync.players[0].scores[3], 5);
 assert.strictEqual((await hostileRoom.get("K7NQ4P")).fields["p1|3|scores"].v, 5);
 assert.ok((await hostileRoom.get("K7NQ4P")).fields["p1|3|scores"].at < 1000);
+
+function lwwMailbox(delayMs) {
+  let room = null;
+  return {
+    async get() {
+      return room ? JSON.parse(JSON.stringify(room)) : null;
+    },
+    async put(code, doc) {
+      if (delayMs) await new Promise((r) => setTimeout(r, delayMs));
+      room = JSON.parse(JSON.stringify(doc));
+    }
+  };
+}
+
+const two = lwwMailbox(0);
+let phoneA = session("dHOST0001", "K7NQ4P", "host");
+phoneA.createdBy = "dHOST0001";
+let phoneB = session("dGUEST009", "K7NQ4P", "join");
+phoneB.createdBy = "dHOST0001";
+let cardA = [player("p1", { 1: 4 })];
+let cardB = [player("p1", { 2: 5 })];
+noteLocalDeltas(phoneA, [player("p1", {})], cardA, 0);
+noteLocalDeltas(phoneB, [player("p1", {})], cardB, 0);
+const raced = await Promise.all([
+  syncShared({ shared: phoneA, players: cardA, mailbox: two, online: true, now: 30, meta: meta }),
+  syncShared({ shared: phoneB, players: cardB, mailbox: two, online: true, now: 30, meta: meta })
+]);
+phoneA = raced[0].shared;
+phoneB = raced[1].shared;
+cardA = raced[0].players;
+cardB = raced[1].players;
+assert.strictEqual(cardA[0].scores[1], 4);
+assert.strictEqual(cardB[0].scores[2], 5);
+const racedRoom = await two.get("K7NQ4P");
+assert.strictEqual(racedRoom.fields["p1|1|scores"].v, 4);
+assert.strictEqual(racedRoom.fields["p1|2|scores"].v, 5);
+const learnA = await syncShared({ shared: phoneA, players: cardA, mailbox: two, online: true, now: 31, meta: meta });
+const learnB = await syncShared({ shared: phoneB, players: cardB, mailbox: two, online: true, now: 32, meta: meta });
+assert.strictEqual(learnA.players[0].scores[1], 4);
+assert.strictEqual(learnA.players[0].scores[2], 5);
+assert.strictEqual(learnB.players[0].scores[1], 4);
+assert.strictEqual(learnB.players[0].scores[2], 5);
+assert.strictEqual((await two.get("K7NQ4P")).fields["p1|1|scores"].v, 4);
+assert.strictEqual((await two.get("K7NQ4P")).fields["p1|2|scores"].v, 5);
+
+const late = lwwMailbox(25);
+let lateA = session("dHOST0001", "K7NQ4P", "host");
+lateA.createdBy = "dHOST0001";
+let lateB = session("dGUEST009", "K7NQ4P", "join");
+lateB.createdBy = "dHOST0001";
+let lateCardA = [player("p1", { 6: 4 })];
+let lateCardB = [player("p1", { 7: 5 })];
+noteLocalDeltas(lateA, [player("p1", {})], lateCardA, 0);
+noteLocalDeltas(lateB, [player("p1", {})], lateCardB, 0);
+for (let n = 0; n < 2; n++) {
+  const pair = await Promise.all([
+    syncShared({ shared: lateA, players: lateCardA, mailbox: late, online: true, now: 40 + n, meta: meta }),
+    syncShared({ shared: lateB, players: lateCardB, mailbox: late, online: true, now: 40 + n, meta: meta })
+  ]);
+  lateA = pair[0].shared;
+  lateB = pair[1].shared;
+  lateCardA = pair[0].players;
+  lateCardB = pair[1].players;
+  assert.strictEqual(lateCardA[0].scores[6], 4);
+  assert.strictEqual(lateCardB[0].scores[7], 5);
+}
+const lateRoom = await late.get("K7NQ4P");
+assert.strictEqual(lateRoom.fields["p1|6|scores"].v, 4);
+assert.strictEqual(lateRoom.fields["p1|7|scores"].v, 5);
+const lateA2 = await syncShared({ shared: lateA, players: lateCardA, mailbox: late, online: true, now: 70, meta: meta });
+const lateB2 = await syncShared({ shared: lateB, players: lateCardB, mailbox: late, online: true, now: 71, meta: meta });
+assert.strictEqual(lateA2.players[0].scores[6], 4);
+assert.strictEqual(lateA2.players[0].scores[7], 5);
+assert.strictEqual(lateB2.players[0].scores[6], 4);
+assert.strictEqual(lateB2.players[0].scores[7], 5);
+
+const offCard = [player("p1", { 1: 4 })];
+const off = session("dHOST0001", "K7NQ4P", "host");
+off.createdBy = "dHOST0001";
+noteLocalDeltas(off, [player("p1", {})], offCard, 0);
+offCard[0].scores[2] = 5;
+noteLocalDeltas(off, [player("p1", { 1: 4 })], offCard, 0);
+const offBox = createMemoryMailbox();
+const offSync = await syncShared({
+  shared: off,
+  players: offCard,
+  mailbox: offBox,
+  online: false,
+  now: 80,
+  meta: meta
+});
+assert.strictEqual(offSync.shared.status, "offline");
+assert.strictEqual(offSync.players[0].scores[1], 4);
+assert.strictEqual(offSync.players[0].scores[2], 5);
+assert.strictEqual(offSync.shared.pending.length, 2);
+assert.strictEqual(offBox.rooms.size, 0);
+offCard[0].scores[3] = 6;
+noteLocalDeltas(offSync.shared, [player("p1", { 1: 4, 2: 5 })], offCard, 0);
+assert.strictEqual(offCard[0].scores[3], 6);
+assert.strictEqual(offSync.shared.pending.length, 3);
+
+const absentBox = createMemoryMailbox();
+absentBox.rooms.set("K7NQ4P", {
+  v: 1,
+  code: "K7NQ4P",
+  createdBy: "dHOST0001",
+  updatedAt: 10,
+  updatedBy: "dOTHER999",
+  meta: { holes: 18, players: [{ id: "p1", name: "p1" }] },
+  fields: { "p1|1|scores": { v: 4, at: 3, seq: 3, by: "dOTHER999", op: "dOTHER999-3" } },
+  presence: {},
+  signals: []
+});
+const absent = session("dHOST0001", "K7NQ4P", "host");
+absent.createdBy = "dHOST0001";
+absent.seq = 9;
+absent.stamps = { "p1|4|scores": 9, "p1|5|scores": 8 };
+absent.marks = {
+  "p1|4|scores": { by: "dHOST0001", op: "dHOST0001-9" },
+  "p1|5|scores": { by: "dHOST0001", op: "dHOST0001-8" }
+};
+absent.pending = [{ playerId: "p1", hole: 4, field: "scores", value: 6, at: 9, by: "dHOST0001", op: "dHOST0001-9" }];
+const absentPlayers = [player("p1", { 4: 6, 5: 3 })];
+const absentSync = await syncShared({
+  shared: absent,
+  players: absentPlayers,
+  mailbox: absentBox,
+  online: true,
+  now: 90,
+  meta: meta
+});
+assert.strictEqual(absentSync.players[0].scores[5], 3);
+assert.strictEqual(absentSync.players[0].scores[4], 6);
+assert.strictEqual(absentSync.players[0].scores[1], 4);
+const absentRoom = await absentBox.get("K7NQ4P");
+assert.strictEqual(absentRoom.fields["p1|5|scores"].v, 3);
+assert.strictEqual(absentRoom.fields["p1|4|scores"].v, 6);
+assert.strictEqual(absentRoom.fields["p1|1|scores"].v, 4);
+const absentOnly = applyFieldsToPlayers(
+  [player("p1", { 4: 6, 5: 3 })],
+  { "p1|1|scores": { v: 4, at: 3, by: "dOTHER999" } },
+  { "p1|4|scores": 9, "p1|5|scores": 8 }
+);
+assert.strictEqual(absentOnly.players[0].scores[5], 3);
+assert.strictEqual(absentOnly.players[0].scores[4], 6);
+
+const lampBox = createMemoryMailbox();
+const lampA = session("dAAAAAAA1", "K7NQ4P", "host");
+lampA.createdBy = "dAAAAAAA1";
+lampA.seq = 4;
+lampA.stamps = { "p1|3|scores": 4 };
+lampA.marks = { "p1|3|scores": { by: "dAAAAAAA1", op: "dAAAAAAA1-4" } };
+lampA.pending = [{ playerId: "p1", hole: 3, field: "scores", value: 4, at: 4, by: "dAAAAAAA1", op: "dAAAAAAA1-4" }];
+await syncShared({
+  shared: lampA,
+  players: [player("p1", { 3: 4 })],
+  mailbox: lampBox,
+  online: true,
+  now: 40,
+  meta: meta
+});
+const lampB = session("dBBBBBBB2", "K7NQ4P", "join");
+lampB.createdBy = "dAAAAAAA1";
+const seen = await syncShared({
+  shared: lampB,
+  players: [player("p1", {})],
+  mailbox: lampBox,
+  online: true,
+  now: 50,
+  meta: meta
+});
+assert.strictEqual(seen.players[0].scores[3], 4);
+assert.ok(seen.shared.seq >= 4);
+const lampNext = [player("p1", { 3: 6 })];
+noteLocalDeltas(seen.shared, seen.players, lampNext, 0);
+assert.ok(seen.shared.stamps["p1|3|scores"] > 4);
+const lampWon = await syncShared({
+  shared: seen.shared,
+  players: lampNext,
+  mailbox: lampBox,
+  online: true,
+  now: 60,
+  meta: meta
+});
+assert.strictEqual(lampWon.players[0].scores[3], 6);
+assert.strictEqual((await lampBox.get("K7NQ4P")).fields["p1|3|scores"].v, 6);
 
 console.log("shared ok");

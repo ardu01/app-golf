@@ -11,6 +11,7 @@ import {
   mayDetachShared,
   normalizeCode,
   noteLocalDeltas,
+  observeFields,
   sanitizeDelta,
   sharedPlayingHcp,
   sharedStatus,
@@ -455,6 +456,7 @@ async function joinRoom(raw) {
   const hadMarks = localHasMarks();
   adoptRoom(remote);
   ensureRemotePlayers(remote);
+  observeFields(shared, remote.fields || {});
   const applied = applyFieldsToPlayers(players(), remote.fields || {}, shared.stamps, shared.marks);
   if (applied.changed) {
     shared.stamps = applied.stamps;
@@ -536,9 +538,14 @@ function boot() {
   if (shared.code) schedule();
   root.addEventListener("online", () => { render(); if (shared.code) flush(); });
   root.addEventListener("offline", () => { render(); });
+  // Device offset so two phones that joined together do not POST on the same tick.
+  let skew = 0;
+  const id = String(shared.deviceId || "");
+  for (let i = 0; i < id.length; i++) skew = (skew + id.charCodeAt(i) * (i + 1)) % 2500;
+  const period = 8000 + skew;
   setInterval(() => {
     if (shared.code && online()) flush();
-  }, 8000);
+  }, period);
 }
 
 boot();

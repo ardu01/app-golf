@@ -22,13 +22,13 @@ Cuando este móvil tiene red, manda la cola. Si no la tiene, el estado dice «Pe
 
 ## Fusión
 
-La unidad es un campo: `jugador|hoyo|campo`. Gana la marca de tiempo más nueva. Si las dos marcas son iguales, se queda la de este móvil.
+La unidad es un campo: `jugador|hoyo|campo`. El orden es un `seq` de Lamport: el número más alto gana; si empatan, gana el `deviceId` mayor en orden lexicográfico. No es la hora del reloj. Al leer un campo del otro móvil, este móvil sube su contador, así el siguiente golpe local queda por encima.
 
-Un campo que el otro no envía no se borra. Un valor imposible (golpe 99, HTML en la bola) no se aplica. Un valor local que todavía no tenía marca se sella con la hora de este móvil antes de mezclar, para que una sala más vieja no lo pise.
+Un campo que el otro no envía no se borra. Un valor imposible (golpe 99, HTML en la bola) no se aplica. Un golpe local que todavía no tiene `seq` no se sustituye ni se numera al mezclar.
 
-La sala no sustituye la ronda entera. `mergeFairwayBackup` no interviene en estos campos.
+La sala no sustituye la ronda entera. `mergeFairwayBackup` no interviene en estos campos. `POST` en Mantle sí sustituye el JSON entero: si la unión de campos ya es la que hay en la sala, este móvil no vuelve a publicar. Un POST con la foto vieja borraba el hoyo que el otro móvil había escrito. Si el GET de después no trae un campo local, ese campo sigue en la cola.
 
-El documento que se publica lleva la unión de los campos, no solo los del móvil que escribe. Un jugador que este teléfono todavía no tiene no se borra del JSON.
+El documento que se publica, cuando hay algo nuevo, lleva la unión de los campos, no solo los del móvil que escribe. Un jugador que este teléfono todavía no tiene no se borra del JSON.
 
 Quien entra con la tarjeta vacía (sin golpes) adopta el campo, el tee y los jugadores del anfitrión, y pinta sus golpes. Si este móvil ya tenía golpes, no se tiran: se suman los jugadores cuyo id no estaba y se siguen aplicando los campos remotos. Los dos acaban con la misma lista y los mismos golpes. Ids distintos no se pisan; el mismo id es el mismo jugador de la tarjeta.
 
