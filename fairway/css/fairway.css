@@ -2139,6 +2139,8 @@
   .winners-actions .placa-link,
   .close-stat .v,
   .theme-paper .close-stat .v { color: #000000; }
+  .close-stat .v.is-gray-total,
+  .theme-paper .close-stat .v.is-gray-total { color: #8E8E93; }
   .winner-row .medal {
     background: rgba(0,0,0,0.06);
     color: #000000;

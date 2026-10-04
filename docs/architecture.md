@@ -37,7 +37,7 @@ Sin bundler. GitHub Pages sirve los archivos tal cual. `index.html` carga `fairw
 | `fairway/js/shared-rtc.js` | Atajo opcional. No hace falta para jugar |
 | `fairway/js/shared-boot.js` | Arranque de la sala en el navegador |
 
-El service worker precachea esos archivos y los trata como shell (`/fairway/js/` y `/fairway/css/`). El nombre de caché del shell es `fairway-v5-510` (5.1.0).
+El service worker precachea esos archivos y los trata como shell (`/fairway/js/` y `/fairway/css/`). El nombre de caché del shell es `fairway-v5-511` (5.1.1).
 
 ## Migración
 
@@ -63,11 +63,11 @@ Desde la 4.2.3 el único workflow del repo es `test-fairway.yml`: lanza `node te
 
 `FAIRWAY_DRIVE_CLIENT_ID` es el client id público de OAuth web para `https://ardu01.github.io` y `https://ardu01.github.io/app-golf/`. El detalle está en `docs/drive-sync.md`. El panel dice «Sin configurar» cuando el id no está. Un conflicto sigue mostrando «Conflicto» y no sustituye la ronda en curso hasta que el jugador elige.
 
-El nombre de caché del shell es `fairway-v5-510`. El `install` no llama a `skipWaiting`. `fairwayShouldHoldUpdate` impide `SKIP_WAITING` y el reload mientras la pantalla es de juego, de cierre, o hay ronda armada. `tests/pwa.mjs` lo fija. El colchón de Inicio de la 4.2.1 sigue.
+El nombre de caché del shell es `fairway-v5-511`. El `install` no llama a `skipWaiting`. `fairwayShouldHoldUpdate` impide `SKIP_WAITING` y el reload mientras la pantalla es de juego, de cierre, o hay ronda armada. `tests/pwa.mjs` lo fija. El colchón de Inicio de la 4.2.1 sigue.
 
 ## Stats
 
-`statsGrossByLayout` separa el gross de 9 y el de 18. No los promedia juntos. La media dentro de cada largo es la misma media aritmética de `me.gross` que ya había. `courseHandicapFor` está en `fairway/js/scoring.js` (`hi * slope / 113`).
+`statsGrossByLayout` separa el gross de 9 y el de 18. No los promedia juntos. La media dentro de cada largo es la misma media aritmética de `me.gross` que ya había. Una tarjeta cerrada con hoyos en blanco y hoyos jugados distintos de 9 no entra. Nueve hoyos en una tarjeta de 18 tampoco: solo es ronda de 9 si `holes` ya es 9. Una de 18 completa sigue. El total gris del cierre no se guarda en `me.gross`. `courseHandicapFor` está en `fairway/js/scoring.js` (`hi * slope / 113`).
 
 No hay bolsa de palos ni recomendación de juego. El enlace `tel:` del caddie de La Herrería sigue en el hoyo.
 
@@ -79,4 +79,4 @@ No hay bolsa de palos ni recomendación de juego. El enlace `tel:` del caddie de
 
 El detalle está en `docs/shared-round.md`. El marcador no la necesita: sin código, la ronda sigue solo en este móvil. Con código, cada cambio de golpe, putt, FIR, GIR, bola o retirado se encola en `fairway.sharedRound.v1` y sale cuando hay red. La fusión es por campo: gana el `seq` más alto (al ver el del otro móvil, el siguiente golpe de este queda por encima) y, si empatan, el `deviceId` mayor. Un hoyo que el otro móvil no manda no se borra. Si ese mapa ya es el de la sala, este móvil no hace POST: el POST sustituye el documento entero y una foto vieja borraba los hoyos del otro. Esta rama no amplía esa sala.
 
-Esa cola no entra en el JSON de esquema 3. Las copias de la 4.0.11 a la 5.0.6 siguen entrando. El documento común es `https://mantledb.sh/v2/{código}/card`, sin clave. El MQTT público es solo un aviso si el socket abre; en Safari a menudo no abre, y Drive no sirve para dos cuentas distintas. El shell es `fairway-v5-510`. El velo de Inicio de la 4.2.2 sigue, y el toque del borde no crea historia antes de cancelarse. Deslizar la ficha del hoyo sigue seleccionando al jugador, como en la 4.2.4. Drive de la 4.1.2 sigue siendo la copia personal `Fairway/fairway-data.json`. No hay bolsa ni caddie. Los workflows que hacían `git push` no vuelven.
+Esa cola no entra en el JSON de esquema 3. Las copias de la 4.0.11 a la 5.0.6 siguen entrando. El documento común es `https://mantledb.sh/v2/{código}/card`, sin clave. El MQTT público es solo un aviso si el socket abre; en Safari a menudo no abre, y Drive no sirve para dos cuentas distintas. El shell es `fairway-v5-511`. El velo de Inicio de la 4.2.2 sigue, y el toque del borde no crea historia antes de cancelarse. Deslizar la ficha del hoyo sigue seleccionando al jugador, como en la 4.2.4. Drive de la 4.1.2 sigue siendo la copia personal `Fairway/fairway-data.json`. No hay bolsa ni caddie. Los workflows que hacían `git push` no vuelven.
