@@ -1,261 +1,64 @@
 # Fairway
 
-PWA personal de golf para iPhone (Safari / pantalla de inicio): marcador offline, sin cuenta, WHS, varios jugadores en el mismo teléfono. Publicada en GitHub Pages.
+Fairway es el marcador de golf personal para el iPhone. Funciona en Safari y en la pantalla de inicio, sin cuenta y sin cobertura: golpes, putts, bruto, neto y Stableford, con varios jugadores en el mismo teléfono. El hándicap de campo sigue el WHS. La partida se queda en el aparato.
 
-**App:** https://ardu01.github.io/app-golf/  
-**Copia de seguridad:** esquema JSON **3** (compatible a lo largo de 3.x / 4.x)  
-**Releases:** https://github.com/ardu01/app-golf/releases · [`CHANGELOG.md`](CHANGELOG.md)
+La app publicada está en https://ardu01.github.io/app-golf/.
 
----
+La versión actual es **5.1.0**. En el código, `APP_VERSION`, la cabecera de Inicio, el perfil («Fairway 5.1.0»), el manifiesto («Marcador de golf personal · 5.1.0») y `appVersion` del JSON de copia dicen 5.1.0. El shell es `fairway-v5-510`. El esquema de la copia sigue en **3**: las copias de la 4.0.11 a la 5.0.6 siguen entrando. La release publicada es [v5.1.0](https://github.com/ardu01/app-golf/releases/tag/v5.1.0), «Fairway 5.1.0», el 2026-10-04T17:16:08Z, sobre `b6aa690c62bc4455f646bf98e06a33b709ea49b2`. El detalle de cada versión está en [`CHANGELOG.md`](CHANGELOG.md) y en las [releases](https://github.com/ardu01/app-golf/releases).
 
-## Fairway 3.x
+En la 5.1.0 la ronda en curso se escribe solo desde `fairway/js/rounds.js`, y sale el código que nadie llamaba. Los puntos, el hándicap y las pantallas no cambian. Al instalar, el service worker no hace `skipWaiting` y no recarga si hay una ronda abierta. En el repositorio no hay una captura de la 5.1.0. La de Inicio más reciente es la de la 5.0.1, más abajo.
 
-La línea **3** consolida el producto como una sola app (`index.html`) pensada para el campo:
+## Qué se hace en una partida
 
-- Anotar la vuelta sin cobertura: golpes, putts, bruto, neto, Stableford
-- Course / Playing Handicap según WHS (CR, Slope, SI); reparto correcto en 9 y en 18
-- Varios jugadores en el mismo dispositivo; tarjeta, clasificación y cierre
-- Perfil, historial reabrable, estadísticas
-- Service worker cuidadoso: no recarga a mitad de ronda abierta
-- Árbitro local (Reglas de Golf) y textos de modalidad
-- Copia de seguridad JSON (esquema 3) en el propio teléfono
+Se elige campo, tee y jugadores, se anota hoyo a hoyo y se cierra la vuelta. La tarjeta enseña el bruto y el neto, y la clasificación ordena la partida. Esas pantallas son la base de la línea 3. No son capturas de la 5.1.0.
 
-### Capturas y vídeos del núcleo (recorrido 3.x / base de partida)
-
-Setup y marcador:
+Lista de campos para empezar la vuelta.
 
 <img src="docs/recorrido/partida/campos.webp" alt="Lista de campos" width="200">
+
+Tees del campo elegido, con course rating y slope.
+
 <img src="docs/recorrido/partida/tees.webp" alt="Tees con CR y Slope" width="200">
-<img src="docs/recorrido/partida/jugadores.webp" alt="Jugadores" width="200">
+
+Jugadores de la partida en el mismo teléfono.
+
+<img src="docs/recorrido/partida/jugadores.webp" alt="Jugadores de la partida" width="200">
+
+Marcador del hoyo: golpes y putts del jugador que está en la ficha.
 
 <img src="docs/recorrido/partida/marcador.webp" alt="Marcador del hoyo" width="200">
+
+Tarjeta bruta de la vuelta.
+
 <img src="docs/recorrido/partida/tarjeta-bruta.webp" alt="Tarjeta bruta" width="200">
+
+La misma tarjeta en neto.
+
 <img src="docs/recorrido/partida/tarjeta-neta.webp" alt="Tarjeta neta" width="200">
+
+Clasificación de la partida.
+
 <img src="docs/recorrido/partida/clasificacion.webp" alt="Clasificación" width="200">
 
-Perfil, historial y stats:
+Perfil del jugador en el teléfono.
 
 <img src="docs/recorrido/partida/perfil.webp" alt="Perfil" width="200">
+
+Historial de vueltas, para reabrir una tarjeta.
+
 <img src="docs/recorrido/partida/historial.webp" alt="Historial" width="200">
-<img src="docs/recorrido/stats/stats_con_vueltas.png" alt="Estadísticas" width="200">
 
-Hándicap y árbitro:
+Estadísticas con vueltas ya jugadas.
 
-<img src="docs/recorrido/handicap/tee-cr-slope.webp" alt="Tee CR Slope" width="200">
-<img src="docs/recorrido/handicap/hoyo-con-golpe.webp" alt="Hoyo con stroke" width="200">
-<img src="docs/recorrido/reglas/arbitro-area-roja.webp" alt="Árbitro" width="220">
+<img src="docs/recorrido/stats/stats_con_vueltas.png" alt="Estadísticas con vueltas" width="200">
 
-Vídeos:
+[Elegir campo](docs/recorrido/videos/elegir-campo.mp4). El paseo por la lista de campos hasta dejar uno elegido.
 
-- [Elegir campo](docs/recorrido/videos/elegir-campo.mp4)
-- [Ajustes, tarjeta y continuar](docs/recorrido/videos/ajustes-tarjeta-continuar.mp4)
-- [Paseo por la interfaz](docs/recorrido/videos/recorrido-interfaz.mp4)
-- [Stats y perfil](docs/recorrido/videos/stats-perfil.mp4)
-- [Hándicap en nueve hoyos](docs/recorrido/videos/handicap-9-hoyos.mp4)
-- [Reglas](docs/recorrido/videos/reglas.mp4)
-- [Árbitro](docs/recorrido/videos/arbitro.mp4)
+[Ajustes, tarjeta y continuar](docs/recorrido/videos/ajustes-tarjeta-continuar.mp4). De los ajustes de la ronda a la tarjeta, y de ahí a seguir la vuelta.
 
----
+[Paseo por la interfaz](docs/recorrido/videos/recorrido-interfaz.mp4). Recorrido por las pantallas de la partida.
 
-## Fairway 4.x
-
-La línea **4** mantiene el mismo motor de partida y el mismo esquema de copia. Cambia la presentación y, en 4.1, la capa de plataforma.
-
-**4.0** — UI iPhone-first: tipografía y densidad tipo sistema, materiales glass monocromo, marcador pensado para un dedo. Las iteraciones 4.0.1–4.0.11 afilan cabecera, ficha del jugador y acciones del hoyo **sin** alterar fórmulas de hándicap ni el formato de guardado.
-
-**4.1** — encima de esa piel: datos más robustos (espejo IndexedDB), Drive opcional, gestos atrás de iOS dentro de la app, y limpieza de funciones que no son de Fairway (bolsa / caddie digital).
-
-### Capturas y vídeo 4.1 (producción reciente)
-
-Inicio (versión en cabecera, CTA de partida, tab bar; service worker que no recarga con ronda abierta; en Inicio el historial se ancla para no salir de la PWA):
-
-<img src="docs/recorrido/4.1/inicio.png" alt="Inicio 4.1 — shell PWA" width="280">
-
-Perfil con copia JSON (esquema 3) y Google Drive (`drive.file`, token en memoria, `Fairway/fairway-data.json`):
-
-<img src="docs/recorrido/4.1/perfil-drive.png" alt="Perfil — copia y Drive" width="280">
-
-Historial alimentado desde el dispositivo (localStorage + espejo IndexedDB):
-
-<img src="docs/recorrido/4.1/historial.png" alt="Historial" width="280">
-
-[Vídeo: Inicio → Perfil → Drive](docs/recorrido/4.1/tour-4.1.mp4)
-
----
-
-## Detalle por versión (4.0 a 4.2)
-
-### 4.0.x
-
-Piel monocromo glass; refinados sucesivos del marcador (golpes/putts, fichas de acceso, cabecera). Esquema de copia **3**. Las partidas de 3.x siguen entrando.
-
-### 4.1.0
-
-IndexedDB como copia verificada del historial y estado; `localStorage` no se borra. Stats Gross · 9 y Gross · 18 separados. Workflows peligrosos del repo desactivados en esa línea. Drive aún sin client id. Shell `fairway-v4-410`.
-
-### 4.1.1
-
-Eliminados bolsa de palos y recomendaciones de caddie digital (otra app). Se mantienen tel. Herrería, árbitro, mapas y marcador. Shell `fairway-v4-411`.
-
-### 4.1.2
-
-Client id OAuth web de Google Drive para `https://ardu01.github.io` / `app-golf`. Sin secreto en el repo. Perfil → Conectar Google Drive. Shell `fairway-v4-412`. Media en [v4.1.2](https://github.com/ardu01/app-golf/releases/tag/v4.1.2).
-
-### 4.1.3
-
-History API: gesto atrás / botón Atrás cierra hoja de hoyo y pantallas dentro de la app; con ronda abierta no se pierden golpes. Shell `fairway-v4-413`.
-
-### 4.1.3.1
-
-Ancla de historial en **Inicio** (intento inicial). Shell `fairway-v4-4131`. Media en [v4.1.3.1](https://github.com/ardu01/app-golf/releases/tag/v4.1.3.1).
-
-### 5.0.0
-
-La versión de producto pasa a 5.0.0 (cabecera, perfil, manifiesto y `appVersion`). El service worker es `fairway-v5-500`. No hace `skipWaiting` al instalar y no recarga con una ronda abierta. Esquema 3. Fórmulas, catálogo, navegación, partida compartida y Drive siguen igual.
-
-### 5.0.1
-
-Inicio queda centrado: el mismo margen a izquierda y a derecha. La banda del borde sigue. Cabecera, perfil, manifiesto y `appVersion` dicen 5.0.1. Shell `fairway-v5-501`. Esquema 3. Quedó publicada como [v5.0.1](https://github.com/ardu01/app-golf/releases/tag/v5.0.1).
-
-### 5.0.2
-
-Si falta `fairway.rounds.v1` y `fairway.rounds.bak.v1` tiene partidas, el historial vuelve de esa copia al leerlo y al cerrar la ronda. Una lista vacía válida no se rellena con la `.bak`. Una clave principal ilegible no se copia encima de la `.bak`. Cabecera, perfil, manifiesto y `appVersion` dicen 5.0.2. Shell `fairway-v5-502`. No hace `skipWaiting` al instalar y no recarga con una ronda abierta. Esquema 3. Quedó publicada como [v5.0.2](https://github.com/ardu01/app-golf/releases/tag/v5.0.2), el 2026-10-03T22:20:03Z, sobre `6ed665959f19e5eaebc80ee510e40ffe63e9a989`.
-
-### 5.0.3
-
-Las cajas dejan de ir en punta. La lista del paso Campo, y los paneles grandes, usan `--glass-r-card` (16px, el de las tarjetas de Inicio). Las fichas de modalidad y los botones de golpe usan `--glass-r-chip` (12px, el de los chips del hoyo). La hoja de invitar y la de elegir hoyo redondean arriba con `--glass-r-sheet` (20px). La fila del campo elegido no pinta un aro inset cuadrado sobre la lista. La banda del borde sigue en 30px. El padding de Inicio sigue en `6px 32px 22px 32px`. Cabecera, perfil, manifiesto y `appVersion` dicen 5.0.3. Shell `fairway-v5-503`. No hace `skipWaiting` al instalar y no recarga con una ronda abierta. Esquema 3. Quedó publicada como [v5.0.3](https://github.com/ardu01/app-golf/releases/tag/v5.0.3), «Fairway 5.0.3», el 2026-10-03T22:40:43Z, sobre `a23a9b872d23928d29b31c6605ffdfdfb49e6700`. No es borrador ni prerelease.
-
-### 5.0.4
-
-Al guardar el historial, `fairway.rounds.bak.v1` se queda con la lista recién escrita si esa lista sigue teniendo cada id que ya estaba guardado. Si después falta `fairway.rounds.v1`, la ronda que se acaba de cerrar vuelve con la `.bak`, no solo la lista anterior. Una lista que pierde un id no pisa esa copia. Una clave principal ilegible tampoco. Cabecera, perfil, manifiesto y `appVersion` dicen 5.0.4. Shell `fairway-v5-504`. No hace `skipWaiting` al instalar y no recarga con una ronda abierta. Esquema 3. Quedó publicada como [v5.0.4](https://github.com/ardu01/app-golf/releases/tag/v5.0.4), «Fairway 5.0.4», el 2026-10-03T22:52:59Z, sobre `8b5752ffe311928458958e875f4b82e536fe732d`. No es borrador ni prerelease.
-
-### 5.1.0
-
-Depuración de lo que ya hay. El marcador escribe la ronda en curso solo por `fairway/js/rounds.js`: golpes, putts, FIR, GIR y totales pasan por `commitActiveScore`, `adjustActiveScore`, `commitActivePutts`, `adjustActivePutts`, `commitActiveMark` y `commitActiveTotal`, y el guardado es `persistActiveRound`. Importar una copia o aplicar Drive escribe la clave principal con `writeStoredActiveRound`, el mismo `storageSetItem`. `index.html` no hace `localStorage.setItem` de `fairway.activeRound.v1`. La `.bak` de la ronda en curso sigue siendo la que deja `persistActiveRound`. Ajustes, si edita una vuelta del historial, guarda con `saveEditingRoundDraft` y no reescribe el registro por su cuenta. Salen funciones sin llamadores. Mismos números, mismas pantallas, mismas claves de localStorage. Las fórmulas no cambian. La sala de la 5.0.6 no se toca. Cabecera, perfil, manifiesto y `appVersion` dicen 5.1.0. Shell `fairway-v5-510`. No hace `skipWaiting` al instalar y no recarga con una ronda abierta. Esquema 3. Quedó publicada como [v5.1.0](https://github.com/ardu01/app-golf/releases/tag/v5.1.0), «Fairway 5.1.0», el 2026-10-04T17:16:08Z, sobre `b6aa690c62bc4455f646bf98e06a33b709ea49b2`. No es borrador ni prerelease.
-
-### 5.0.6
-
-Dos iPhone con el mismo código ya no se pisan los golpes. La sala HTTPS sigue siendo un POST que sustituye el documento entero. Si este móvil no tiene campos más nuevos que los de la sala, no publica: un POST con la foto vieja borraba el hoyo que el otro móvil sí había mandado. Si el GET de después no trae un campo local, ese campo sigue en `fairway.sharedRound.v1` y sale en el siguiente intento. Sin red el marcador sigue en localStorage y la cola no se vacía. El orden de un mismo campo es el `seq` de Lamport (al ver el del otro, el siguiente golpe de este móvil queda por encima) y, si empatan, el `deviceId` mayor. Un hoyo que el otro no manda no se borra. Cabecera, perfil, manifiesto y `appVersion` dicen 5.0.6. Shell `fairway-v5-506`. No hace `skipWaiting` al instalar y no recarga con una ronda abierta. Esquema 3. Quedó publicada como [v5.0.6](https://github.com/ardu01/app-golf/releases/tag/v5.0.6), «Fairway 5.0.6», el 2026-10-04T16:46:13Z, sobre `d08b685299e2069226ae218eed4cbcca1ef74e36`. No es borrador ni prerelease.
-
-### 5.0.5
-
-Al guardar la ronda en curso, `fairway.activeRound.bak.v1` se queda con la tarjeta recién escrita si esa tarjeta sigue teniendo cada jugador y cada clave de `scores`, `putts`, `fir` y `gir` (y `totalsGross` / `totalsPutts` si no eran null) de la última tarjeta buena: la principal anterior si era válida, y si no la `.bak`. El primer guardado, sin esa línea de base, también crea la `.bak`. Si después falta `fairway.activeRound.v1`, `restoreActiveRound` devuelve los golpes de ese último guardado. Una tarjeta que pierde un golpe no pisa esa copia. Una clave principal ilegible con `.bak` buena tampoco. Cabecera, perfil, manifiesto y `appVersion` dicen 5.0.5. Shell `fairway-v5-505`. No hace `skipWaiting` al instalar y no recarga con una ronda abierta. Esquema 3. Quedó publicada como [v5.0.5](https://github.com/ardu01/app-golf/releases/tag/v5.0.5), «Fairway 5.0.5», el 2026-10-04T15:37:03Z, sobre `0b961329dfdc5b0774896e5d1bf948761d8116fd`. No es borrador ni prerelease.
-
-### 4.2.6
-
-La ficha de la sala en Inicio deja 16px con la ronda. Dos móviles con el mismo código leen y escriben el mismo JSON público (`mantledb.sh`, sin clave). El MQTT de prueba sigue como aviso si Safari abre el socket; si no, la sala HTTPS converge igual. Drive no comparte la tarjeta entre cuentas. Quien entra vacío adopta la tarjeta del anfitrión. Shell `fairway-v4-426`. Esquema 3.
-
-### 4.2.5
-
-Partida compartida, opcional: sin código se anota igual; con código, cada golpe se encola y sale cuando hay red. En Inicio el toque del borde no crea historia antes de cancelar el swipe. Deslizar la ficha del hoyo sigue seleccionando al jugador. Shell `fairway-v4-425`. Esquema 3.
-
-### 4.2.4
-
-En el marcador, deslizar hasta otra ficha selecciona a ese jugador (golpes, putts, FIR y GIR), igual que tocarla. Un solo jugador no cambia. Shell `fairway-v4-424`. Esquema 3.
-
-### 4.2.3
-
-Salen los workflows que descargaban otra app o hacían `git push` (`publish-fairway-v3`, multicourse, tees, assemble, decode). Queda `test-fairway.yml` con `contents: read`; Pages no se toca. Los mapas de `holes/` y la ficha Mapa siguen. Shell `fairway-v4-423`. Esquema 3.
-
-### 4.2.2
-
-En **Inicio** el swipe desde el borde izquierdo no se arma (velo + `preventDefault` en `touchstart`, solo en esa pantalla). El colchón de la 4.2.1 sigue como red por si el gesto se cuela: el `popstate` no cambia la vista. Pantallas anidadas, un paso. Shell `fairway-v4-422`. Esquema 3.
-
-### 4.2.1
-
-Colchón de sentinels más robusto para iOS Safari/PWA en Inicio (`pushState` diferido; hashes `#b=…`). Un swipe = un paso en pantallas anidadas. Shell `fairway-v4-421`. Media: [v4.2.1](https://github.com/ardu01/app-golf/releases/tag/v4.2.1).
-
----
-
-## Datos, Drive y desarrollo
-
-La partida vive primero en el teléfono. Drive, si se conecta, es el Drive del usuario. La partida compartida no usa ese JSON: es un buzón aparte. Tests: `node tests/run.mjs`.
-
-
-```bash
-python3 -m http.server 8766
-```
-
-HTTP obligatorio para el service worker. Pages usa `.nojekyll`.
-
-## Marca
-
-<img src="docs/recorrido/marca/logo-f.png" alt="F" width="72">
-<img src="docs/recorrido/marca/icono-192.png" alt="192" width="72">
-<img src="docs/recorrido/marca/icono-512.png" alt="512" width="96">
-
----
-
-## Fairway 5.x
-
-La release publicada en GitHub es [v5.1.0](https://github.com/ardu01/app-golf/releases/tag/v5.1.0), «Fairway 5.1.0», el 2026-10-04T17:16:08Z, sobre `b6aa690c62bc4455f646bf98e06a33b709ea49b2`. No es borrador ni prerelease. [v5.0.6](https://github.com/ardu01/app-golf/releases/tag/v5.0.6) («Fairway 5.0.6», 2026-10-04T16:46:13Z, `d08b685299e2069226ae218eed4cbcca1ef74e36`) sigue en el historial, igual que [v5.0.5](https://github.com/ardu01/app-golf/releases/tag/v5.0.5) («Fairway 5.0.5», 2026-10-04T15:37:03Z, `0b961329dfdc5b0774896e5d1bf948761d8116fd`), [v5.0.4](https://github.com/ardu01/app-golf/releases/tag/v5.0.4) («Fairway 5.0.4», 2026-10-03T22:52:59Z, `8b5752ffe311928458958e875f4b82e536fe732d`), [v5.0.3](https://github.com/ardu01/app-golf/releases/tag/v5.0.3) («Fairway 5.0.3», 2026-10-03T22:40:43Z, `a23a9b872d23928d29b31c6605ffdfdfb49e6700`), [v5.0.2](https://github.com/ardu01/app-golf/releases/tag/v5.0.2) («Fairway 5.0.2», 2026-10-03T22:20:03Z, `6ed665959f19e5eaebc80ee510e40ffe63e9a989`), [v5.0.1](https://github.com/ardu01/app-golf/releases/tag/v5.0.1) («Fairway 5.0.1», 2026-10-03T21:35:52Z, `e0416723b5d1431b690ab2a612b0c6efcd2ffc5e`) y [v5.0.0](https://github.com/ardu01/app-golf/releases/tag/v5.0.0) («Fairway 5.0.0», 2026-10-03T21:21:47Z, `3bf8568`).
-
-En esta rama el código es **5.1.0**: `APP_VERSION` en `fairway/js/keys.js`, la cabecera de Inicio, el perfil («Fairway 5.1.0»), el manifiesto («Marcador de golf personal · 5.1.0») y `appVersion` del JSON de copia. El shell es `fairway-v5-510`. No hace `skipWaiting` al instalar y no recarga con una ronda abierta. El esquema de copia sigue en **3** (`BACKUP_SCHEMA` y `version: 3` en el JSON). La release publicada es v5.1.0, el 2026-10-04T17:16:08Z, sobre `b6aa690c62bc4455f646bf98e06a33b709ea49b2`.
-
-Al guardar la ronda en curso, `persistActiveRound` deja esa tarjeta en `fairway.activeRound.bak.v1` si la tarjeta nueva conserva cada jugador y cada clave de scores, putts, fir y gir, y totalsGross / totalsPutts cuando no eran null, de la última tarjeta buena. El primer guardado también escribe la `.bak`. Si luego falta `fairway.activeRound.v1`, `restoreActiveRound` devuelve los golpes del último guardado. Una tarjeta que pierde un golpe no sustituye esa `.bak`. Una clave principal ilegible con `.bak` buena tampoco. Al cerrar una ronda, `saveRounds` deja esa partida en `fairway.rounds.bak.v1` si la lista nueva conserva cada id que ya estaba. Si luego falta `fairway.rounds.v1`, `loadRounds` devuelve también la ronda recién cerrada. Una lista que pierde un id no sustituye esa `.bak`. Una clave principal ilegible tampoco. Las fórmulas no cambian. La lista del paso Campo y los paneles grandes siguen en `--glass-r-card` (16px). Las fichas de modalidad y los botones de golpe siguen en `--glass-r-chip` (12px). La hoja de invitar y la de elegir hoyo siguen redondeando arriba con `--glass-r-sheet` (20px). La banda del borde sigue en 30px y el padding de Inicio sigue en `6px 32px 22px 32px`. En la 5.0.2, `6ed6659`, si falta la clave principal y la `.bak` todavía tiene partidas, `loadRounds` devuelve esa lista. 5.0.1, en `e041672`, centró la columna de Inicio.
-
-El resto de capturas de `docs/recorrido/cursor/` se tomaron cuando la cabecera decía 4.2.6. `home_5_0_1.png` es el Inicio de la 5.0.1. No hay captura de la 5.0.2, de la 5.0.3, de la 5.0.4, de la 5.0.5, de la 5.0.6 ni de la 5.1.0.
-
-Inicio de la 5.0.1, columna centrada. La cabecera de esa foto dice 5.0.1.
-
-<img src="docs/recorrido/cursor/home_5_0_1.png" alt="La cabecera dice 5.0.1 y la columna está centrada" width="280">
-
-En `main`, `docs/fairway-5.0/` sigue siendo la nota escrita sobre la 4.2.6: [`BASELINE.md`](docs/fairway-5.0/BASELINE.md) congela `6ceef03`, [`AUDIT.md`](docs/fairway-5.0/AUDIT.md) es la auditoría de ese árbol, [`ADR-001.md`](docs/fairway-5.0/ADR-001.md) es el orden de la sala que el `56a2662` dejó en el código. El 3 oct 2026 el PR #57 quedó en `main` con ese commit. El mensaje dice «Fairway 5.0 baseline». Esos markdown no se han reescrito: siguen describiendo la 4.2.6 y el commit `6ceef03`. En esta rama la cabecera, el perfil, el manifiesto y `APP_VERSION` son 5.1.0. La release publicada es [v5.1.0](https://github.com/ardu01/app-golf/releases/tag/v5.1.0), «Fairway 5.1.0», el 2026-10-04T17:16:08Z, sobre `b6aa690c62bc4455f646bf98e06a33b709ea49b2`. No es borrador ni prerelease. [v5.0.6](https://github.com/ardu01/app-golf/releases/tag/v5.0.6) (2026-10-04T16:46:13Z, `d08b685299e2069226ae218eed4cbcca1ef74e36`), [v5.0.4](https://github.com/ardu01/app-golf/releases/tag/v5.0.4) (2026-10-03T22:52:59Z, `8b5752ffe311928458958e875f4b82e536fe732d`), [v5.0.3](https://github.com/ardu01/app-golf/releases/tag/v5.0.3) (2026-10-03T22:40:43Z, `a23a9b872d23928d29b31c6605ffdfdfb49e6700`), [v5.0.2](https://github.com/ardu01/app-golf/releases/tag/v5.0.2) (2026-10-03T22:20:03Z, `6ed665959f19e5eaebc80ee510e40ffe63e9a989`), [v5.0.1](https://github.com/ardu01/app-golf/releases/tag/v5.0.1), [v5.0.0](https://github.com/ardu01/app-golf/releases/tag/v5.0.0) (2026-10-03T21:21:47Z, `3bf8568`) y [v4.2.6](https://github.com/ardu01/app-golf/releases/tag/v4.2.6) (29 sep 2026) quedan en el historial.
-
-El corte del `index.html` único está en `main`. Sin bundler, sin React, Vue ni Angular. El esquema del JSON sigue en 3. Los PR #58 y #59 siguen abiertos; en esas ramas `APP_VERSION` sigue en 4.2.6.
-
-- [PR #60](https://github.com/ardu01/app-golf/pull/60) (`cursor/scoring-module-e67a`). Fusionado en `main` el 2026-10-03T21:09:44Z (`dcf7aef`). El tanteo en vivo está en `fairway/js/scoring.js`, módulo ES. `fairway/js/scoring-boot.js` publica en `window` las mismas funciones (`courseHandicapFor`, `liveStandings`, `stablefordHole`, …). `window.go` y `window.setScore` se quedan en el script clásico. Ese squash trae `tests/golden.mjs`. `sw.js` lista `scoring-boot.js` y `scoring.js` en el precache de instalación.
-- [PR #59](https://github.com/ardu01/app-golf/pull/59) (`cursor/golden-card-tests-0946`). Sigue abierto. Su commit no está en `main`. Añade `tests/golden.mjs` y lo da de alta en `tests/run.mjs` sobre `56a2662`. El `tests/golden.mjs` de `main` llegó con el #60 y no es el mismo archivo.
-- [PR #61](https://github.com/ardu01/app-golf/pull/61) (`cursor/rounds-module-214c`). Fusionado el 2026-10-03T21:09:22Z en la rama del #60. En `main` entra con el squash `dcf7aef`: la persistencia está en `fairway/js/rounds.js`. `rounds-boot.js` publica `saveRounds`, `persistActiveRound`, `reopenRound` y el resto. `localStorage` sigue siendo la tarjeta. IndexedDB sigue de espejo. `sw.js` precarga `rounds-boot.js` y `rounds.js` al instalar. El esquema sigue en 3.
-- [PR #62](https://github.com/ardu01/app-golf/pull/62) (`cursor/courses-css-split-6b38`). Fusionado en `main` el 2026-10-03T21:13:14Z (`15a45f1`). El catálogo (`let COURSES`, 54 campos) está en `fairway/js/courses.js`, script clásico, no módulo. `index.html` sigue filtrando `club-ejemplo-norte`. El CSS está en `fairway/css/fairway.css` y el `<head>` lo enlaza. Ese squash dejó el shell en `fairway-v4-426`; el commit `3bf8568` lo dejó en `fairway-v5-500`, `e041672` lo dejó en `fairway-v5-501`, `6ed6659` lo dejó en `fairway-v5-502`, `a23a9b8` lo dejó en `fairway-v5-503`, `8b5752f` lo dejó en `fairway-v5-504`, `0b96132` lo dejó en `fairway-v5-505`, `d08b685` lo dejó en `fairway-v5-506` y esta rama lo deja en `fairway-v5-510`. El precache incluye `courses.js` y `fairway.css`.
-- [PR #63](https://github.com/ardu01/app-golf/pull/63) (`cursor/course-hole-preload-1422`). Fusionado el 2026-10-03T21:09:00Z en la rama del #62. En `main` entra con el squash `15a45f1`: al empezar la ronda precarga como mucho 18 planos de ese campo, no todo `holes/`. `icons/escorial-monasterio.png` no está en el precache y solo se pide al pintar la placa de La Herrería.
-- [PR #58](https://github.com/ardu01/app-golf/pull/58) (`cursor/fairway-data-guard-9c4b`). Sigue abierto. Parte de `6ceef03` (la 4.2.6 del 29 sep, antes del #57) y no incluye el #57. No está en la pila 60–63. En esa rama `APP_VERSION` sigue en 4.2.6 y el esquema en 3. La fusión de Drive por hoyo, el `fairway.host.v1` que no se escribe con ronda protegida o pantalla de juego, y la clave local en blanco que no borra IndexedDB, ya están en `main` por el [PR #66](https://github.com/ardu01/app-golf/pull/66) (`83c7b19`).
-
-El marcador (PR #60) y las rondas (PR #61) no dejaron captura ni vídeo en `docs/recorrido/cursor/`. Las fotos de 4.0.x que ya están más arriba no son esos dos cambios.
-
-### Catálogo y CSS (PR #62)
-
-El código está en `main`. Las fotos y el vídeo de `docs/recorrido/cursor/` se tomaron cuando la cabecera decía 4.2.6. No son capturas de la app 5.0.0.
-
-Inicio. La cabecera dice 4.2.6. «Buenas noches, Ana», ronda en curso en La Herrería (hoyo 18), Continuar, Ajustes, Cerrar ronda, y el campo del código de la partida compartida.
-
-<img src="docs/recorrido/cursor/home_la_herreria.png" alt="Inicio 4.2.6, La Herrería, partida compartida" width="200">
-
-Paso Campo. La Herrería está seleccionada, Centro Nacional de Golf queda encima, y Siguiente está abajo.
-
-<img src="docs/recorrido/cursor/course_list.png" alt="Lista de campos, La Herrería seleccionada" width="200">
-
-Tarjeta bruta de La Herrería, 18 hoyos, tee Amarillas. La ida va al par: OUT 35, TOT 71, course handicap 13.
-
-<img src="docs/recorrido/cursor/scorecard_la_herreria.png" alt="Tarjeta bruta, La Herrería, 71" width="200">
-
-[De la lista de campos a la tarjeta](docs/recorrido/cursor/course_list_and_scorecard.mp4). El paseo de ese paso Campo (La Herrería elegida) hasta la tarjeta bruta de La Herrería. En los tramos que se ven, la lista y luego la tarjeta con OUT 35 y TOT 71.
-
-### Precarga del plano (PR #63)
-
-El código está en `main`. Chrome de escritorio en `127.0.0.1`. Estas capturas se tomaron cuando la cabecera decía 4.2.6. No son de la app 5.0.0. Al empezar se abre el plano de un solo campo, no el de todos.
-
-Inicio sin nombre todavía. La cabecera dice 4.2.6. La Herrería figura como tu campo. La partida compartida ofrece Crear código y Unirme.
-
-<img src="docs/recorrido/cursor/home_version_4_2_6.webp" alt="Inicio 4.2.6 en el escritorio" width="280">
-
-El mismo escritorio, paso Campo, con Centro Nacional de Golf seleccionado.
-
-<img src="docs/recorrido/cursor/course_centro_nacional.webp" alt="Centro Nacional de Golf seleccionado" width="280">
-
-Hoyo 1 de Centro Nacional dentro de la app: par 5, 476 m, y las yardas escritas en el plano.
-
-<img src="docs/recorrido/cursor/hole_map_centro_nacional.webp" alt="Plano del hoyo 1 de Centro Nacional" width="280">
-
-[Empezar la ronda y abrir el plano](docs/recorrido/cursor/start_round_centro_nacional_map.mp4). Arranca en el paso Campo con Centro Nacional seleccionado y llega al plano del hoyo 1 (par 5, 476 m).
-
-## Capturas y vídeos que no estaban arriba
-
-Estos archivos ya estaban en `docs/` y `assets/`. No son de una 5.x.
-
-Inicio con una ronda a medias (La Herrería, 3/18) y el botón de continuar. En esta captura la cabecera marca 4.0.11.
-
-<img src="docs/recorrido/partida/inicio.webp" alt="Inicio con ronda en curso" width="200">
+[Stats y perfil](docs/recorrido/videos/stats-perfil.mp4). Estadísticas y la ficha del perfil.
 
 Ajustes de la ronda abierta: campo, tee, hoyos y la bola de cada jugador. Abajo, cerrar la ronda.
 
@@ -273,35 +76,57 @@ Reabrir una vuelta del historial: la hoja pide confirmar antes de cargar esa tar
 
 <img src="docs/recorrido/partida/reabrir.webp" alt="Reabrir una partida" width="200">
 
-Los tres iconos del perfil (exportar, importar, borrar) vistos de cerca.
+Los tres iconos del perfil, de cerca: exportar, importar y borrar la copia.
 
-<img src="docs/recorrido/stats/perfil_iconos.png" alt="Iconos de la copia en el perfil" width="200">
+<img src="docs/recorrido/stats/perfil_iconos.png" alt="Iconos de exportar, importar y borrar" width="200">
 
-La pantalla de stats con el filtro de temporada (este año, el anterior, todas).
+Estadísticas con el filtro de temporada: este año, el anterior o todas.
 
 <img src="docs/recorrido/stats/stats_temporada.png" alt="Estadísticas por temporada" width="200">
 
-El hoyo 2 de una vuelta de 18 con course handicap 10, sin punto: ahí no toca golpe. El hoyo 1 de esa misma serie ya está más arriba.
+## Hándicap
+
+El course handicap sale del hándicap de juego, el CR y el slope del tee. En 18 hoyos el golpe va al índice de dificultad del hoyo. En 9, al índice relativo de esos nueve, no a «los hoyos 1 a 9». Estas capturas explican ese reparto. No son de la 5.1.0.
+
+Tee con CR y slope, la base del hándicap de campo.
+
+<img src="docs/recorrido/handicap/tee-cr-slope.webp" alt="Tee con CR y Slope" width="200">
+
+Hoyo que recibe golpe: el punto marca el stroke.
+
+<img src="docs/recorrido/handicap/hoyo-con-golpe.webp" alt="Hoyo con stroke" width="200">
+
+Hoyo 2 de una vuelta de 18 con course handicap 10, sin punto: ahí no toca golpe.
 
 <img src="docs/recorrido/handicap/hoyo-sin-golpe.webp" alt="Hoyo sin stroke" width="200">
 
-La misma salida recortada a 9 hoyos. El hándicap de campo baja (en la captura, de 10 a 5) y el hoyo 1 sigue llevando golpe.
+La misma salida recortada a 9 hoyos. En la captura el hándicap de campo baja de 10 a 5, y el hoyo 1 sigue llevando golpe.
 
 <img src="docs/recorrido/handicap/9-hoyos-hoyo-1.webp" alt="Nueve hoyos, hoyo 1 con golpe" width="200">
 
-En 9 hoyos, un hoyo que en 18 recibía golpe puede quedarse sin él. La captura es el hoyo 2, par 4, sin punto.
+En 9 hoyos, un hoyo que en 18 recibía golpe puede quedarse sin él. Aquí el hoyo 2, par 4, sin punto.
 
 <img src="docs/recorrido/handicap/9-hoyos-sin-golpe.webp" alt="Nueve hoyos, hoyo sin golpe" width="200">
 
-El reparto de 9 no es «los hoyos 1 a 9». El golpe va al índice de dificultad relativo de esos nueve. Aquí el hoyo 6, el más fácil de ese tramo, lleva el punto.
+El golpe de 9 va al índice relativo de ese tramo. El hoyo 6, el más fácil de esos nueve, lleva el punto.
 
 <img src="docs/recorrido/handicap/9-hoyos-golpe-relativo.webp" alt="Golpe en el índice relativo de nueve hoyos" width="200">
 
-Vuelta de 18 con course handicap 10, vista en el marcador: diez hoyos con punto y el resto sin él.
+Vuelta de 18 con course handicap 10 en el marcador: diez hoyos con punto y el resto sin él.
 
 <img src="docs/recorrido/handicap/18-hoyos-ch10.webp" alt="Dieciocho hoyos, course handicap 10" width="200">
 
-La ficha Árbitro en el marcador del hoyo, junto a Hoyos y Mapa. Árbitro abre esa pantalla.
+[Hándicap en nueve hoyos](docs/recorrido/videos/handicap-9-hoyos.mp4). Cómo baja el hándicap de campo al pasar de 18 a 9 y dónde cae el golpe.
+
+## Árbitro y modalidades
+
+El árbitro es local: textos de las Reglas de Golf para la situación del hoyo. Stableford y Stroke Play van como modalidades oficiales; el resto, como juegos de la partida.
+
+Árbitro en un área de penalización.
+
+<img src="docs/recorrido/reglas/arbitro-area-roja.webp" alt="Árbitro en área de penalización" width="220">
+
+La ficha Árbitro en el marcador del hoyo, junto a Hoyos y Mapa.
 
 <img src="docs/recorrido/reglas/boton-en-marcador.webp" alt="Ficha Árbitro en el marcador" width="200">
 
@@ -309,25 +134,31 @@ El mismo acceso desde la clasificación: el botón Árbitro en la barra de arrib
 
 <img src="docs/recorrido/reglas/boton-en-clasificacion.webp" alt="Botón Árbitro en la clasificación" width="200">
 
-Lista de modalidades. Stableford y Stroke Play van como oficiales; el resto, como juegos de la partida.
+Lista de modalidades. Stableford y Stroke Play como oficiales; el resto, juegos de la partida.
 
 <img src="docs/recorrido/reglas/todos-los-modos.webp" alt="Modalidades oficiales y sociales" width="200">
 
-La ficha Mapa del hoyo sigue en la app publicada. Los planos que carga están en `holes/`. Las fotos de abajo son las de `docs/recorrido/mapas/`: unas son la ficha dentro de la app, otras el plano o la foto del hoyo.
+[Reglas](docs/recorrido/videos/reglas.mp4). Las modalidades y los textos de reglas.
 
-La Herrería, hoyo 1, dentro de la ficha Mapa: el plano del hoyo a pantalla, con Marcador para volver.
+[Árbitro](docs/recorrido/videos/arbitro.mp4). Abrir el árbitro desde la partida.
+
+## Planos del hoyo
+
+La ficha Mapa sigue en la app. Al empezar una ronda se piden los planos de ese campo, no los de todos. Los archivos viven en `holes/`. Las fotos de esta sección están en `docs/recorrido/mapas/`: unas son la ficha dentro de la app, otras el plano o la foto del hoyo. No son capturas de la 5.1.0. Donde la cabecera se lee, se dice cuál es.
+
+La Herrería, hoyo 1, dentro de la ficha Mapa: el plano a pantalla, con Marcador para volver.
 
 <img src="docs/recorrido/mapas/la-herreria-hoyo-1.webp" alt="Mapa del hoyo 1 de La Herrería" width="200">
 
 Las Rozas, hoyo 1, la misma ficha.
 
-<img src="docs/recorrido/mapas/las-rozas-hoyo-1.webp" alt="Mapa del hoyo 1 de Las Rozas en la app" width="200">
+<img src="docs/recorrido/mapas/las-rozas-hoyo-1.webp" alt="Mapa del hoyo 1 de Las Rozas" width="200">
 
 [Mapas de Las Rozas](docs/recorrido/videos/mapas-las-rozas.mp4). La ficha Mapa del hoyo 1 (La Encina) y, en otro tramo, la tarjeta de esa vuelta.
 
-El Robledal, hoyo 1, ficha Mapa en la app. La cabecera de la captura es 4.0.11.
+El Robledal, hoyo 1, ficha Mapa en la app. La cabecera de esta captura es 4.0.11.
 
-<img src="docs/recorrido/mapas/robledal-en-la-app.webp" alt="El Robledal, mapa en la app" width="200">
+<img src="docs/recorrido/mapas/robledal-en-la-app.webp" alt="El Robledal, mapa en la app, cabecera 4.0.11" width="200">
 
 Foto del mismo hoyo 1, calle y green, aparte del plano.
 
@@ -341,7 +172,7 @@ Golf Santander, ficha Mapa del hoyo 1 en la app.
 
 <img src="docs/recorrido/mapas/golf-santander-en-la-app.webp" alt="Golf Santander, mapa en la app" width="200">
 
-La foto de satélite de ese hoyo 1, la que la ficha enseña.
+La foto de satélite de ese hoyo 1, la que enseña la ficha.
 
 <img src="docs/recorrido/mapas/golf-santander-satelite.webp" alt="Satélite del hoyo 1 de Golf Santander" width="280">
 
@@ -393,7 +224,7 @@ El Encín, hoyo 1, foto aérea de la calle.
 
 <img src="docs/recorrido/mapas/el-encin-hoyo-1.webp" alt="Foto del hoyo 1 de El Encín" width="280">
 
-Hoja de referencia con el hoyo 1 de La Dehesa del Escorial (par, hándicap, metros por tee). No es una captura de la ficha Mapa.
+Hoja de referencia del hoyo 1 de La Dehesa del Escorial: par, hándicap y metros por tee. No es la ficha Mapa.
 
 <img src="docs/recorrido/mapas/dehesa-escorial.png" alt="Hoyo 1 de La Dehesa del Escorial" width="280">
 
@@ -401,6 +232,142 @@ Tres campos en una hoja: La Moraleja, Olivar de la Hinojosa y Torrejón. Tampoco
 
 <img src="docs/recorrido/mapas/moraleja-olivar-torrejon.png" alt="La Moraleja, Olivar y Torrejón" width="280">
 
-Foto de la que sale la F de la marca: calle, hierba y la letra recortada. Está en `assets/`, no en la PWA.
+## Inicio en las versiones que tienen foto
+
+Inicio con una ronda a medias en La Herrería (3/18) y el botón de continuar. La cabecera de esta captura marca 4.0.11.
+
+<img src="docs/recorrido/partida/inicio.webp" alt="Inicio con ronda en curso, cabecera 4.0.11" width="200">
+
+La 4.1 deja Inicio, Perfil y el historial en el teléfono, con Drive opcional. Estas tres capturas y el vídeo son de esa línea.
+
+Inicio de la 4.1: la versión en la cabecera, el botón de partida y la barra de abajo.
+
+<img src="docs/recorrido/4.1/inicio.png" alt="Inicio de la 4.1" width="280">
+
+Perfil con la copia JSON, esquema 3, y Google Drive. El archivo es `Fairway/fairway-data.json`; el token se queda en memoria.
+
+<img src="docs/recorrido/4.1/perfil-drive.png" alt="Perfil con copia y Drive" width="280">
+
+Historial leído en el dispositivo.
+
+<img src="docs/recorrido/4.1/historial.png" alt="Historial en el dispositivo" width="280">
+
+[De Inicio a Perfil y Drive](docs/recorrido/4.1/tour-4.1.mp4). El paseo Inicio, Perfil y la conexión de Drive en la 4.1.
+
+La 4.2.6 es la última de la línea 4. Las fotos y los vídeos de `docs/recorrido/cursor/` que siguen se tomaron cuando la cabecera decía 4.2.6.
+
+Inicio. La cabecera dice 4.2.6. «Buenas noches, Ana», ronda en curso en La Herrería (hoyo 18), Continuar, Ajustes, Cerrar ronda, y el campo del código de la partida compartida.
+
+<img src="docs/recorrido/cursor/home_la_herreria.png" alt="Inicio 4.2.6, La Herrería, partida compartida" width="200">
+
+Paso Campo. La Herrería está seleccionada, Centro Nacional de Golf queda encima, y Siguiente está abajo.
+
+<img src="docs/recorrido/cursor/course_list.png" alt="Lista de campos, La Herrería seleccionada" width="200">
+
+Tarjeta bruta de La Herrería, 18 hoyos, tee Amarillas. La ida va al par: OUT 35, TOT 71, course handicap 13.
+
+<img src="docs/recorrido/cursor/scorecard_la_herreria.png" alt="Tarjeta bruta, La Herrería, 71" width="200">
+
+[De la lista de campos a la tarjeta](docs/recorrido/cursor/course_list_and_scorecard.mp4). Del paso Campo, con La Herrería elegida, a la tarjeta bruta. En los tramos que se ven, la lista y luego la tarjeta con OUT 35 y TOT 71. La cabecera de esa sesión decía 4.2.6.
+
+Inicio en Chrome de escritorio, en `127.0.0.1`. La cabecera dice 4.2.6. La Herrería figura como campo, y la partida compartida ofrece Crear código y Unirme.
+
+<img src="docs/recorrido/cursor/home_version_4_2_6.webp" alt="Inicio 4.2.6 en el escritorio" width="280">
+
+El mismo escritorio, paso Campo, con Centro Nacional de Golf seleccionado.
+
+<img src="docs/recorrido/cursor/course_centro_nacional.webp" alt="Centro Nacional de Golf seleccionado" width="280">
+
+Hoyo 1 de Centro Nacional dentro de la app: par 5, 476 m, y las yardas escritas en el plano.
+
+<img src="docs/recorrido/cursor/hole_map_centro_nacional.webp" alt="Plano del hoyo 1 de Centro Nacional" width="280">
+
+[Empezar la ronda y abrir el plano](docs/recorrido/cursor/start_round_centro_nacional_map.mp4). Arranca en el paso Campo con Centro Nacional seleccionado y llega al plano del hoyo 1 (par 5, 476 m). La cabecera de esa sesión decía 4.2.6.
+
+Inicio de la 5.0.1, columna centrada. La cabecera dice 5.0.1. A la derecha, Perfil; el saludo; Nueva partida; la ficha de La Herrería; la partida compartida; y la barra de abajo. El mismo margen a los dos lados. La 5.1.0 no tiene captura propia: las pantallas no cambiaron respecto de la 5.0.6, y esta es la foto de Inicio más nueva del repositorio.
+
+<img src="docs/recorrido/cursor/home_5_0_1.png" alt="Inicio de la 5.0.1, cabecera 5.0.1, columna centrada" width="280">
+
+## Cómo ha crecido
+
+El esquema de copia es el 3 desde la línea 3. Una partida guardada entonces sigue abriéndose.
+
+### Línea 3
+
+La línea 3 deja el producto en una sola app para el campo: anotar sin cobertura, hándicap WHS en 9 y en 18, varios jugadores, tarjeta, clasificación y cierre, perfil, historial que se puede reabrir, estadísticas, árbitro local y la copia JSON en el propio teléfono. El service worker no recarga a mitad de una ronda abierta. No hay una release numerada de la línea 3 en el listado publicado; lo que sigue, a partir de la 4.1.0, sí tiene fecha en GitHub.
+
+### Línea 4
+
+La línea 4 conserva el motor de la partida y el esquema 3. Cambia la presentación y, desde la 4.1, la forma de guardar y de volver atrás.
+
+La 4.0 es la piel para el iPhone: tipografía y densidad de sistema, cristal monocromo, marcador de un dedo. El changelog registra la 4.0.11 con la cabecera más baja y la ficha del jugador al inicio del hueco. El esquema sigue en 3. La captura de Inicio con la ronda a medias, más arriba, lleva esa cabecera.
+
+La 4.1.0, publicada el 2026-09-29T07:14:58Z, guarda en IndexedDB una copia verificada del historial y del estado. `localStorage` no se borra. Las estadísticas separan Gross · 9 y Gross · 18. Drive todavía no tiene client id. El shell es `fairway-v4-410`.
+
+La 4.1.1, el 2026-09-29T08:48:23Z, quita la bolsa de palos y el caddie digital. Siguen el teléfono de La Herrería, el árbitro, los mapas y el marcador. Shell `fairway-v4-411`.
+
+La 4.1.2, el 2026-09-29T08:49:15Z, conecta Google Drive con el client id público de OAuth para `https://ardu01.github.io` y la app. No hay secreto en el repositorio. El archivo es `Fairway/fairway-data.json`. Shell `fairway-v4-412`. [v4.1.2](https://github.com/ardu01/app-golf/releases/tag/v4.1.2).
+
+La 4.1.3, el 2026-09-29T09:00:08Z, hace que el gesto atrás del iPhone y el botón Atrás cierren la hoja del hoyo o la pantalla interior. Con una ronda abierta no se pierden los golpes. Shell `fairway-v4-413`.
+
+La 4.1.3.1, el 2026-09-29T09:13:37Z, es el primer ancla de Inicio: ahí el gesto atrás no cierra la app. Shell `fairway-v4-4131`. [v4.1.3.1](https://github.com/ardu01/app-golf/releases/tag/v4.1.3.1).
+
+La 4.2.1, el 2026-09-29T09:29:04Z, refuerza ese ancla en Inicio para Safari y la PWA. En las pantallas interiores, un gesto es un paso. Shell `fairway-v4-421`. [v4.2.1](https://github.com/ardu01/app-golf/releases/tag/v4.2.1).
+
+La 4.2.2, el 2026-09-29T09:46:48Z, pone en Inicio un velo en el borde izquierdo para que el swipe ni siquiera arranque. Si el gesto se cuela, la pantalla no cambia. Shell `fairway-v4-422`.
+
+La 4.2.3, el 2026-09-29T10:03:46Z, retira del repositorio los workflows que descargaban otra app o hacían `git push`. Quedan los tests con lectura del repo, los planos de `holes/` y la ficha Mapa. Shell `fairway-v4-423`.
+
+La 4.2.4, el 2026-09-29T10:08:46Z, selecciona al jugador al deslizar hasta su ficha en el marcador, igual que al tocarla. Con un solo jugador no cambia. Shell `fairway-v4-424`.
+
+La 4.2.5, el 2026-09-29T10:14:21Z, añade la partida compartida, opcional. Sin código se anota igual. Con código, cada golpe se encola en el teléfono y sale cuando hay red. Esa cola no entra en el JSON de copia. Shell `fairway-v4-425`.
+
+La 4.2.6, el 2026-09-29T10:51:56Z, separa en Inicio la ficha de la sala y la ronda. Dos móviles con el mismo código leen y escriben la misma tarjeta pública. Drive sigue siendo la copia de una cuenta, no la sala. Quien entra con la tarjeta vacía adopta la del anfitrión. Shell `fairway-v4-426`. Esquema 3. [v4.2.6](https://github.com/ardu01/app-golf/releases/tag/v4.2.6).
+
+### Línea 5
+
+La línea 5 mantiene el esquema 3, las fórmulas, el catálogo de 54 campos y la partida. Cada release de abajo está publicada, no es borrador ni prerelease.
+
+La 5.0.0, el 2026-10-03T21:21:47Z, sobre `3bf85688470e001c607830a61bf48ae6d512d183`, pasa la versión de producto a 5.0.0 en cabecera, perfil, manifiesto y JSON. El shell es `fairway-v5-500`. Fórmulas, catálogo, navegación, partida compartida y Drive siguen. [v5.0.0](https://github.com/ardu01/app-golf/releases/tag/v5.0.0).
+
+La 5.0.1, el 2026-10-03T21:35:52Z, centra la columna de Inicio: el mismo margen a izquierda y a derecha. La banda del borde sigue. Shell `fairway-v5-501`. La foto de ese Inicio es `home_5_0_1.png`, en la sección anterior. [v5.0.1](https://github.com/ardu01/app-golf/releases/tag/v5.0.1).
+
+La 5.0.2, el 2026-10-03T22:20:03Z, sobre `6ed665959f19e5eaebc80ee510e40ffe63e9a989`, recupera el historial desde `fairway.rounds.bak.v1` si falta la clave principal y esa copia tiene partidas. Una lista vacía válida no se sustituye. Una clave ilegible no se copia encima de la `.bak`. Shell `fairway-v5-502`. [v5.0.2](https://github.com/ardu01/app-golf/releases/tag/v5.0.2).
+
+La 5.0.3, el 2026-10-03T22:40:43Z, sobre `a23a9b872d23928d29b31c6605ffdfdfb49e6700`, redondea la lista de campos y los paneles grandes como las tarjetas de Inicio, y los chips del hoyo con su propio radio. La banda del borde y el centrado de Inicio siguen. Shell `fairway-v5-503`. [v5.0.3](https://github.com/ardu01/app-golf/releases/tag/v5.0.3).
+
+La 5.0.4, el 2026-10-03T22:52:59Z, sobre `8b5752ffe311928458958e875f4b82e536fe732d`, deja en la `.bak` del historial la lista recién escrita cuando esa lista conserva cada id. Si luego falta la clave principal, vuelve también la ronda recién cerrada. Una lista que pierde un id no pisa esa copia. Shell `fairway-v5-504`. [v5.0.4](https://github.com/ardu01/app-golf/releases/tag/v5.0.4).
+
+La 5.0.5, el 2026-10-04T15:37:03Z, sobre `0b961329dfdc5b0774896e5d1bf948761d8116fd`, hace lo mismo con la ronda en curso: `fairway.activeRound.bak.v1` guarda la tarjeta recién escrita si conserva jugadores y golpes. Si falta la clave principal, vuelven los golpes del último guardado. Shell `fairway-v5-505`. [v5.0.5](https://github.com/ardu01/app-golf/releases/tag/v5.0.5).
+
+La 5.0.6, el 2026-10-04T16:46:13Z, sobre `d08b685299e2069226ae218eed4cbcca1ef74e36`, deja de pisar los golpes del otro móvil en la sala. La fusión es por campo: un hoyo que el otro no manda no se borra. Sin red, el golpe se queda en la tarjeta local. Shell `fairway-v5-506`. [v5.0.6](https://github.com/ardu01/app-golf/releases/tag/v5.0.6).
+
+La 5.1.0, el 2026-10-04T17:16:08Z, sobre `b6aa690c62bc4455f646bf98e06a33b709ea49b2`, es la publicada. Depura lo que ya había: la ronda en curso se escribe solo desde `rounds.js`, y se quita código que nadie llamaba. Los puntos, el hándicap y las pantallas siguen. Shell `fairway-v5-510`. Esquema 3. [v5.1.0](https://github.com/ardu01/app-golf/releases/tag/v5.1.0).
+
+## Datos y cómo abrirla
+
+La partida vive primero en el teléfono. Drive, si se conecta, es el Drive de esa cuenta. La partida compartida no usa ese JSON: es un buzón aparte. Los tests son `node tests/run.mjs`.
+
+```bash
+python3 -m http.server 8766
+```
+
+El service worker pide HTTP. GitHub Pages usa `.nojekyll`.
+
+## Marca
+
+La F del logotipo.
+
+<img src="docs/recorrido/marca/logo-f.png" alt="F de Fairway" width="72">
+
+Icono de 192 que usa la PWA.
+
+<img src="docs/recorrido/marca/icono-192.png" alt="Icono 192" width="72">
+
+Icono de 512 que usa la PWA.
+
+<img src="docs/recorrido/marca/icono-512.png" alt="Icono 512" width="96">
+
+Foto de la que sale esa F: calle, hierba y la letra recortada. Está en `assets/`, no dentro de la PWA.
 
 <img src="assets/fairway-icon-source.jpg" alt="Foto de origen del icono" width="200">
