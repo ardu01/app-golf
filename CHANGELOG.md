@@ -1,5 +1,17 @@
 # Changelog
 
+## 5.1.0
+
+Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 5.0.6 siguen entrando.
+
+- Depuración. El marcador escribe la ronda en curso solo por `fairway/js/rounds.js`. Golpes, putts, FIR, GIR y totales pasan por ese módulo y se guardan con `persistActiveRound`. Importar una copia o aplicar Drive usa `writeStoredActiveRound`, el mismo `storageSetItem`. `index.html` ya no hace `localStorage.setItem` de `fairway.activeRound.v1`.
+- Ajustes, al editar una vuelta del historial, guarda con `saveEditingRoundDraft`. No reescribe el registro por su cuenta ni llama dos veces a `persistActiveRound` al cambiar un modo.
+- Salen funciones sin llamadores: `scoringPlayers`, `applyCreativePaste`, `promptCreativePaste`, `setWriteModeDemo`, `setInviteTab`, `copyInvite`, `exportFairwayJson`, `cycleDetalleVisibility`, `softDeleteDetalle`, `ensureHoleDefaults`, `listCreativePresetNames`, `toggleSetupWriteMode`, `inviteCodeNow` y `hostHasProfile`.
+- Mismos números, mismas pantallas y las mismas claves de localStorage. Las fórmulas no cambian. La sala de la 5.0.6 no se amplía.
+- La versión de producto es 5.1.0: cabecera, perfil, manifiesto y `appVersion` del JSON.
+- El service worker pasa a `fairway-v5-510`. No hace `skipWaiting` al instalar y no recarga con una ronda abierta.
+- No hay release v5.1.0. La publicada sigue siendo v5.0.6, el 2026-10-04T16:46:13Z, sobre `d08b685299e2069226ae218eed4cbcca1ef74e36`.
+
 ## 5.0.6
 
 Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 5.0.5 siguen entrando.
@@ -9,7 +21,7 @@ Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 5.0.5 siguen entrando
 - Sin red se sigue anotando en localStorage. La cola no se vacía y sale cuando hay red. No entra en el JSON de copia.
 - La versión de producto es 5.0.6: cabecera, perfil, manifiesto y `appVersion` del JSON.
 - El service worker pasa a `fairway-v5-506`. No hace `skipWaiting` al instalar y no recarga con una ronda abierta.
-- No hay release v5.0.6. La publicada sigue siendo v5.0.5, el 2026-10-04T15:37:03Z, sobre `0b961329dfdc5b0774896e5d1bf948761d8116fd`, hasta que Lider publique la 5.0.6.
+- Quedó publicada como v5.0.6, el 2026-10-04T16:46:13Z, sobre `d08b685299e2069226ae218eed4cbcca1ef74e36`.
 
 ## 5.0.5
 

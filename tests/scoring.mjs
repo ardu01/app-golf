@@ -214,8 +214,8 @@ assert.strictEqual(api.playerParPlayed({ scores: { 1: 4 } }, 2), 5);
 scope.HOLES = holes18;
 
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
-assert.strictEqual(APP_VERSION, "5.0.6");
-assert.ok(html.includes('appVersion: "5.0.6"'));
+assert.strictEqual(APP_VERSION, "5.1.0");
+assert.ok(html.includes('appVersion: "5.1.0"'));
 assert.ok(html.includes("function go(name)"));
 assert.ok(html.includes("function setScore(idx, v)"));
 assert.ok(html.includes('src="fairway/js/scoring-boot.js"'));

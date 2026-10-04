@@ -276,6 +276,10 @@ function loadApply(scope) {
     "function getDataUpdatedAt() { return ''; }",
     "function restoreActiveRound() {}",
     "function isRoundInProgress() { return false; }",
+    "function writeStoredActiveRound(payload) {",
+    "  try { localStorage.setItem(ACTIVE_KEY, JSON.stringify(payload)); return true; }",
+    "  catch (e) { return false; }",
+    "}",
     "function showToast() {}",
     "function localActiveRoundIsProtected() { return !!scope.protectedRound; }",
     code,
@@ -332,7 +336,7 @@ function applyRemoteHost(scope) {
   assert.strictEqual(JSON.parse(open.localStorage.getItem("fairway.activeRound.v1")).hole, 9);
 }
 assert.ok(html.includes("version: 3"));
-assert.ok(html.includes('appVersion: "5.0.6"'));
+assert.ok(html.includes('appVersion: "5.1.0"'));
 
 const dirty = {
   hole: 4,
@@ -402,7 +406,7 @@ assert.ok(html.includes("DRIVE_DEBOUNCE_MS = 4000"));
 assert.ok(html.includes('method: safeFile ? "PATCH" : "POST"'));
 assert.ok(!html.includes("driveClientIdInput"));
 
-assert.ok(sw.includes('const SHELL = "fairway-v5-506"'));
+assert.ok(sw.includes('const SHELL = "fairway-v5-510"'));
 assert.ok(sw.includes("accounts.google.com"));
 assert.ok(sw.includes(".googleapis.com"));
 assert.ok(sw.includes("fairway-maps-v1"));
