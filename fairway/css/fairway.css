@@ -268,7 +268,8 @@
   #screen-scorecard .sc-score-card {
     display: block;
     padding: 8px 10px;
-    margin: 0;
+    /* Aire solo entre el recuadro y F9/B9 (arriba) y Out/In/Al par (abajo). */
+    margin: 12px 0;
     overflow: visible;
   }
   #screen-scorecard .sc-table-wrap {

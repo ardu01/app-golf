@@ -292,6 +292,8 @@ assert.ok(css.includes("html.fairway-edge-lock"));
 assert.ok(css.includes("touch-action: pan-y"));
 assert.ok(css.includes("touch-action: manipulation"));
 assert.ok(css.includes("padding: 6px 32px 22px 32px"));
+const scCardAir = css.slice(css.indexOf("#screen-scorecard .sc-score-card {"), css.indexOf("#screen-scorecard .sc-table-wrap"));
+assert.match(scCardAir, /margin:\s*12px 0/);
 assert.ok(css.includes("--glass-r-card: 16px"));
 assert.ok(css.includes("--glass-r-chip: 12px"));
 assert.ok(css.includes("--glass-r-sheet: 20px"));
