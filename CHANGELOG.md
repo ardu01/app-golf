@@ -1,5 +1,14 @@
 # Changelog
 
+## 5.1.2
+
+Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 5.1.1 siguen entrando.
+
+- En Tarjeta, el recuadro deja aire respecto a F9 · Ida / B9 · Vuelta y respecto a Out, In y Al par. El contenido, los colores y las fórmulas no cambian.
+- La versión de producto es 5.1.2: cabecera, perfil, manifiesto y `appVersion` del JSON.
+- El service worker pasa a `fairway-v5-512`. No hace `skipWaiting` al instalar y no recarga con una ronda abierta.
+- No hay release v5.1.2. La publicada es v5.1.1, el 2026-10-04T17:38:48Z, sobre `2b56e92508fdb143434ee1e92413f090113fbefd`.
+
 ## 5.1.1
 
 Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 5.1.0 siguen entrando.
@@ -10,7 +19,7 @@ Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 5.1.0 siguen entrando
 - El gross, el neto y el Stableford de los hoyos apuntados no cambian. No se reescriben los golpes ni el `me.gross` de partidas ya guardadas. Una partida vieja sin `holesPlayed` se queda como estaba.
 - La versión de producto es 5.1.1: cabecera, perfil, manifiesto y `appVersion` del JSON.
 - El service worker pasa a `fairway-v5-511`. No hace `skipWaiting` al instalar y no recarga con una ronda abierta.
-- No hay release v5.1.1. La publicada sigue siendo v5.1.0, el 2026-10-04T17:16:08Z, sobre `b6aa690c62bc4455f646bf98e06a33b709ea49b2`, hasta que Lider publique la 5.1.1.
+- Quedó publicada como v5.1.1, el 2026-10-04T17:38:48Z, sobre `2b56e92508fdb143434ee1e92413f090113fbefd`.
 
 ## 5.1.0
 
