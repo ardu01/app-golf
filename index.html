@@ -28,7 +28,7 @@
         <div class="fit">
           <div class="home-hero">
             <div class="home-top">
-              <span class="app-version" aria-label="Versión">5.1.3</span>
+              <span class="app-version" aria-label="Versión">5.1.4</span>
               <button type="button" class="topnav-action" onclick="go('perfil')" aria-label="Perfil">Perfil</button>
             </div>
             <div class="greeting">Buenos días</div>
@@ -3956,16 +3956,17 @@ function renderScorecard() {
         } else {
           const diff = s - h.par;
           let cls = "score-cell";
+          let num = String(s);
           if (diff <= -2) cls += " sc-eagle";
           else if (diff === -1) cls += " sc-birdie";
-          else if (diff === 1) cls += " sc-bogey";
-          else if (diff >= 2) cls += " sc-dbl";
+          else if (diff === 1) num = `<span class="sc-mark square">${s}</span>`;
+          else if (diff >= 2) num = `<span class="sc-mark square dbl">${s}</span>`;
           const strokeMark = recv > 0
             ? `<span class="sc-stroke">${"·".repeat(Math.min(recv, 3))}</span>`
             : (recv < 0 ? `<span class="sc-stroke give">${"◦".repeat(Math.min(-recv, 3))}</span>` : "");
           const sf = stablefordHole(s, h.par, recv);
           const sfMark = `<span class="sc-sf">${sf} pts</span>`;
-          rows += `<td class="${cls}">${s}${strokeMark}${sfMark}</td>`;
+          rows += `<td class="${cls}">${num}${strokeMark}${sfMark}</td>`;
         }
       } else {
         if (cardMode === "gross" && recv) {
@@ -5651,7 +5652,7 @@ function collectFairwayBackup() {
   return {
     version: 3,
     app: "Fairway",
-    appVersion: "5.1.3",
+    appVersion: "5.1.4",
     exportedAt: new Date().toISOString(),
     updatedAt: (typeof getDataUpdatedAt === "function" ? getDataUpdatedAt() : "") || "",
     includes: ["rounds", "players.scores", "players.putts", "players.fir", "players.gir", "players.ball", "players.withdrawn", "roster", "host", "activeRound", "winners", "standings"],
@@ -6747,7 +6748,7 @@ function renderPerfil() {
     <div class="profile-hero">
       <div class="avatar-lg">${escapeHtml(initials)}</div>
       <p class="muted" style="margin-top:8px;">Tu perfil en este dispositivo</p>
-      <p class="micro">Fairway 5.1.3</p>
+      <p class="micro">Fairway 5.1.4</p>
     </div>
     <div class="card mb-16">
       <div class="eyebrow">Nombre</div>
