@@ -83,7 +83,7 @@ assert.ok(!folders.includes("forus-golf-las-rejas-pares-3"));
 assert.ok(existsSync(new URL("holes/forus-las-rejas-pares-3/overview.webp", root)));
 
 const sw = readFileSync(new URL("../sw.js", import.meta.url), "utf8");
-assert.ok(sw.includes('const SHELL = "fairway-v5-513"'));
+assert.ok(sw.includes('const SHELL = "fairway-v5-514"'));
 assert.ok(sw.includes("./fairway/js/courses.js"));
 assert.ok(sw.includes("./fairway/css/fairway.css"));
 assert.ok(sw.includes("escorial-monasterio.png"));

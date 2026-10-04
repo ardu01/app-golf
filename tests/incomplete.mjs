@@ -160,7 +160,7 @@ assert.ok(!/\.is-gray-total[^{]*\{[^}]*padding/.test(css));
 assert.ok(!/\.is-gray-total[^{]*\{[^}]*border/.test(css));
 
 const sw = readFileSync(new URL("../sw.js", import.meta.url), "utf8");
-assert.ok(sw.includes('const SHELL = "fairway-v5-513"'));
+assert.ok(sw.includes('const SHELL = "fairway-v5-514"'));
 const installPart = sw.slice(sw.indexOf('addEventListener("install"'), sw.indexOf('addEventListener("activate"'));
 assert.ok(installPart.length > 0 && !installPart.includes("skipWaiting"));
 

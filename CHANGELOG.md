@@ -1,5 +1,14 @@
 # Changelog
 
+## 5.1.4
+
+Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 5.1.3 siguen entrando.
+
+- En Tarjeta, modo Bruta, el recuadro rojo de bogey+ se ciñe al número. Es el mismo cuadrado de bogey en Neta (`sc-mark square`, 26×26). El doble usa el mismo tamaño con el aro interior. Los puntos Stableford quedan fuera del recuadro. Eagle, birdie, números y fórmulas no cambian. El aire de 12px del recuadro tampoco. El modo Stableford sigue.
+- La versión de producto es 5.1.4: cabecera, perfil, manifiesto y `appVersion` del JSON.
+- El service worker pasa a `fairway-v5-514`. No hace `skipWaiting` al instalar y no recarga con una ronda abierta.
+- No hay release v5.1.4. La publicada es v5.1.3, el 2026-10-04T18:05:55Z, sobre `b3a05419ea7220ca7f5efafaf1a6d1adc1fb1fbd`.
+
 ## 5.1.3
 
 Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 5.1.2 siguen entrando.
@@ -8,7 +17,7 @@ Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 5.1.2 siguen entrando
 - Bruta y Neta siguen igual. El recuadro de bogey+ en Bruta no cambia. El aire de 12px del recuadro tampoco.
 - La versión de producto es 5.1.3: cabecera, perfil, manifiesto y `appVersion` del JSON.
 - El service worker pasa a `fairway-v5-513`. No hace `skipWaiting` al instalar y no recarga con una ronda abierta.
-- No hay release v5.1.3. La publicada es v5.1.2, el 2026-10-04T17:46:37Z, sobre `9346c988f45d1c32e9623da5aa65c14e305085f7`.
+- Quedó publicada como v5.1.3, el 2026-10-04T18:05:55Z, sobre `b3a05419ea7220ca7f5efafaf1a6d1adc1fb1fbd`.
 
 ## 5.1.2
 
