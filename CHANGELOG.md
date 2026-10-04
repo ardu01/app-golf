@@ -8,7 +8,7 @@ Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 5.0.4 siguen entrando
 - Una tarjeta que pierde un golpe no pisa `fairway.activeRound.bak.v1`. Una clave principal ilegible con `.bak` buena tampoco.
 - La versión de producto es 5.0.5: cabecera, perfil, manifiesto y `appVersion` del JSON.
 - El service worker pasa a `fairway-v5-505`. No hace `skipWaiting` al instalar y no recarga con una ronda abierta.
-- No hay release v5.0.5. La publicada sigue siendo v5.0.4, el 2026-10-03T22:52:59Z, sobre `8b5752ffe311928458958e875f4b82e536fe732d`, hasta que Lider publique la 5.0.5.
+- Quedó publicada como v5.0.5, el 2026-10-04T15:37:03Z, sobre `0b961329dfdc5b0774896e5d1bf948761d8116fd`.
 
 ## 5.0.4
 
