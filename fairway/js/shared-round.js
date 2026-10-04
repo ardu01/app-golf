@@ -1,7 +1,10 @@
 /**
  * Shared-round queue and merge. No network, no DOM.
- * Order is a monotonic per-device seq, then deviceId. Not a wall clock.
+ * Order is a Lamport seq, then deviceId. Not a wall clock.
+ * Seeing a remote field raises this device's counter, so the next local edit wins.
  * A missing remote field never clears a local score.
+ * Mantle POST replaces the whole room. A phone with no newer fields does not POST,
+ * and a local field missing from the follow-up GET stays in the queue.
  * An unsequenced local stroke is not replaced and is not given a new seq here.
  */
 
@@ -133,6 +136,9 @@ export function loadShared(raw, deviceId) {
     base.pending = [];
     base.seal = false;
   }
+  Object.keys(base.stamps).forEach((key) => {
+    if (base.stamps[key] > base.seq) base.seq = base.stamps[key];
+  });
   return base;
 }
 
@@ -178,6 +184,17 @@ export function observeSeq(shared, seq) {
   if (!shared || !n) return;
   const cur = validSeq(shared.seq) || 0;
   if (n > cur) shared.seq = n;
+}
+
+/** Raise the local counter to any remote field seq. The next edit then sorts after it. */
+export function observeFields(shared, fields) {
+  if (!shared || !fields || typeof fields !== "object") return;
+  Object.keys(fields).forEach((key) => {
+    const field = fields[key];
+    if (!field || typeof field !== "object") return;
+    observeSeq(shared, field.seq);
+    observeSeq(shared, field.at);
+  });
 }
 
 function orderBy(id) {
@@ -512,6 +529,45 @@ export function pendingToFields(pending) {
   return fields;
 }
 
+function fieldsEqual(a, b) {
+  const left = a || {};
+  const right = b || {};
+  const keys = Object.keys(left);
+  if (keys.length !== Object.keys(right).length) return false;
+  for (let i = 0; i < keys.length; i++) {
+    const key = keys[i];
+    const x = left[key];
+    const y = right[key];
+    if (!x || !y || x.v !== y.v || x.at !== y.at || (x.by || "") !== (y.by || "")) return false;
+  }
+  return true;
+}
+
+/** Ours should still be the room value. A missing key, or a lower remote seq, is a gap. */
+function fieldsNotWinning(ours, echoed) {
+  const gaps = [];
+  Object.keys(ours || {}).forEach((key) => {
+    const mine = ours[key];
+    if (!mine) return;
+    const remote = echoed && echoed[key];
+    if (remote && !fieldOrderWins(mine, remote)) return;
+    const parsed = parseFieldKey(key);
+    if (!parsed) return;
+    const delta = sanitizeDelta({
+      playerId: parsed.playerId,
+      hole: parsed.hole,
+      field: parsed.field,
+      value: mine.v,
+      at: mine.at,
+      seq: mine.seq || mine.at,
+      by: mine.by,
+      op: mine.op
+    });
+    if (delta) gaps.push(delta);
+  });
+  return gaps;
+}
+
 /** First map wins ties. Keys only present on one side are kept. */
 export function mergeFields(primary, incoming) {
   const out = {};
@@ -769,6 +825,8 @@ function emptySync(shared, players, extra) {
 /**
  * Pull the HTTPS room, merge by seq then deviceId, push the union, then GET again.
  * A stroke is acked only when that following GET still shows it as the winner.
+ * If the merged map is already the room, do not POST: the store replaces the whole
+ * document, and a stale POST drops holes this phone did not have in its snapshot.
  * Drive and MQTT are not the room. A failed POST leaves the queue in place.
  */
 export async function syncShared(opts) {
@@ -809,16 +867,31 @@ export async function syncShared(opts) {
   let changed = false;
   let doc = null;
   let httpOk = false;
-  for (let pass = 0; pass < 4; pass++) {
+  const queuedIds = [];
+  shared.pending.forEach((delta) => {
+    const id = delta.op || opId(delta.by, delta.at);
+    if (id) queuedIds.push(id);
+  });
+  for (let pass = 0; pass < 6; pass++) {
     const localFields = playersToFields(players, shared.stamps, shared.deviceId, shared.marks);
     const ours = mergeFields(localFields, pendingToFields(shared.pending));
     const merged = mergeFields(ours, remote && remote.fields);
+    observeFields(shared, merged);
     if (!shared.seal) {
       const applied = applyFieldsToPlayers(players, merged, shared.stamps, shared.marks);
       players = applied.players;
       shared.stamps = applied.stamps;
       shared.marks = applied.marks || shared.marks;
       if (applied.changed) changed = true;
+    }
+    const remoteFields = (remote && remote.fields) || {};
+    if (remote && fieldsEqual(merged, remoteFields)) {
+      shared.pending = ackPending(shared.pending, remoteFields);
+      const already = fieldsNotWinning(ours, remoteFields);
+      if (already.length) shared.pending = queueDeltas(shared.pending, already);
+      httpOk = true;
+      doc = remote;
+      if (!shared.pending.length) break;
     }
     const signals = []
       .concat(remote && remote.signals || [])
@@ -843,24 +916,28 @@ export async function syncShared(opts) {
     let again = null;
     try { again = sanitizeRoom(await mailbox.get(shared.code)); } catch (e) { again = null; }
     if (!again) {
-      if (pass < 3) continue;
+      if (pass < 5) continue;
       shared.status = "error";
       shared.lastError = "get";
       shared.syncing = false;
       return emptySync(shared, players, { changed: changed, doc: remote });
     }
     httpOk = true;
-    const before = shared.pending.slice();
     const echoed = again.fields || {};
+    const gaps = fieldsNotWinning(ours, echoed);
     shared.pending = ackPending(shared.pending, echoed);
-    before.forEach((delta) => {
-      const id = delta.op || opId(delta.by, delta.at);
-      const kept = shared.pending.some((item) => (item.op || opId(item.by, item.at)) === id);
-      if (id && !kept) confirmedOps.push(id);
-    });
+    if (gaps.length) shared.pending = queueDeltas(shared.pending, gaps);
     remote = again;
-    if (!shared.pending.length) break;
+    if (!shared.pending.length && !gaps.length) break;
   }
+  const still = {};
+  shared.pending.forEach((delta) => {
+    const id = delta.op || opId(delta.by, delta.at);
+    if (id) still[id] = true;
+  });
+  queuedIds.forEach((id) => {
+    if (!still[id]) confirmedOps.push(id);
+  });
   shared.status = shared.pending.length ? "pending" : "synced";
   shared.lastError = "";
   shared.lastSyncAt = now;
