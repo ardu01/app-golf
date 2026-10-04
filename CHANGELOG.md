@@ -9,7 +9,7 @@ Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 5.0.5 siguen entrando
 - Sin red se sigue anotando en localStorage. La cola no se vacía y sale cuando hay red. No entra en el JSON de copia.
 - La versión de producto es 5.0.6: cabecera, perfil, manifiesto y `appVersion` del JSON.
 - El service worker pasa a `fairway-v5-506`. No hace `skipWaiting` al instalar y no recarga con una ronda abierta.
-- No hay release v5.0.6. La publicada sigue siendo v5.0.5, el 2026-10-04T15:37:03Z, sobre `0b961329dfdc5b0774896e5d1bf948761d8116fd`, hasta que Lider publique la 5.0.6.
+- Quedó publicada como v5.0.6, el 2026-10-04T16:46:13Z, sobre `d08b685299e2069226ae218eed4cbcca1ef74e36`.
 
 ## 5.0.5
 
