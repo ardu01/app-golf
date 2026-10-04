@@ -2,7 +2,7 @@
  * Round persistence from index.html (Fairway 4.2.6).
  * localStorage is the score. IndexedDB stays a mirror in persistence.js.
  * scope is read on every call so a later HOLES or CLUB assignment stays visible.
- * Backup schema stays 3. Product version is 5.1.2.
+ * Backup schema stays 3. Product version is 5.1.3.
  * The live card is written only here: persistActiveRound, writeStoredActiveRound,
  * restoreActiveRound and recoverActiveRoundFromBackup all go through storageSetItem.
  */
@@ -467,7 +467,7 @@ function createApi(scope) {
         activePlayer: state.activePlayer,
         dataTier: state.dataTier,
         scNine: state.scNine,
-        scCard: state.scCard || "gross",
+        scCard: state.scCard === "net" || state.scCard === "stableford" ? state.scCard : "gross",
         editingRoundId: state.editingRoundId || null,
         setup: JSON.parse(JSON.stringify(state.setup)),
         club: typeof CLUB !== "undefined" ? CLUB : (course && course.name),
@@ -590,7 +590,7 @@ function createApi(scope) {
     state.activePlayer = data.activePlayer || 0;
     state.dataTier = data.dataTier || "score";
     state.scNine = data.scNine || "out";
-    state.scCard = data.scCard === "net" ? "net" : "gross";
+    state.scCard = data.scCard === "net" || data.scCard === "stableford" ? data.scCard : "gross";
     state.editingRoundId = data.editingRoundId || null;
     PLAYERS.length = 0;
     data.players.forEach(p => {

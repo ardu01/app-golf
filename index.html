@@ -28,7 +28,7 @@
         <div class="fit">
           <div class="home-hero">
             <div class="home-top">
-              <span class="app-version" aria-label="Versión">5.1.2</span>
+              <span class="app-version" aria-label="Versión">5.1.3</span>
               <button type="button" class="topnav-action" onclick="go('perfil')" aria-label="Perfil">Perfil</button>
             </div>
             <div class="greeting">Buenos días</div>
@@ -203,6 +203,7 @@
           <div class="sc-card-tabs" id="scCardTabs">
             <button type="button" class="chip selected" data-card="gross" onclick="setScCard('gross')">Bruta</button>
             <button type="button" class="chip" data-card="net" onclick="setScCard('net')">Neta</button>
+            <button type="button" class="chip" data-card="stableford" onclick="setScCard('stableford')">Stableford</button>
           </div>
           <div class="sc-nine-tabs" id="scNineTabs">
             <button type="button" class="chip selected" data-nine="out" onclick="setScNine('out')">F9 · Ida</button>
@@ -3875,7 +3876,7 @@ function updateClubCalls() {
 }
 
 function setScCard(mode) {
-  state.scCard = mode === "net" ? "net" : "gross";
+  state.scCard = mode === "net" || mode === "stableford" ? mode : "gross";
   document.querySelectorAll("#scCardTabs .chip").forEach(c => {
     c.classList.toggle("selected", c.dataset.card === state.scCard);
   });
@@ -3922,6 +3923,8 @@ function renderScorecard() {
   let parNine = 0;
   const totalsNine = list.map(() => 0);
   const netsNine = list.map(() => 0);
+  const sfsNine = list.map(() => 0);
+  const sfPlayedNine = list.map(() => 0);
 
   for (let n = startH; n <= endH; n++) {
     const h = HOLES[n - 1];
@@ -3937,7 +3940,12 @@ function renderScorecard() {
         totalsNine[pi] += s;
         const net = s - recv;
         netsNine[pi] += net;
-        if (cardMode === "net") {
+        if (cardMode === "stableford") {
+          const sf = stablefordHole(s, h.par, recv);
+          sfsNine[pi] += sf;
+          sfPlayedNine[pi] += 1;
+          rows += `<td class="score-cell">${sf}</td>`;
+        } else if (cardMode === "net") {
           const diff = net - h.par;
           let mark = String(net);
           if (diff <= -2) mark = `<span class="sc-mark circle eagle">${net}</span>`;
@@ -3975,7 +3983,9 @@ function renderScorecard() {
 
   const label = nine === "in" ? "IN" : "OUT";
   rows += `<tr class="sc-totals"><td class="hole-label">${label}</td><td>${parNine}</td>`;
-  if (cardMode === "net") {
+  if (cardMode === "stableford") {
+    sfPlayedNine.forEach((n, i) => { rows += `<td>${n ? sfsNine[i] : "—"}</td>`; });
+  } else if (cardMode === "net") {
     netsNine.forEach(t => { rows += `<td>${t || "—"}</td>`; });
   } else {
     totalsNine.forEach(t => { rows += `<td>${t || "—"}</td>`; });
@@ -3985,6 +3995,8 @@ function renderScorecard() {
   let parAll = 0;
   const totAll = list.map(() => 0);
   const netAll = list.map(() => 0);
+  const sfAll = list.map(() => 0);
+  const sfPlayedAll = list.map(() => 0);
   for (let i = 0; i < maxH; i++) {
     if (HOLES[i]) parAll += HOLES[i].par;
     list.forEach((p, pi) => {
@@ -3992,7 +4004,12 @@ function renderScorecard() {
       if (s != null) {
         totAll[pi] += s;
         const ch = playerCourseHcp(p);
-        netAll[pi] += s - strokesOnHole(ch, HOLES[i].hcp);
+        const recvAll = strokesOnHole(ch, HOLES[i].hcp);
+        netAll[pi] += s - recvAll;
+        if (cardMode === "stableford") {
+          sfAll[pi] += stablefordHole(s, HOLES[i].par, recvAll);
+          sfPlayedAll[pi] += 1;
+        }
       }
     });
   }
@@ -4000,7 +4017,9 @@ function renderScorecard() {
     if (!totAll[pi] && p.totalsGross != null) totAll[pi] = Number(p.totalsGross) || 0;
   });
   rows += `<tr class="sc-totals"><td class="hole-label">TOT</td><td>${parAll}</td>`;
-  if (cardMode === "net") {
+  if (cardMode === "stableford") {
+    sfPlayedAll.forEach((n, i) => { rows += `<td>${n ? sfAll[i] : "—"}</td>`; });
+  } else if (cardMode === "net") {
     netAll.forEach(t => { rows += `<td>${t || "—"}</td>`; });
   } else {
     totAll.forEach(t => { rows += `<td>${t || "—"}</td>`; });
@@ -4010,7 +4029,15 @@ function renderScorecard() {
 
   const leg = document.getElementById("scLegend");
   if (leg) {
-    if (cardMode === "net") {
+    if (cardMode === "stableford") {
+      leg.innerHTML = `
+        <span>5 albatros+</span>
+        <span>4 eagle</span>
+        <span>3 birdie</span>
+        <span>2 par</span>
+        <span>1 bogey</span>
+        <span>0 doble+</span>`;
+    } else if (cardMode === "net") {
       leg.innerHTML = `
         <span><i class="leg-circle" style="display:inline-block;box-shadow:inset 0 0 0 1px #34C759;"></i> Eagle+</span>
         <span><i class="leg-circle" style="display:inline-block;"></i> Birdie</span>
@@ -4035,13 +4062,17 @@ function renderScorecard() {
   let migOut = 0, migIn = 0, parOut = 0, parIn = 0;
   let netOut = 0, netIn = 0;
   let parPlayedOut = 0, parPlayedIn = 0;
+  let sfOut = 0, sfIn = 0, sfPlayedOut = 0, sfPlayedIn = 0;
   for (let k = 1; k <= 9; k++) {
     if (HOLES[k - 1]) parOut += HOLES[k - 1].par;
     if (me && me.scores[k] != null && HOLES[k - 1]) {
       migOut += me.scores[k];
       parPlayedOut += HOLES[k - 1].par;
       const ch = playerCourseHcp(me);
-      netOut += me.scores[k] - strokesOnHole(ch, HOLES[k - 1].hcp);
+      const recv = strokesOnHole(ch, HOLES[k - 1].hcp);
+      netOut += me.scores[k] - recv;
+      sfOut += stablefordHole(me.scores[k], HOLES[k - 1].par, recv);
+      sfPlayedOut += 1;
     }
   }
   for (let k = 10; k <= 18; k++) {
@@ -4050,13 +4081,23 @@ function renderScorecard() {
       migIn += me.scores[k];
       parPlayedIn += HOLES[k - 1].par;
       const ch = playerCourseHcp(me);
-      netIn += me.scores[k] - strokesOnHole(ch, HOLES[k - 1].hcp);
+      const recv = strokesOnHole(ch, HOLES[k - 1].hcp);
+      netIn += me.scores[k] - recv;
+      sfIn += stablefordHole(me.scores[k], HOLES[k - 1].par, recv);
+      sfPlayedIn += 1;
     }
   }
   let sumGross = migOut + migIn;
   if (!sumGross && me && me.totalsGross != null) sumGross = Number(me.totalsGross) || 0;
   const parPlayed = parPlayedOut + parPlayedIn;
-  if (cardMode === "net") {
+  if (cardMode === "stableford") {
+    document.getElementById("scOut").textContent = sfPlayedOut ? String(sfOut) : "—";
+    document.getElementById("scIn").textContent = sfPlayedIn ? String(sfIn) : "—";
+    const played = sfPlayedOut + sfPlayedIn;
+    const pts = sfOut + sfIn;
+    const d = pts - (2 * played);
+    document.getElementById("scToPar").textContent = played ? ((d > 0 ? "+" : "") + d) : "—";
+  } else if (cardMode === "net") {
     document.getElementById("scOut").textContent = migOut ? String(netOut) : "—";
     document.getElementById("scIn").textContent = migIn ? String(netIn) : "—";
     const netTot = netOut + netIn;
@@ -5610,7 +5651,7 @@ function collectFairwayBackup() {
   return {
     version: 3,
     app: "Fairway",
-    appVersion: "5.1.2",
+    appVersion: "5.1.3",
     exportedAt: new Date().toISOString(),
     updatedAt: (typeof getDataUpdatedAt === "function" ? getDataUpdatedAt() : "") || "",
     includes: ["rounds", "players.scores", "players.putts", "players.fir", "players.gir", "players.ball", "players.withdrawn", "roster", "host", "activeRound", "winners", "standings"],
@@ -5802,7 +5843,7 @@ function validateFairwayBackup(data) {
       editingRoundId: data.activeRound.editingRoundId ? clipStr(data.activeRound.editingRoundId, 64) : null,
       dataTier: clipStr(data.activeRound.dataTier || "score", 16),
       scNine: data.activeRound.scNine === "in" ? "in" : "out",
-      scCard: data.activeRound.scCard === "net" ? "net" : "gross",
+      scCard: data.activeRound.scCard === "net" || data.activeRound.scCard === "stableford" ? data.activeRound.scCard : "gross",
       club: clipStr(data.activeRound.club, 80),
       setup: (function () {
         const s = data.activeRound.setup;
@@ -6706,7 +6747,7 @@ function renderPerfil() {
     <div class="profile-hero">
       <div class="avatar-lg">${escapeHtml(initials)}</div>
       <p class="muted" style="margin-top:8px;">Tu perfil en este dispositivo</p>
-      <p class="micro">Fairway 5.1.2</p>
+      <p class="micro">Fairway 5.1.3</p>
     </div>
     <div class="card mb-16">
       <div class="eyebrow">Nombre</div>

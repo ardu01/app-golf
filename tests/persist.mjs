@@ -11,7 +11,7 @@ for (const block of html.matchAll(/<script>([\s\S]*?)<\/script>/g)) {
   new Function(block[1]);
 }
 
-assert.ok(html.includes('appVersion: "5.1.2"'));
+assert.ok(html.includes('appVersion: "5.1.3"'));
 assert.ok(!html.includes("localStorage.setItem(ACTIVE_KEY"));
 assert.ok(!html.includes('localStorage.setItem("fairway.activeRound.v1"'));
 assert.ok(!html.includes("localStorage.setItem('fairway.activeRound.v1'"));
@@ -28,7 +28,7 @@ assert.ok(!html.includes('appVersion: "4.0.0-alpha"'));
 assert.ok(!html.includes('appVersion: "3.0.3"'));
 assert.ok(!html.includes('appVersion: "3.0.2"'));
 assert.ok(!html.includes('appVersion: "3.0.0"'));
-assert.ok(sw.includes('const SHELL = "fairway-v5-512"'));
+assert.ok(sw.includes('const SHELL = "fairway-v5-513"'));
 assert.ok(!sw.includes("fairway-v4-400a"));
 assert.ok(roundsSrc.includes("pagehide"));
 assert.ok(roundsSrc.includes("visibilitychange"));
@@ -528,6 +528,22 @@ function closeStorage(blockRounds) {
   assert.strictEqual(s.api.saveRounds([older[0]]), true);
   const afterDrop = JSON.parse(s.localStorage.getItem("fairway.rounds.bak.v1"));
   assert.ok(afterDrop.some((r) => r.id === "r-new"));
+}
+
+{
+  const s = fresh();
+  const player = { id: "me", name: "Miguel", scores: { 1: 4 } };
+  assert.strictEqual(s.api.applyActivePayload({ scCard: "stableford", players: [player] }), true);
+  assert.strictEqual(s.state.scCard, "stableford");
+  assert.strictEqual(s.api.persistActiveRound(), true);
+  assert.strictEqual(s.api.inspectActiveKey(ACTIVE_KEY).data.scCard, "stableford");
+  s.state.scCard = "gross";
+  assert.strictEqual(s.api.restoreActiveRound(), true);
+  assert.strictEqual(s.state.scCard, "stableford");
+  assert.strictEqual(s.api.applyActivePayload({ scCard: "net", players: [player] }), true);
+  assert.strictEqual(s.state.scCard, "net");
+  assert.strictEqual(s.api.applyActivePayload({ scCard: "match", players: [player] }), true);
+  assert.strictEqual(s.state.scCard, "gross");
 }
 
 console.log("persist ok");

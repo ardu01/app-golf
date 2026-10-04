@@ -1330,7 +1330,7 @@
     line-height: 1; margin-top: 1px;
   }
   .sc-card-tabs { display: flex; gap: 8px; padding: 0; flex-shrink: 0; margin-bottom: 4px; }
-  .sc-card-tabs .chip { flex: 1; justify-content: center; height: 34px; }
+  .sc-card-tabs .chip { flex: 1; justify-content: center; height: 34px; padding: 0 8px; white-space: nowrap; min-width: 0; }
   .sc-totals { background: rgba(26,26,24,0.04); }
   .sc-totals td { font-weight: 600; color: var(--ink); border-bottom: none; }
   .sc-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; font-size: 11px; color: var(--ink-secondary); }

@@ -1,5 +1,15 @@
 # Changelog
 
+## 5.1.3
+
+Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 5.1.2 siguen entrando.
+
+- En Tarjeta, junto a Bruta y Neta, Stableford es otro modo de la misma fila. Cada hoyo muestra los puntos de `stablefordHole`, el mismo cálculo de la clasificación. Out, In y el total suman esos puntos. Al par es la diferencia frente a 2 puntos por hoyo jugado: 2 es el par de esa tabla. No hay fórmula nueva.
+- Bruta y Neta siguen igual. El recuadro de bogey+ en Bruta no cambia. El aire de 12px del recuadro tampoco.
+- La versión de producto es 5.1.3: cabecera, perfil, manifiesto y `appVersion` del JSON.
+- El service worker pasa a `fairway-v5-513`. No hace `skipWaiting` al instalar y no recarga con una ronda abierta.
+- No hay release v5.1.3. La publicada es v5.1.2, el 2026-10-04T17:46:37Z, sobre `9346c988f45d1c32e9623da5aa65c14e305085f7`.
+
 ## 5.1.2
 
 Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 5.1.1 siguen entrando.
@@ -7,7 +17,7 @@ Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 5.1.1 siguen entrando
 - En Tarjeta, el recuadro deja aire respecto a F9 · Ida / B9 · Vuelta y respecto a Out, In y Al par. El contenido, los colores y las fórmulas no cambian.
 - La versión de producto es 5.1.2: cabecera, perfil, manifiesto y `appVersion` del JSON.
 - El service worker pasa a `fairway-v5-512`. No hace `skipWaiting` al instalar y no recarga con una ronda abierta.
-- No hay release v5.1.2. La publicada es v5.1.1, el 2026-10-04T17:38:48Z, sobre `2b56e92508fdb143434ee1e92413f090113fbefd`.
+- Quedó publicada como v5.1.2, el 2026-10-04T17:46:37Z, sobre `9346c988f45d1c32e9623da5aa65c14e305085f7`.
 
 ## 5.1.1
 
