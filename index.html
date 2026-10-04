@@ -28,7 +28,7 @@
         <div class="fit">
           <div class="home-hero">
             <div class="home-top">
-              <span class="app-version" aria-label="Versión">5.1.0</span>
+              <span class="app-version" aria-label="Versión">5.1.1</span>
               <button type="button" class="topnav-action" onclick="go('perfil')" aria-label="Perfil">Perfil</button>
             </div>
             <div class="greeting">Buenos días</div>
@@ -5108,6 +5108,99 @@ function roundLayoutLabel() {
   return n + " hoyos";
 }
 
+/** Gross that is the first Stableford 0: par + 2 + strokes the hole already receives. */
+function netDoubleBogeyScore(par, strokesReceived) {
+  const recv = Number(strokesReceived);
+  return (Number(par) || 0) + 2 + (Number.isFinite(recv) ? recv : 0);
+}
+
+/**
+ * Complete-round gross. Holes without a stroke contribute net double bogey.
+ * Does not write those strokes into `scores`.
+ */
+function completeRoundGross(holeList, scores, strokesForHole) {
+  const list = holeList || [];
+  const map = scores || {};
+  let gross = 0;
+  let filled = false;
+  let marked = 0;
+  for (let i = 0; i < list.length; i++) {
+    const h = list[i] || {};
+    const n = h.n != null ? h.n : (i + 1);
+    if (map[n] != null && map[n] !== "") {
+      gross += Number(map[n]) || 0;
+      marked += 1;
+    } else {
+      const recv = typeof strokesForHole === "function" ? strokesForHole(h, i) : 0;
+      gross += netDoubleBogeyScore(h.par, recv);
+      filled = true;
+    }
+  }
+  return { gross: gross, filled: filled, marked: marked };
+}
+
+function roundHasMarkedHoleScores(round) {
+  const players = round && round.players;
+  if (!Array.isArray(players)) return false;
+  for (let i = 0; i < players.length; i++) {
+    const scores = players[i] && players[i].scores;
+    if (!scores || typeof scores !== "object") continue;
+    const keys = Object.keys(scores);
+    for (let k = 0; k < keys.length; k++) {
+      if (scores[keys[k]] != null && scores[keys[k]] !== "") return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * A closed card counts for stats when it is a full card, or a real 9
+ * (the app already stores that as `holes === 9`). Nine marked holes on an
+ * 18-hole card do not. Cards saved before `holesPlayed` existed stay as they were.
+ */
+function closedCardCountsForStats(round) {
+  if (!round || typeof round !== "object") return false;
+  const planned = Number(round.holes);
+  const playedRaw = round.holesPlayed;
+  const played = Number(playedRaw);
+  if (!Number.isFinite(planned) || playedRaw == null || playedRaw === "" || !Number.isFinite(played)) return true;
+  if (played >= planned) return played > 0;
+  if (played === 0 && !roundHasMarkedHoleScores(round)) {
+    const thru = Number(round.me && round.me.thru);
+    const gross = round.me ? round.me.gross : null;
+    if (Number.isFinite(thru) && thru >= planned && gross != null && gross !== "") return true;
+  }
+  if (played !== 9) return false;
+  return planned === 9;
+}
+
+/** Gray total only when the close screen needs a 9- or 18-hole number and the card is short. */
+function needsCompleteRoundGross(planned, played, totalsOnly) {
+  if (totalsOnly) return false;
+  const n = Number(planned);
+  const p = Number(played);
+  if (!Number.isFinite(n) || !Number.isFinite(p)) return false;
+  if (!(n === 9 || n === 18)) return false;
+  return p > 0 && p < n;
+}
+
+function filledRoundGross(player, maxH) {
+  const holes = [];
+  for (let i = 0; i < maxH; i++) {
+    const src = (typeof HOLES !== "undefined" && HOLES && HOLES[i]) ? HOLES[i] : null;
+    holes.push(src
+      ? { n: src.n != null ? src.n : (i + 1), par: src.par, hcp: src.hcp }
+      : { n: i + 1, par: 4, hcp: i + 1 });
+  }
+  const scores = (player && player.scores) ? player.scores : {};
+  return completeRoundGross(holes, scores, function (h) {
+    if (typeof strokesOnHole !== "function" || typeof playerCourseHcp !== "function") return 0;
+    // Same call as the live card. A 9-hole round on an 18-hole course
+    // reorders stroke index only when HOLES is longer than the round.
+    return strokesOnHole(playerCourseHcp(player), h.hcp);
+  });
+}
+
 function renderClose() {
   const body = document.getElementById("closeBody");
   // Snapshot standings/podium BEFORE wiping active memory (P05 + placas)
@@ -5115,7 +5208,6 @@ function renderClose() {
   const podium = buildLivePodium();
   window._lastPodium = podium.slice();
   window._lastPlaqueMeta = plaqueMeta();
-  persistCompletedRound();
   const me = rows.find(r => r.me) || rows[0];
   const course = (typeof getSelectedCourse === "function" ? getSelectedCourse() : null);
   const layout = roundLayoutLabel();
@@ -5126,21 +5218,42 @@ function renderClose() {
 
   const planned = (state.setup && state.setup.holes) || 18;
   const played = me && me.p ? countMarkedHoles(me.p.scores, planned) : 0;
-  const playedNote = (me && me.totalsOnly) ? "Total, sin hoyo a hoyo" : (played ? (played + " hoyos con resultado") : "");
-  const gross = me && me.thru ? me.gross : "—";
+  const playedBit = (me && me.totalsOnly) ? "Total, sin hoyo a hoyo" : (played ? (played + " hoyos con resultado") : "");
+  let gross = me && me.thru ? me.gross : "—";
+  let grossGray = false;
+  if (needsCompleteRoundGross(planned, played, !!(me && me.totalsOnly))) {
+    const filled = filledRoundGross(me.p, planned);
+    if (filled && filled.filled) {
+      gross = filled.gross;
+      grossGray = true;
+    }
+  }
+  const countsAsRound = closedCardCountsForStats({
+    holes: planned,
+    holesPlayed: played,
+    players: me && me.p ? [{ scores: me.p.scores || {} }] : [],
+    me: { gross: me ? me.gross : null, thru: me && me.totalsOnly ? planned : (me ? me.thru : null) }
+  });
+  persistCompletedRound();
   const toPar = me && me.toPar != null ? ((me.toPar > 0 ? "+" : "") + me.toPar) : "—";
   const sfPts = me && me.thru ? me.sf : "—";
   const net = me && me.thru ? me.net : "—";
+  const grossClass = grossGray ? "v is-gray-total" : "v";
+  const grossTitle = grossGray ? ' title="Total de la vuelta completa: hoyos sin golpe al doble bogey neto"' : "";
+  const playedNote = grossGray
+    ? (playedBit ? playedBit + " · gross en gris, doble bogey neto" : "Gross en gris, doble bogey neto")
+    : playedBit;
+  const eyebrow = countsAsRound ? "Ronda completada" : "Tarjeta cerrada";
 
   body.innerHTML = `
     <div class="close-hero">
       <div class="trophy" aria-hidden="true"></div>
-      <div class="eyebrow">Ronda completada</div>
+      <div class="eyebrow">${eyebrow}</div>
       <h1 style="font-size:22px;">${escapeHtml(CLUB)}</h1>
       <p class="micro mt-8">${escapeHtml(layout)} · ${escapeHtml(state.setup.tee)} · Par ${par}${officialBadge}${playedNote ? " · " + escapeHtml(playedNote) : ""}</p>
     </div>
     <div class="close-stats">
-      <div class="close-stat"><div class="v">${gross}</div><div class="l">Gross</div></div>
+      <div class="close-stat"><div class="${grossClass}"${grossTitle}>${gross}</div><div class="l">Gross</div></div>
       <div class="close-stat"><div class="v">${toPar}</div><div class="l">Al par</div></div>
       <div class="close-stat"><div class="v">${sfPts}</div><div class="l">Stableford</div></div>
       <div class="close-stat"><div class="v">${net}</div><div class="l">Net</div></div>
@@ -5497,7 +5610,7 @@ function collectFairwayBackup() {
   return {
     version: 3,
     app: "Fairway",
-    appVersion: "5.1.0",
+    appVersion: "5.1.1",
     exportedAt: new Date().toISOString(),
     updatedAt: (typeof getDataUpdatedAt === "function" ? getDataUpdatedAt() : "") || "",
     includes: ["rounds", "players.scores", "players.putts", "players.fir", "players.gir", "players.ball", "players.withdrawn", "roster", "host", "activeRound", "winners", "standings"],
@@ -6593,7 +6706,7 @@ function renderPerfil() {
     <div class="profile-hero">
       <div class="avatar-lg">${escapeHtml(initials)}</div>
       <p class="muted" style="margin-top:8px;">Tu perfil en este dispositivo</p>
-      <p class="micro">Fairway 5.1.0</p>
+      <p class="micro">Fairway 5.1.1</p>
     </div>
     <div class="card mb-16">
       <div class="eyebrow">Nombre</div>
@@ -7012,7 +7125,9 @@ function savedRoundsForStats() {
     if (state.deletedRounds && state.deletedRounds[r.id]) return false;
     const me = r.me || {};
     const played = statsNum(r.holesPlayed) || statsNum(me.thru) || 0;
-    return played > 0 && statsNum(me.gross) != null;
+    if (!(played > 0 && statsNum(me.gross) != null)) return false;
+    if (r.holesPlayed != null && !closedCardCountsForStats(r)) return false;
+    return true;
   }).sort((a, b) => statsRoundTime(b) - statsRoundTime(a));
 }
 function filterStatsRounds(all) {
@@ -7049,6 +7164,7 @@ function fmtStat(n, digits) {
 function statsGrossByLayout(rounds) {
   const out = { 9: [], 18: [] };
   (rounds || []).forEach(function (r) {
+    if (r && r.holesPlayed != null && !closedCardCountsForStats(r)) return;
     const holes = statsNum(r && r.holes);
     const gross = statsNum(r && r.me && r.me.gross);
     if ((holes === 9 || holes === 18) && gross != null) out[holes].push(gross);
