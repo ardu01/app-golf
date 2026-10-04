@@ -5195,7 +5195,9 @@ function filledRoundGross(player, maxH) {
   const scores = (player && player.scores) ? player.scores : {};
   return completeRoundGross(holes, scores, function (h) {
     if (typeof strokesOnHole !== "function" || typeof playerCourseHcp !== "function") return 0;
-    return strokesOnHole(playerCourseHcp(player), h.hcp, { holes: maxH, holeList: holes });
+    // Same call as the live card. A 9-hole round on an 18-hole course
+    // reorders stroke index only when HOLES is longer than the round.
+    return strokesOnHole(playerCourseHcp(player), h.hcp);
   });
 }
 

@@ -6,7 +6,7 @@ Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 5.1.0 siguen entrando
 
 - Al cerrar, una tarjeta con hoyos en blanco y un número de hoyos jugados distinto de 9 no es vuelta y no entra en estadísticas. Una de 18 completa sigue siendo vuelta.
 - Con exactamente 9 hoyos jugados solo es ronda de 9 si la app ya la trata como de 9 (`holes` es 9). Nueve hoyos sueltos en una tarjeta de 18 no lo son.
-- Si hace falta el número de la vuelta completa, el gross del cierre va en gris: cada hoyo sin golpe cuenta como doble bogey neto (`par + 2 + los golpes que ese hoyo ya recibe`, también si el golpe es negativo). Es el primer golpe que en Stableford vale 0. No se escribe el bruto en esos hoyos. El gris no mete la no-vuelta en las estadísticas.
+- Si hace falta el número de la vuelta completa, el gross del cierre va en gris: cada hoyo sin golpe cuenta como doble bogey neto (`par + 2 + los golpes que ese hoyo ya recibe`, también si el golpe es negativo). El reparto es el mismo `strokesOnHole` del marcador, también en una ronda de 9 sobre un campo de 18. Es el primer golpe que en Stableford vale 0. No se escribe el bruto en esos hoyos. El gris no mete la no-vuelta en las estadísticas.
 - El gross, el neto y el Stableford de los hoyos apuntados no cambian. No se reescriben los golpes ni el `me.gross` de partidas ya guardadas. Una partida vieja sin `holesPlayed` se queda como estaba.
 - La versión de producto es 5.1.1: cabecera, perfil, manifiesto y `appVersion` del JSON.
 - El service worker pasa a `fairway-v5-511`. No hace `skipWaiting` al instalar y no recarga con una ronda abierta.

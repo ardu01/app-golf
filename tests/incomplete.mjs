@@ -1,7 +1,7 @@
 import assert from "assert";
 import { readFileSync } from "fs";
 import { extractFunction, readApp } from "./extract.mjs";
-import { stablefordHole } from "../fairway/js/scoring.js";
+import { bindScoringScope, stablefordHole } from "../fairway/js/scoring.js";
 
 const html = readApp();
 const names = [
@@ -163,5 +163,62 @@ const sw = readFileSync(new URL("../sw.js", import.meta.url), "utf8");
 assert.ok(sw.includes('const SHELL = "fairway-v5-511"'));
 const installPart = sw.slice(sw.indexOf('addEventListener("install"'), sw.indexOf('addEventListener("activate"'));
 assert.ok(installPart.length > 0 && !installPart.includes("skipWaiting"));
+
+const filledSrc = extractFunction(html, "filledRoundGross");
+assert.ok(filledSrc.includes("strokesOnHole(playerCourseHcp(player), h.hcp)"));
+assert.ok(!filledSrc.includes("holeList"));
+
+// 9-hole round on an 18-hole card. Live scoring calls strokesOnHole(ph, hcp)
+// with the full HOLES list. Gray must use that same allocation.
+{
+  const front = [4, 10, 18, 6, 2, 12, 14, 8, 16];
+  const holes18 = front.map((hcp, i) => ({ n: i + 1, par: 4, hcp: hcp })).concat(
+    Array.from({ length: 9 }, (_, i) => ({ n: 10 + i, par: 4, hcp: 20 + i }))
+  );
+  const state = { setup: { holes: 9, tee: "Amarillas", players: [true] } };
+  const scoring = bindScoringScope({
+    state: state,
+    HOLES: holes18,
+    PLAYERS: [],
+    FX: { tee: "Amarillas" },
+    getSelectedCourse: () => null
+  });
+  const filledRoundGross = new Function(
+    "HOLES",
+    "strokesOnHole",
+    "playerCourseHcp",
+    extractFunction(html, "netDoubleBogeyScore") + "\n" +
+    extractFunction(html, "completeRoundGross") + "\n" +
+    extractFunction(html, "filledRoundGross") + "\n" +
+    "return filledRoundGross;"
+  )(holes18, scoring.strokesOnHole, scoring.playerCourseHcp);
+
+  function liveRecv(ph, hcp) {
+    return scoring.strokesOnHole(ph, hcp);
+  }
+  function assertGrayMatchesLive(ph, expectRecv) {
+    const nine = holes18.slice(0, 9);
+    nine.forEach(h => {
+      assert.strictEqual(liveRecv(ph, h.hcp), expectRecv[h.hcp], "PH " + ph + " SI " + h.hcp);
+    });
+    const player = { ch: ph, scores: {} };
+    const filled = filledRoundGross(player, 9);
+    const expected = nine.reduce((sum, h) => sum + h.par + 2 + liveRecv(ph, h.hcp), 0);
+    assert.strictEqual(filled.gross, expected);
+    assert.strictEqual(filled.filled, true);
+    assert.deepStrictEqual(player.scores, {});
+    nine.forEach((h, i) => {
+      const scores = {};
+      nine.forEach((other, j) => { if (j !== i) scores[other.n] = other.par; });
+      const one = filledRoundGross({ ch: ph, scores: scores }, 9);
+      const marked = nine.reduce((sum, other, j) => sum + (j === i ? 0 : other.par), 0);
+      assert.strictEqual(one.gross - marked, h.par + 2 + liveRecv(ph, h.hcp));
+    });
+  }
+  // PH 6: the six hardest of these nine, not absolute SI 1–6.
+  assertGrayMatchesLive(6, { 2: 1, 4: 1, 6: 1, 8: 1, 10: 1, 12: 1, 14: 0, 16: 0, 18: 0 });
+  // PH −2: the two easiest of these nine, not the two easiest absolute SI on 18.
+  assertGrayMatchesLive(-2, { 2: 0, 4: 0, 6: 0, 8: 0, 10: 0, 12: 0, 14: 0, 16: -1, 18: -1 });
+}
 
 console.log("incomplete ok");
