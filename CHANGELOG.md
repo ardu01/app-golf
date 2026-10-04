@@ -10,7 +10,7 @@ Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 5.0.6 siguen entrando
 - Mismos números, mismas pantallas y las mismas claves de localStorage. Las fórmulas no cambian. La sala de la 5.0.6 no se amplía.
 - La versión de producto es 5.1.0: cabecera, perfil, manifiesto y `appVersion` del JSON.
 - El service worker pasa a `fairway-v5-510`. No hace `skipWaiting` al instalar y no recarga con una ronda abierta.
-- No hay release v5.1.0. La publicada sigue siendo v5.0.6, el 2026-10-04T16:46:13Z, sobre `d08b685299e2069226ae218eed4cbcca1ef74e36`.
+- Quedó publicada como v5.1.0, el 2026-10-04T17:16:08Z, sobre `b6aa690c62bc4455f646bf98e06a33b709ea49b2`.
 
 ## 5.0.6
 
