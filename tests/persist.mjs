@@ -11,12 +11,24 @@ for (const block of html.matchAll(/<script>([\s\S]*?)<\/script>/g)) {
   new Function(block[1]);
 }
 
-assert.ok(html.includes('appVersion: "5.0.6"'));
+assert.ok(html.includes('appVersion: "5.1.0"'));
+assert.ok(!html.includes("localStorage.setItem(ACTIVE_KEY"));
+assert.ok(!html.includes('localStorage.setItem("fairway.activeRound.v1"'));
+assert.ok(!html.includes("localStorage.setItem('fairway.activeRound.v1'"));
+assert.ok(html.includes("writeStoredActiveRound("));
+assert.ok(roundsSrc.includes("function writeStoredActiveRound"));
+assert.ok(roundsSrc.includes("function commitActiveScore"));
+const toggleMod = extractFunction(html, "toggleMod");
+assert.strictEqual((toggleMod.match(/persistActiveRound\(/g) || []).length, 1);
+assert.ok(extractFunction(html, "ajPersist").includes("saveEditingRoundDraft(true)"));
+assert.ok(!extractFunction(html, "ajPersist").includes("buildRoundRecord"));
+assert.ok(extractFunction(html, "setScore").includes("commitActiveScore"));
+assert.ok(!extractFunction(html, "setScore").includes("p.scores["));
 assert.ok(!html.includes('appVersion: "4.0.0-alpha"'));
 assert.ok(!html.includes('appVersion: "3.0.3"'));
 assert.ok(!html.includes('appVersion: "3.0.2"'));
 assert.ok(!html.includes('appVersion: "3.0.0"'));
-assert.ok(sw.includes('const SHELL = "fairway-v5-506"'));
+assert.ok(sw.includes('const SHELL = "fairway-v5-510"'));
 assert.ok(!sw.includes("fairway-v4-400a"));
 assert.ok(roundsSrc.includes("pagehide"));
 assert.ok(roundsSrc.includes("visibilitychange"));
@@ -120,6 +132,13 @@ const ACTIVE_BAK_KEY = "fairway.activeRound.bak.v1";
   assert.strictEqual(saved.data.players[0].scores["1"], 5);
   assert.strictEqual(s.toasts.length, 0);
   assert.strictEqual(s.state._activeRoundLive, true);
+  const bak = s.localStorage.getItem(ACTIVE_BAK_KEY);
+  assert.strictEqual(s.api.writeStoredActiveRound({
+    hole: 9,
+    players: [{ id: "me", name: "Miguel", scores: { 1: 3 } }]
+  }), true);
+  assert.strictEqual(s.api.inspectActiveKey(ACTIVE_KEY).data.hole, 9);
+  assert.strictEqual(s.localStorage.getItem(ACTIVE_BAK_KEY), bak);
 }
 
 {

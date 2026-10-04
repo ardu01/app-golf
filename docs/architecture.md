@@ -1,27 +1,43 @@
 # Fairway — arquitectura
 
-Producto **5.0.0**. Esquema del JSON de copia: **3**. No es un rediseño de la app.
+Producto **5.1.0**. Esquema del JSON de copia: **3**. No es un rediseño de la app. La release publicada sigue siendo **v5.0.6** (2026-10-04T16:46:13Z, `d08b685299e2069226ae218eed4cbcca1ef74e36`) hasta que Lider publique la 5.1.0.
 
-## Qué sigue siendo la fuente de la partida
+## Qué es la fuente de la partida
 
-La ronda en memoria (`state`, `PLAYERS`) y `localStorage` siguen siendo la copia que lee el marcador. Las fórmulas de hándicap no se han movido de `index.html`. `collectFairwayBackup` escribe `version: 3` y `appVersion: "5.0.0"`.
+La ronda en memoria (`state`, `PLAYERS`) y `localStorage` son la copia que lee el marcador. Hay un solo escritor de `fairway.activeRound.v1`: `fairway/js/rounds.js`.
 
-IndexedDB es una copia verificada de esas claves, no un segundo marcador. Importar un JSON o aplicar Drive sigue pasando por `mergeFairwayBackup` y `driveApplyResolved`, que ya no pisan una ronda local protegida. La migración no es un import remoto: copia lo que ya está en este dispositivo.
+- El marcador no asigna golpes, putts, FIR, GIR ni totales por su cuenta. Llama a `commitActiveScore`, `adjustActiveScore`, `commitActivePutts`, `adjustActivePutts`, `commitActiveMark` y `commitActiveTotal`. Esas funciones mutan la tarjeta y llaman a `persistActiveRound`.
+- `persistActiveRound`, `restoreActiveRound` y `recoverActiveRoundFromBackup` escriben la clave con `storageSetItem`. `persistActiveRound` es quien actualiza `fairway.activeRound.bak.v1` cuando la tarjeta nueva conserva las marcas de la última tarjeta buena.
+- Importar un JSON (`mergeFairwayBackup`) y aplicar Drive (`driveApplyResolved`) no hacen `localStorage.setItem` de la ronda activa. Llaman a `writeStoredActiveRound`, que usa el mismo `storageSetItem` y no mueve la `.bak`.
+- Ajustes, si edita una vuelta del historial, guarda con `saveEditingRoundDraft`. No hay una segunda copia de ese registro en la página.
+- `rounds-boot.js` publica esas funciones en `window`.
+
+Las fórmulas de hándicap viven en `fairway/js/scoring.js` (`courseHandicapFor`: `hi * slope / 113`). `collectFairwayBackup` escribe `version: 3` y `appVersion: "5.1.0"`. La cola `fairway.sharedRound.v1` no entra en ese JSON.
+
+IndexedDB es una copia verificada de esas claves, no un segundo marcador. Importar un JSON o aplicar Drive sigue pasando por `mergeFairwayBackup` y `driveApplyResolved`, que no pisan una ronda local protegida. La migración no es un import remoto: copia lo que ya está en este dispositivo.
 
 ## Módulos
 
-Sin bundler. GitHub Pages sirve los archivos tal cual. `index.html` carga al final:
+Sin bundler. GitHub Pages sirve los archivos tal cual. `index.html` carga `fairway/js/courses.js` (script clásico) y, al final, los módulos:
 
-`fairway/js/persist-boot.js` → `persistence.js` + `idb.js` + `keys.js`.
+`scoring-boot.js` → `scoring.js`. `rounds-boot.js` → `rounds.js`. `persist-boot.js` → `persistence.js` + `idb.js` + `keys.js`. `shared-boot.js` → `shared-round.js` + `shared-mail.js` + `shared-rtc.js`.
 
 | Archivo | Rol |
 | --- | --- |
-| `fairway/js/keys.js` | Nombres de clave y esquema 3. No incluye `fairway.drive.clientId` ni el token de OAuth |
+| `fairway/js/keys.js` | Nombres de clave, `APP_VERSION` 5.1.0 y esquema 3. No incluye `fairway.drive.clientId` ni el token de OAuth. `fairway.bag.v1` está en `RETIRED_KEYS` |
+| `fairway/js/courses.js` | Catálogo (`let COURSES`). Script clásico |
+| `fairway/css/fairway.css` | Estilos. El `<head>` de `index.html` lo enlaza |
+| `fairway/js/scoring.js` | Tanteo en vivo: CH, golpes recibidos, Stableford, clasificación. `scoring-boot.js` lo publica en `window` |
+| `fairway/js/rounds.js` | Historial y ronda en curso. Único escritor de `fairway.activeRound.v1` |
 | `fairway/js/persistence.js` | Migración, verificación, recuperación, espejo. Funciones puras sobre un adaptador |
 | `fairway/js/idb.js` | `indexedDB.open("fairway", 1)`, almacén `kv` |
-| `fairway/js/persist-boot.js` | Arranque en el navegador |
+| `fairway/js/persist-boot.js` | Arranque del espejo en el navegador |
+| `fairway/js/shared-round.js` | Sala opcional. No es el marcador |
+| `fairway/js/shared-mail.js` | Buzón HTTPS de la sala |
+| `fairway/js/shared-rtc.js` | Atajo opcional. No hace falta para jugar |
+| `fairway/js/shared-boot.js` | Arranque de la sala en el navegador |
 
-El service worker precachea esos archivos y los trata como shell (`/fairway/js/`). El nombre de caché del shell es `fairway-v5-500` (5.0.0). El CSS no se ha partido. La puntuación sigue en `index.html`.
+El service worker precachea esos archivos y los trata como shell (`/fairway/js/` y `/fairway/css/`). El nombre de caché del shell es `fairway-v5-510` (5.1.0).
 
 ## Migración
 
@@ -47,20 +63,20 @@ Desde la 4.2.3 el único workflow del repo es `test-fairway.yml`: lanza `node te
 
 `FAIRWAY_DRIVE_CLIENT_ID` es el client id público de OAuth web para `https://ardu01.github.io` y `https://ardu01.github.io/app-golf/`. El detalle está en `docs/drive-sync.md`. El panel dice «Sin configurar» cuando el id no está. Un conflicto sigue mostrando «Conflicto» y no sustituye la ronda en curso hasta que el jugador elige.
 
-El nombre de caché del shell es `fairway-v5-500`. `fairwayShouldHoldUpdate` impide `SKIP_WAITING` y el reload mientras la pantalla es de juego, de cierre, o hay ronda armada. `tests/pwa.mjs` lo fija. El colchón de Inicio de la 4.2.1 sigue.
+El nombre de caché del shell es `fairway-v5-510`. El `install` no llama a `skipWaiting`. `fairwayShouldHoldUpdate` impide `SKIP_WAITING` y el reload mientras la pantalla es de juego, de cierre, o hay ronda armada. `tests/pwa.mjs` lo fija. El colchón de Inicio de la 4.2.1 sigue.
 
 ## Stats
 
-`statsGrossByLayout` separa el gross de 9 y el de 18. No los promedia juntos. La media dentro de cada largo es la misma media aritmética de `me.gross` que ya había. `courseHandicapFor` sigue en `index.html` (`hi * slope / 113`). No se ha extraído la puntuación: la suite la saca por texto y un traslado que no sea idéntico cambiaría el número.
+`statsGrossByLayout` separa el gross de 9 y el de 18. No los promedia juntos. La media dentro de cada largo es la misma media aritmética de `me.gross` que ya había. `courseHandicapFor` está en `fairway/js/scoring.js` (`hi * slope / 113`).
 
-No hay bolsa de palos ni recomendación de juego. El enlace `tel:` del caddie de La Herrería sigue en el hoyo. El área de toque de las fichas de acceso pasa a 48×48.
+No hay bolsa de palos ni recomendación de juego. El enlace `tel:` del caddie de La Herrería sigue en el hoyo.
 
 ## Cartografía
 
-`el-robledal`, `rshecc-norte` y `rshecc-sur` tienen manifiesto de los `01.webp`–`18.webp` que ya estaban. Sin nombres de hoyo. No se han creado planos ni se han movido coordenadas `approx: true`. Los 28 campos sin carpeta, Puerta de Hierro incluida, siguen sin carpeta.
+`el-robledal`, `rshecc-norte` y `rshecc-sur` tienen manifiesto de los `01.webp`–`18.webp` que ya estaban. Sin nombres de hoyo. No se han creado planos ni se han movido coordenadas `approx: true`. Los campos sin carpeta, Puerta de Hierro incluida, siguen sin carpeta.
 
 ## Partida compartida
 
-El detalle está en `docs/shared-round.md`. El marcador no la necesita: sin código, la ronda sigue solo en este móvil. Con código, cada cambio de golpe, putt, FIR, GIR, bola o retirado se encola en `fairway.sharedRound.v1` y sale cuando hay red. La fusión es por campo: gana el `seq` más alto (al ver el del otro móvil, el siguiente golpe de este queda por encima) y, si empatan, el `deviceId` mayor. Un hoyo que el otro móvil no manda no se borra. Si ese mapa ya es el de la sala, este móvil no hace POST: el POST sustituye el documento entero y una foto vieja borraba los hoyos del otro.
+El detalle está en `docs/shared-round.md`. El marcador no la necesita: sin código, la ronda sigue solo en este móvil. Con código, cada cambio de golpe, putt, FIR, GIR, bola o retirado se encola en `fairway.sharedRound.v1` y sale cuando hay red. La fusión es por campo: gana el `seq` más alto (al ver el del otro móvil, el siguiente golpe de este queda por encima) y, si empatan, el `deviceId` mayor. Un hoyo que el otro móvil no manda no se borra. Si ese mapa ya es el de la sala, este móvil no hace POST: el POST sustituye el documento entero y una foto vieja borraba los hoyos del otro. Esta rama no amplía esa sala.
 
-Esa cola no entra en el JSON de esquema 3. Las copias de la 4.0.11 a la 4.2.6 siguen entrando. El documento común es `https://mantledb.sh/v2/{código}/card`, sin clave. El MQTT público es solo un aviso si el socket abre; en Safari a menudo no abre, y Drive no sirve para dos cuentas distintas. El shell es `fairway-v5-500`. El velo de Inicio de la 4.2.2 sigue, y el toque del borde no crea historia antes de cancelarse. Deslizar la ficha del hoyo sigue seleccionando al jugador, como en la 4.2.4. Drive de la 4.1.2 sigue siendo la copia personal `Fairway/fairway-data.json`. No hay bolsa ni caddie. Los workflows que hacían `git push` no vuelven.
+Esa cola no entra en el JSON de esquema 3. Las copias de la 4.0.11 a la 5.0.6 siguen entrando. El documento común es `https://mantledb.sh/v2/{código}/card`, sin clave. El MQTT público es solo un aviso si el socket abre; en Safari a menudo no abre, y Drive no sirve para dos cuentas distintas. El shell es `fairway-v5-510`. El velo de Inicio de la 4.2.2 sigue, y el toque del borde no crea historia antes de cancelarse. Deslizar la ficha del hoyo sigue seleccionando al jugador, como en la 4.2.4. Drive de la 4.1.2 sigue siendo la copia personal `Fairway/fairway-data.json`. No hay bolsa ni caddie. Los workflows que hacían `git push` no vuelven.

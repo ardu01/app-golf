@@ -50,7 +50,7 @@ function session(deviceId, code, role) {
 }
 
 assert.strictEqual(BACKUP_SCHEMA, 3);
-assert.strictEqual(APP_VERSION, "5.0.6");
+assert.strictEqual(APP_VERSION, "5.1.0");
 assert.strictEqual(SHARED_KEY, "fairway.sharedRound.v1");
 assert.strictEqual(normalizeCode("k7nq4p"), "K7NQ4P");
 assert.strictEqual(normalizeCode("K7NQ4O"), "");
@@ -440,7 +440,7 @@ assert.ok(!boot.includes("IndexedDB"));
 assert.ok(html.includes('id="sharedRoundHome"'));
 assert.ok(readFileSync(new URL("../fairway/js/rounds.js", import.meta.url), "utf8").includes("fairwaySharedAfterPersist"));
 assert.ok(html.includes("fairway/js/shared-boot.js"));
-assert.ok(html.includes('aria-label="Versión">5.0.6</span>'));
+assert.ok(html.includes('aria-label="Versión">5.1.0</span>'));
 assert.ok(html.includes('href="fairway/css/fairway.css"'));
 assert.ok(css.includes("#screen-home .home-hero > #sharedRoundHome"));
 assert.ok(/#screen-home \.home-hero > #sharedRoundHome \{\s*margin-top:\s*16px;/.test(css));
@@ -448,7 +448,7 @@ assert.ok(html.includes("version: 3"));
 assert.ok(html.includes("function fairwayNavDecide"));
 assert.ok(!html.includes("client_secret"));
 assert.ok(!html.includes('id="holeBagBtn"'));
-assert.ok(sw.includes('const SHELL = "fairway-v5-506"'));
+assert.ok(sw.includes('const SHELL = "fairway-v5-510"'));
 assert.ok(sw.includes("fairway/js/shared-boot.js"));
 const mailSrc = readFileSync(new URL("../fairway/js/shared-mail.js", import.meta.url), "utf8");
 assert.ok(mailSrc.includes("wss://test.mosquitto.org:8081/mqtt"));

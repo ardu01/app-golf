@@ -2,7 +2,9 @@
  * Round persistence from index.html (Fairway 4.2.6).
  * localStorage is the score. IndexedDB stays a mirror in persistence.js.
  * scope is read on every call so a later HOLES or CLUB assignment stays visible.
- * Backup schema stays 3. Product version is 5.0.6.
+ * Backup schema stays 3. Product version is 5.1.0.
+ * The live card is written only here: persistActiveRound, writeStoredActiveRound,
+ * restoreActiveRound and recoverActiveRoundFromBackup all go through storageSetItem.
  */
 import {
   ACTIVE_BAK_KEY,
@@ -351,6 +353,108 @@ function createApi(scope) {
     return false;
   }
 
+  function activePlayersNow() {
+    sync();
+    if (pageFn("activePlayers")) return callPage("activePlayers");
+    return PLAYERS || [];
+  }
+
+  // Hole marks on the live card. The page paints; this is the only place that
+  // changes scores, putts, FIR, GIR and round totals before the save.
+  function commitActiveScore(idx, value) {
+    sync();
+    const p = activePlayersNow()[idx];
+    if (!p) return null;
+    p.scores[state.hole] = value;
+    p.totalsGross = null;
+    state.activePlayer = idx;
+    persistActiveRound();
+    return p;
+  }
+
+  function adjustActiveScore(idx, delta) {
+    sync();
+    const p = activePlayersNow()[idx];
+    if (!p) return null;
+    const par = HOLES[state.hole - 1].par;
+    let cur = p.scores[state.hole];
+    if (cur == null) {
+      cur = delta > 0 ? par : Math.max(1, par - 1);
+      p.scores[state.hole] = cur;
+    } else {
+      p.scores[state.hole] = Math.max(1, Math.min(15, cur + delta));
+    }
+    p.totalsGross = null;
+    state.activePlayer = idx;
+    persistActiveRound();
+    return p;
+  }
+
+  function commitActivePutts(idx, n) {
+    sync();
+    const p = activePlayersNow()[idx];
+    if (!p) return null;
+    p.putts[state.hole] = n;
+    state.activePlayer = idx;
+    state.dataTier = "stats";
+    persistActiveRound();
+    return p;
+  }
+
+  function adjustActivePutts(idx, delta) {
+    sync();
+    const p = activePlayersNow()[idx];
+    if (!p) return null;
+    let cur = p.putts[state.hole];
+    if (cur == null) cur = delta > 0 ? 0 : 1;
+    p.putts[state.hole] = Math.max(0, Math.min(6, cur + delta));
+    state.activePlayer = idx;
+    state.dataTier = "stats";
+    persistActiveRound();
+    return p;
+  }
+
+  function commitActiveMark(kind, value) {
+    sync();
+    if (kind !== "fir" && kind !== "gir") return false;
+    state[kind] = value;
+    state.dataTier = "stats";
+    const list = activePlayersNow();
+    const p = list[state.activePlayer] || list[0];
+    if (p) {
+      if (pageFn("ensurePlayerFirGir")) callPage("ensurePlayerFirGir", [p]);
+      if (!p[kind] || typeof p[kind] !== "object") p[kind] = {};
+      p[kind][state.hole] = value;
+    }
+    persistActiveRound();
+    return true;
+  }
+
+  function commitActiveTotal(idx, kind, value) {
+    sync();
+    const p = activePlayersNow()[idx];
+    if (!p) return false;
+    if (kind === "putts") p.totalsPutts = value;
+    else p.totalsGross = value;
+    persistActiveRound();
+    return true;
+  }
+
+  // Import and Drive replace the stored primary. They do not rebuild it from
+  // memory and they do not move the .bak: that copy stays the last good card
+  // written by persistActiveRound.
+  function writeStoredActiveRound(payload, failMsg) {
+    sync();
+    let next;
+    try {
+      next = typeof payload === "string" ? payload : JSON.stringify(payload);
+    } catch (e) {
+      noteActiveStorageError(failMsg || "No se pudo guardar la ronda en curso");
+      return false;
+    }
+    return storageSetItem(ACTIVE_KEY, next, failMsg || "No se pudo guardar la ronda en curso");
+  }
+
   function persistActiveRound() {
     sync();
     if (state._newRoundArmed || state._roundSaved) return false;
@@ -441,8 +545,6 @@ function createApi(scope) {
     try { if (pageFn("fairwaySharedRoundClosed")) callPage("fairwaySharedRoundClosed"); } catch (e) {}
     state._activeRoundLive = false;
     clearActiveRound();
-    // Double-clear in case ACTIVE_KEY was written under an alias
-    try { localStorage.removeItem("fairway.activeRound.v1"); } catch (e) {}
     PLAYERS.forEach(p => {
       p.scores = {};
       p.putts = {};
@@ -797,16 +899,16 @@ function createApi(scope) {
     return true;
   }
 
-  function saveEditingRoundDraft() {
+  function saveEditingRoundDraft(silent) {
     sync();
     if (!state.editingRoundId) {
-      if (persistActiveRound()) callPage("showToast", ["Progreso guardado"]);
+      if (persistActiveRound() && !silent) callPage("showToast", ["Progreso guardado"]);
       return;
     }
     const list = loadRounds();
     const idx = list.findIndex(r => r.id === state.editingRoundId);
     if (idx < 0) {
-      if (persistActiveRound()) callPage("showToast", ["Progreso guardado"]);
+      if (persistActiveRound() && !silent) callPage("showToast", ["Progreso guardado"]);
       return;
     }
     const rec = buildRoundRecord();
@@ -816,7 +918,7 @@ function createApi(scope) {
     rec.date = prev.date || rec.date;
     list[idx] = rec;
     saveRounds(list);
-    if (persistActiveRound()) callPage("showToast", ["Cambios guardados en el historial"]);
+    if (persistActiveRound() && !silent) callPage("showToast", ["Cambios guardados en el historial"]);
   }
 
   return {
@@ -836,6 +938,13 @@ function createApi(scope) {
     activeBackupNeedsRecovery: activeBackupNeedsRecovery,
     roundWouldBeReplaced: roundWouldBeReplaced,
     localActiveRoundIsProtected: localActiveRoundIsProtected,
+    commitActiveScore: commitActiveScore,
+    adjustActiveScore: adjustActiveScore,
+    commitActivePutts: commitActivePutts,
+    adjustActivePutts: adjustActivePutts,
+    commitActiveMark: commitActiveMark,
+    commitActiveTotal: commitActiveTotal,
+    writeStoredActiveRound: writeStoredActiveRound,
     persistActiveRound: persistActiveRound,
     clearActiveRound: clearActiveRound,
     endActiveRoundMemory: endActiveRoundMemory,
