@@ -4,13 +4,13 @@ Fairway es el marcador de golf personal para el iPhone. Funciona en Safari y en 
 
 La app publicada está en https://ardu01.github.io/app-golf/.
 
-La versión actual del código es **5.1.2**. En el código, `APP_VERSION`, la cabecera de Inicio, el perfil («Fairway 5.1.2»), el manifiesto («Marcador de golf personal · 5.1.2») y `appVersion` del JSON de copia dicen 5.1.2. El shell es `fairway-v5-512`. El esquema de la copia sigue en **3**: las copias de la 4.0.11 a la 5.1.1 siguen entrando. La release publicada es [v5.1.1](https://github.com/ardu01/app-golf/releases/tag/v5.1.1), «Fairway 5.1.1», el 2026-10-04T17:38:48Z, sobre `2b56e92508fdb143434ee1e92413f090113fbefd`. El detalle de cada versión está en [`CHANGELOG.md`](CHANGELOG.md) y en las [releases](https://github.com/ardu01/app-golf/releases).
+La versión actual del código es **5.1.3**. En el código, `APP_VERSION`, la cabecera de Inicio, el perfil («Fairway 5.1.3»), el manifiesto («Marcador de golf personal · 5.1.3») y `appVersion` del JSON de copia dicen 5.1.3. El shell es `fairway-v5-513`. El esquema de la copia sigue en **3**: las copias de la 4.0.11 a la 5.1.2 siguen entrando. La release publicada es [v5.1.2](https://github.com/ardu01/app-golf/releases/tag/v5.1.2), «Fairway 5.1.2», el 2026-10-04T17:46:37Z, sobre `9346c988f45d1c32e9623da5aa65c14e305085f7`. El detalle de cada versión está en [`CHANGELOG.md`](CHANGELOG.md) y en las [releases](https://github.com/ardu01/app-golf/releases).
 
-En la 5.1.2 la tarjeta deja aire entre el recuadro y los botones de F9 · Ida / B9 · Vuelta, y entre el recuadro y Out, In y Al par. El contenido, los colores y las fórmulas no cambian. Al instalar, el service worker no hace `skipWaiting` y no recarga si hay una ronda abierta. En el repositorio no hay una captura de la 5.1.2. La de Inicio más reciente es la de la 5.0.1, más abajo.
+En la 5.1.3 la tarjeta tiene Stableford junto a Bruta y Neta. Los puntos son los de `stablefordHole`. El aire de 12px del recuadro y el recuadro de bogey+ en Bruta siguen. En la 5.1.2 la tarjeta deja aire entre el recuadro y los botones de F9 · Ida / B9 · Vuelta, y entre el recuadro y Out, In y Al par. Al instalar, el service worker no hace `skipWaiting` y no recarga si hay una ronda abierta. En el repositorio no hay una captura de la 5.1.3. La de Inicio más reciente es la de la 5.0.1, más abajo.
 
 ## Qué se hace en una partida
 
-Se elige campo, tee y jugadores, se anota hoyo a hoyo y se cierra la vuelta. La tarjeta enseña el bruto y el neto, y la clasificación ordena la partida. Esas pantallas son la base de la línea 3. No son capturas de la 5.1.0.
+Se elige campo, tee y jugadores, se anota hoyo a hoyo y se cierra la vuelta. La tarjeta enseña el bruto, el neto y el Stableford, y la clasificación ordena la partida. Esas pantallas son la base de la línea 3. No son capturas de la 5.1.0.
 
 Lista de campos para empezar la vuelta.
 
@@ -344,7 +344,9 @@ La 5.0.6, el 2026-10-04T16:46:13Z, sobre `d08b685299e2069226ae218eed4cbcca1ef74e
 
 La 5.1.0, el 2026-10-04T17:16:08Z, sobre `b6aa690c62bc4455f646bf98e06a33b709ea49b2`, depura lo que ya había: la ronda en curso se escribe solo desde `rounds.js`, y se quita código que nadie llamaba. Los puntos, el hándicap y las pantallas siguen. Shell `fairway-v5-510`. Esquema 3. [v5.1.0](https://github.com/ardu01/app-golf/releases/tag/v5.1.0).
 
-La 5.1.1, el 2026-10-04T17:38:48Z, sobre `2b56e92508fdb143434ee1e92413f090113fbefd`, es la publicada. Una tarjeta con hoyos en blanco y un número de hoyos jugados distinto de 9 no es vuelta y no entra en estadísticas. Con exactamente 9 hoyos jugados solo es ronda de 9 si `holes` es 9. Si hace falta el número de la vuelta completa, el gross del cierre va en gris, sin escribir el bruto en los hoyos vacíos. Shell `fairway-v5-511`. Esquema 3. [v5.1.1](https://github.com/ardu01/app-golf/releases/tag/v5.1.1).
+La 5.1.1, el 2026-10-04T17:38:48Z, sobre `2b56e92508fdb143434ee1e92413f090113fbefd`, deja fuera de las estadísticas una tarjeta con hoyos en blanco y un número de hoyos jugados distinto de 9: no es vuelta. Con exactamente 9 hoyos jugados solo es ronda de 9 si `holes` es 9. Si hace falta el número de la vuelta completa, el gross del cierre va en gris, sin escribir el bruto en los hoyos vacíos. Shell `fairway-v5-511`. Esquema 3. [v5.1.1](https://github.com/ardu01/app-golf/releases/tag/v5.1.1).
+
+La 5.1.2, el 2026-10-04T17:46:37Z, sobre `9346c988f45d1c32e9623da5aa65c14e305085f7`, es la publicada. En Tarjeta, el recuadro deja aire respecto a F9 · Ida / B9 · Vuelta y respecto a Out, In y Al par. El contenido, los colores y las fórmulas no cambian. Shell `fairway-v5-512`. Esquema 3. [v5.1.2](https://github.com/ardu01/app-golf/releases/tag/v5.1.2).
 
 ## Datos y cómo abrirla
 

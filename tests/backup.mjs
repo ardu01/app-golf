@@ -89,6 +89,27 @@ const active = api.validateFairwayBackup({
 assert.strictEqual(active.data.activeRound.hole, 7);
 assert.strictEqual(active.data.activeRound.players[0].scores["1"], 4);
 
+const stablefordCard = api.validateFairwayBackup({
+  version: 3,
+  rounds: [],
+  activeRound: {
+    hole: 3,
+    scCard: "stableford",
+    players: [{ id: "p1", name: "Ana", hcp: 10, scores: { 1: 4 } }]
+  }
+});
+assert.strictEqual(stablefordCard.data.activeRound.scCard, "stableford");
+const grossCard = api.validateFairwayBackup({
+  version: 3,
+  rounds: [],
+  activeRound: {
+    hole: 3,
+    scCard: "match",
+    players: [{ id: "p1", name: "Ana", hcp: 10, scores: { 1: 4 } }]
+  }
+});
+assert.strictEqual(grossCard.data.activeRound.scCard, "gross");
+
 assert.ok(!html.includes("onclick=\"openDetalle('${r.id}')\""));
 assert.ok(!html.includes("onclick=\"reopenRound('${d.id}'"));
 assert.ok(html.includes("data-open-detalle"));
@@ -100,7 +121,7 @@ assert.ok(html.includes("data.rounds.length > ROUNDS_MAX"));
 assert.ok(html.includes(".slice(0, ROUNDS_MAX)"));
 assert.ok(!html.includes("saveRounds(list.slice(0, 50))"));
 assert.ok(!html.includes("o.rounds.slice(0, 200)"));
-assert.ok(html.includes('appVersion: "5.1.2"'));
+assert.ok(html.includes('appVersion: "5.1.3"'));
 assert.ok(!html.includes('appVersion: "4.0.0-alpha"'));
 assert.ok(html.includes("fairwayShouldHoldUpdate"));
 assert.ok(html.includes("fairway.rounds.bak.v1"));
