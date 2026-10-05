@@ -1,5 +1,14 @@
 # Changelog
 
+## 5.1.5
+
+Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 5.1.4 siguen entrando.
+
+- En Inicio, Tarjeta y Clasificación, la barra ya no deja una banda vacía bajo las pestañas en el iPhone. `.app` reserva `--safe-bot` y la barra lo volvía a sumar. Con la barra a la vista, ese margen lo lleva solo la barra (`padding` con `--safe-bot` y `padding-bottom: 0` en `.app`). El hoyo, el historial y el resto siguen con el margen de la app. El gesto de volver atrás no cambia.
+- La versión de producto es 5.1.5: cabecera, perfil, manifiesto y `appVersion` del JSON.
+- El service worker pasa a `fairway-v5-515`. No hace `skipWaiting` al instalar y no recarga con una ronda abierta.
+- No hay release v5.1.5. La publicada es v5.1.4, el 2026-10-04T18:17:32Z, sobre `fa7d755deba42e6d28ea386accbefe213eeca524`.
+
 ## 5.1.4
 
 Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 5.1.3 siguen entrando.
@@ -7,7 +16,7 @@ Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 5.1.3 siguen entrando
 - En Tarjeta, modo Bruta, el recuadro rojo de bogey+ se ciñe al número. Es el mismo cuadrado de bogey en Neta (`sc-mark square`, 26×26). El doble usa el mismo tamaño con el aro interior. Los puntos Stableford quedan fuera del recuadro. Eagle, birdie, números y fórmulas no cambian. El aire de 12px del recuadro tampoco. El modo Stableford sigue.
 - La versión de producto es 5.1.4: cabecera, perfil, manifiesto y `appVersion` del JSON.
 - El service worker pasa a `fairway-v5-514`. No hace `skipWaiting` al instalar y no recarga con una ronda abierta.
-- No hay release v5.1.4. La publicada es v5.1.3, el 2026-10-04T18:05:55Z, sobre `b3a05419ea7220ca7f5efafaf1a6d1adc1fb1fbd`.
+- Quedó publicada como v5.1.4, el 2026-10-04T18:17:32Z, sobre `fa7d755deba42e6d28ea386accbefe213eeca524`.
 
 ## 5.1.3
 

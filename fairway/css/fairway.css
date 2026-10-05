@@ -131,6 +131,12 @@
     padding-top: var(--safe-top); padding-bottom: var(--safe-bot);
     min-height: 0; position: relative;
   }
+  /* Inicio, Tarjeta y Clasificación: the tab bar already pads --safe-bot.
+     A second inset on .app leaves a blank band under the tabs on iPhone.
+     Hole, historial and the other screens keep the app inset. */
+  .app:has(> .screen.active > .tabbar) {
+    padding-bottom: 0;
+  }
   .screen { display: none; flex: 1; flex-direction: column; min-height: 0; overflow: hidden; }
   .screen.active { display: flex; overflow: hidden; }
 
@@ -439,7 +445,7 @@
 
   .tabbar {
     display: flex; align-items: stretch; justify-content: space-around;
-    padding: 4px 8px calc(2px + env(safe-area-inset-bottom, 0px));
+    padding: 4px 8px calc(2px + var(--safe-bot));
     border-top: 0.5px solid var(--separator);
     background: rgba(249,249,249,0.94);
     backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
