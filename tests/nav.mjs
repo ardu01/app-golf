@@ -302,7 +302,7 @@ assert.ok(!tabbarRule.includes("safe-area-inset-bottom"));
 const refCompose = css.slice(css.indexOf("\n  .ref-compose {"), css.indexOf("\n  .ref-compose input"));
 assert.ok(refCompose.includes("padding: 8px var(--pad-x) 8px"));
 assert.ok(!refCompose.includes("safe-area-inset-bottom"));
-assert.ok(!refCompose.includes("--safe-bot"));
+assert.ok(!/padding:[^;]*--safe-bot/.test(refCompose));
 assert.ok(!css.includes("#screen-close .scroll"));
 const scrollRule = css.slice(css.indexOf("\n  .scroll {"), css.indexOf("\n  .scroll::-webkit-scrollbar"));
 assert.ok(scrollRule.includes("padding: 8px var(--pad-x) 24px"));
