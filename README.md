@@ -4,13 +4,13 @@ Fairway es el marcador de golf personal para el iPhone. Funciona en Safari y en 
 
 La app publicada está en https://ardu01.github.io/app-golf/.
 
-La versión actual es **5.1.5**. En el código, `APP_VERSION`, la cabecera de Inicio, el perfil («Fairway 5.1.5»), el manifiesto («Marcador de golf personal · 5.1.5») y `appVersion` del JSON de copia dicen 5.1.5. El shell es `fairway-v5-515`. El esquema de la copia sigue en **3**: las copias de la 4.0.11 a la 5.1.4 siguen entrando. La release publicada es [v5.1.4](https://github.com/ardu01/app-golf/releases/tag/v5.1.4), «Fairway 5.1.4», el 2026-10-04T18:17:32Z, sobre `fa7d755deba42e6d28ea386accbefe213eeca524`. El detalle de cada versión está en [`CHANGELOG.md`](CHANGELOG.md) y en las [releases](https://github.com/ardu01/app-golf/releases).
+La versión actual es **5.1.6**. En el código, `APP_VERSION`, la cabecera de Inicio, el perfil («Fairway 5.1.6»), el manifiesto («Marcador de golf personal · 5.1.6») y `appVersion` del JSON de copia dicen 5.1.6. El shell es `fairway-v5-516`. El esquema de la copia sigue en **3**: las copias de la 4.0.11 a la 5.1.5 siguen entrando. La release publicada es [v5.1.5](https://github.com/ardu01/app-golf/releases/tag/v5.1.5), «Fairway 5.1.5», el 2026-10-05T20:34:57Z, sobre `aa1c45429e5de1e4f4ae0c2e946d625e2ad04414`. El detalle de cada versión está en [`CHANGELOG.md`](CHANGELOG.md) y en las [releases](https://github.com/ardu01/app-golf/releases).
 
-En la 5.1.5, la barra de Inicio, Tarjeta y Clasificación deja de sumar dos veces el margen inferior del iPhone. Ese margen lo lleva la barra. El hoyo, el historial y el resto siguen con el de la app. Al instalar, el service worker no hace `skipWaiting` y no recarga si hay una ronda abierta. En el repositorio no hay una captura de la 5.1.5. La de Inicio más reciente es la de la 5.0.1, más abajo.
+En la 5.1.6, el compositor del árbitro y el scroll de Fin de vuelta dejan de sumar otra vez el margen inferior del iPhone. Ese margen lo sigue llevando la app. La barra de Inicio, Tarjeta y Clasificación sigue como en la 5.1.5. Al instalar, el service worker no hace `skipWaiting` y no recarga si hay una ronda abierta. En el repositorio no hay una captura de la 5.1.6. La de Inicio más reciente es la de la 5.0.1, más abajo.
 
 ## Línea 3
 
-La línea 3 deja el producto en una sola app para el campo: anotar sin cobertura, hándicap WHS en 9 y en 18, varios jugadores, tarjeta, clasificación y cierre, perfil, historial que se puede reabrir, estadísticas, árbitro local y la copia JSON en el propio teléfono. El service worker no recarga a mitad de una ronda abierta. El esquema de copia es el 3. No hay una release numerada de esta línea en el listado publicado. Las pantallas de abajo son de esa base. No son capturas de la 5.1.5.
+La línea 3 deja el producto en una sola app para el campo: anotar sin cobertura, hándicap WHS en 9 y en 18, varios jugadores, tarjeta, clasificación y cierre, perfil, historial que se puede reabrir, estadísticas, árbitro local y la copia JSON en el propio teléfono. El service worker no recarga a mitad de una ronda abierta. El esquema de copia es el 3. No hay una release numerada de esta línea en el listado publicado. Las pantallas de abajo son de esa base. No son capturas de la 5.1.6.
 
 Lista de campos para empezar la vuelta.
 
@@ -236,7 +236,9 @@ La 5.1.2, el 2026-10-04T17:46:37Z, sobre `9346c988f45d1c32e9623da5aa65c14e305085
 
 La 5.1.3, el 2026-10-04T18:05:55Z, sobre `b3a05419ea7220ca7f5efafaf1a6d1adc1fb1fbd`, en Tarjeta pone Stableford en la misma fila que Bruta y Neta. Cada hoyo usa el cálculo de `stablefordHole` que ya existía. Out, In y el total suman esos puntos. Al par es la diferencia frente a 2 puntos por hoyo jugado. Shell `fairway-v5-513`. Esquema 3. [v5.1.3](https://github.com/ardu01/app-golf/releases/tag/v5.1.3).
 
-La 5.1.4, el 2026-10-04T18:17:32Z, sobre `fa7d755deba42e6d28ea386accbefe213eeca524`, es la publicada. En Tarjeta, modo Bruta, el recuadro de bogey y de doble bogey es el mismo cuadrado de 26px que en Neta, ceñido al número. Los puntos quedan fuera. Eagle, birdie y las fórmulas no cambian. Shell `fairway-v5-514`. Esquema 3. [v5.1.4](https://github.com/ardu01/app-golf/releases/tag/v5.1.4). No hay foto de esta versión.
+La 5.1.4, el 2026-10-04T18:17:32Z, sobre `fa7d755deba42e6d28ea386accbefe213eeca524`, en Tarjeta, modo Bruta, el recuadro de bogey y de doble bogey es el mismo cuadrado de 26px que en Neta, ceñido al número. Los puntos quedan fuera. Eagle, birdie y las fórmulas no cambian. Shell `fairway-v5-514`. Esquema 3. [v5.1.4](https://github.com/ardu01/app-golf/releases/tag/v5.1.4). No hay foto de esta versión.
+
+La 5.1.5, el 2026-10-05T20:34:57Z, sobre `aa1c45429e5de1e4f4ae0c2e946d625e2ad04414`, es la publicada. En Inicio, Tarjeta y Clasificación, la barra deja de sumar dos veces el margen inferior del iPhone. Ese margen lo lleva la barra. El hoyo, el historial y el resto siguen con el de la app. Shell `fairway-v5-515`. Esquema 3. [v5.1.5](https://github.com/ardu01/app-golf/releases/tag/v5.1.5). No hay foto de esta versión.
 
 ## Datos y cómo abrirla
 
