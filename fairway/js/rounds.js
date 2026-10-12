@@ -2,7 +2,7 @@
  * Round persistence from index.html (Fairway 4.2.6).
  * localStorage is the score. IndexedDB stays a mirror in persistence.js.
  * scope is read on every call so a later HOLES or CLUB assignment stays visible.
- * Backup schema stays 3. Product version is 5.1.5.
+ * Backup schema stays 3. Product version is 5.1.6.
  * The live card is written only here: persistActiveRound, writeStoredActiveRound,
  * restoreActiveRound and recoverActiveRoundFromBackup all go through storageSetItem.
  */

@@ -1,5 +1,14 @@
 # Changelog
 
+## 5.1.6
+
+Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 5.1.5 siguen entrando.
+
+- El compositor del árbitro y el scroll de Fin de vuelta dejan de sumar otra vez el margen inferior del iPhone. `.app` ya reserva `--safe-bot`. `.ref-compose` y `#screen-close .scroll` volvían a sumar `env(safe-area-inset-bottom)`. Ese margen lo lleva la app, como en el hoyo. La barra de Inicio, Tarjeta y Clasificación no cambia.
+- La versión de producto es 5.1.6: cabecera, perfil, manifiesto y `appVersion` del JSON.
+- El service worker pasa a `fairway-v5-516`. No hace `skipWaiting` al instalar y no recarga con una ronda abierta.
+- No hay release v5.1.6. La publicada es v5.1.5, el 2026-10-05T20:34:57Z, sobre `aa1c45429e5de1e4f4ae0c2e946d625e2ad04414`.
+
 ## 5.1.5
 
 Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 5.1.4 siguen entrando.
@@ -7,7 +16,7 @@ Esquema del JSON de copia: 3. Las copias de la 4.0.11 a la 5.1.4 siguen entrando
 - En Inicio, Tarjeta y Clasificación, la barra ya no deja una banda vacía bajo las pestañas en el iPhone. `.app` reserva `--safe-bot` y la barra lo volvía a sumar. Con la barra a la vista, ese margen lo lleva solo la barra (`padding` con `--safe-bot` y `padding-bottom: 0` en `.app`). El hoyo, el historial y el resto siguen con el margen de la app. El gesto de volver atrás no cambia.
 - La versión de producto es 5.1.5: cabecera, perfil, manifiesto y `appVersion` del JSON.
 - El service worker pasa a `fairway-v5-515`. No hace `skipWaiting` al instalar y no recarga con una ronda abierta.
-- No hay release v5.1.5. La publicada es v5.1.4, el 2026-10-04T18:17:32Z, sobre `fa7d755deba42e6d28ea386accbefe213eeca524`.
+- Quedó publicada como v5.1.5, el 2026-10-05T20:34:57Z, sobre `aa1c45429e5de1e4f4ae0c2e946d625e2ad04414`.
 
 ## 5.1.4
 

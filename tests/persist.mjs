@@ -11,7 +11,7 @@ for (const block of html.matchAll(/<script>([\s\S]*?)<\/script>/g)) {
   new Function(block[1]);
 }
 
-assert.ok(html.includes('appVersion: "5.1.5"'));
+assert.ok(html.includes('appVersion: "5.1.6"'));
 assert.ok(!html.includes("localStorage.setItem(ACTIVE_KEY"));
 assert.ok(!html.includes('localStorage.setItem("fairway.activeRound.v1"'));
 assert.ok(!html.includes("localStorage.setItem('fairway.activeRound.v1'"));
@@ -28,7 +28,7 @@ assert.ok(!html.includes('appVersion: "4.0.0-alpha"'));
 assert.ok(!html.includes('appVersion: "3.0.3"'));
 assert.ok(!html.includes('appVersion: "3.0.2"'));
 assert.ok(!html.includes('appVersion: "3.0.0"'));
-assert.ok(sw.includes('const SHELL = "fairway-v5-515"'));
+assert.ok(sw.includes('const SHELL = "fairway-v5-516"'));
 assert.ok(!sw.includes("fairway-v4-400a"));
 assert.ok(roundsSrc.includes("pagehide"));
 assert.ok(roundsSrc.includes("visibilitychange"));

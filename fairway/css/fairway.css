@@ -403,10 +403,7 @@
 
   .scroll { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 8px var(--pad-x) 24px; -webkit-overflow-scrolling: touch; }
   .scroll::-webkit-scrollbar { width: 0; }
-  #screen-close .scroll {
-    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
-    -webkit-overflow-scrolling: touch;
-  }
+  /* Fin de vuelta uses .scroll. .app already pads --safe-bot; do not add env(safe-area-inset-bottom). */
   /* Main screens never use .scroll — only perfil/historial/stats/lobby */
 
   h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.3px; color: inherit; line-height: 1.2; }
@@ -706,7 +703,9 @@
     white-space: nowrap;
   }
   .ref-compose {
-    display: flex; gap: 8px; padding: 8px var(--pad-x) calc(8px + env(safe-area-inset-bottom, 0px));
+    display: flex; gap: 8px;
+    /* Safe-area already on .app (--safe-bot); do not double-inset under the composer */
+    padding: 8px var(--pad-x) 8px;
     border-top: 0.5px solid var(--separator); flex-shrink: 0; background: var(--bg-paper);
   }
   .ref-compose input {
