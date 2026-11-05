@@ -240,7 +240,9 @@ La 5.1.4, el 2026-10-04T18:17:32Z, sobre `fa7d755deba42e6d28ea386accbefe213eeca5
 
 La 5.1.5, el 2026-10-05T20:34:57Z, sobre `aa1c45429e5de1e4f4ae0c2e946d625e2ad04414`, fue la publicada anterior. En Inicio, Tarjeta y Clasificación, la barra deja de sumar dos veces el margen inferior del iPhone. Ese margen lo lleva la barra. El hoyo, el historial y el resto siguen con el de la app. Shell `fairway-v5-515`. Esquema 3. [v5.1.5](https://github.com/ardu01/app-golf/releases/tag/v5.1.5). No hay foto de esta versión.
 
-La 5.1.6, el 2026-10-14T16:48:51Z, sobre `7eef9714bb42e9e0d777c3dee1b33e92abaa92ff`, evita duplicar el margen inferior del iPhone en el compositor del árbitro y en el scroll de Fin de vuelta. Shell `fairway-v5-516`. Esquema 3. [v5.1.6](https://github.com/ardu01/app-golf/releases/tag/v5.1.6).\n\n## Datos y cómo abrirla
+La 5.1.6, el 2026-10-14T16:48:51Z, sobre `7eef9714bb42e9e0d777c3dee1b33e92abaa92ff`, evita duplicar el margen inferior del iPhone en el compositor del árbitro y en el scroll de Fin de vuelta. Shell `fairway-v5-516`. Esquema 3. [v5.1.6](https://github.com/ardu01/app-golf/releases/tag/v5.1.6).
+
+## Datos y cómo abrirla
 
 La partida vive primero en el teléfono. Drive, si se conecta, es el Drive de esa cuenta. La partida compartida no usa ese JSON: es un buzón aparte. Los tests son `node tests/run.mjs`.
 
