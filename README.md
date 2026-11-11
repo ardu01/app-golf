@@ -4,7 +4,7 @@ Fairway es el marcador de golf personal para el iPhone. Funciona en Safari y en 
 
 La app publicada está en https://ardu01.github.io/app-golf/.
 
-La versión actual es **5.1.6**. En el código, `APP_VERSION`, la cabecera de Inicio, el perfil («Fairway 5.1.6»), el manifiesto («Marcador de golf personal · 5.1.6») y `appVersion` del JSON de copia dicen 5.1.6. El shell es `fairway-v5-516`. El esquema de la copia sigue en **3**: las copias de la 4.0.11 a la 5.1.5 siguen entrando. La release publicada es [v5.1.5](https://github.com/ardu01/app-golf/releases/tag/v5.1.5), «Fairway 5.1.5», el 2026-10-05T20:34:57Z, sobre `aa1c45429e5de1e4f4ae0c2e946d625e2ad04414`. El detalle de cada versión está en [`CHANGELOG.md`](CHANGELOG.md) y en las [releases](https://github.com/ardu01/app-golf/releases).
+La versión actual es **5.1.6**. En el código, `APP_VERSION`, la cabecera de Inicio, el perfil («Fairway 5.1.6»), el manifiesto («Marcador de golf personal · 5.1.6») y `appVersion` del JSON de copia dicen 5.1.6. El shell es `fairway-v5-516`. El esquema de la copia sigue en **3**: las copias de la 4.0.11 a la 5.1.5 siguen entrando. La release publicada es [v5.1.6](https://github.com/ardu01/app-golf/releases/tag/v5.1.6), «Fairway 5.1.6», el 2026-10-14T16:48:51Z, sobre `7eef9714bb42e9e0d777c3dee1b33e92abaa92ff`. El detalle de cada versión está en [`CHANGELOG.md`](CHANGELOG.md) y en las [releases](https://github.com/ardu01/app-golf/releases).
 
 En la 5.1.6, el compositor del árbitro y el scroll de Fin de vuelta dejan de sumar otra vez el margen inferior del iPhone. Ese margen lo sigue llevando la app. La barra de Inicio, Tarjeta y Clasificación sigue como en la 5.1.5. Al instalar, el service worker no hace `skipWaiting` y no recarga si hay una ronda abierta. En el repositorio no hay una captura de la 5.1.6. La de Inicio más reciente es la de la 5.0.1, más abajo.
 
@@ -208,7 +208,7 @@ Inicio en el escritorio. La cabecera dice 4.2.6. La Herrería figura como campo,
 
 ## Línea 5
 
-La línea 5 mantiene el esquema 3, las fórmulas, el catálogo de 54 campos y la partida. Cada release de abajo está publicada. La última, y la que figura arriba, es la 5.1.4.
+La línea 5 mantiene el esquema 3, las fórmulas, el catálogo de 54 campos y la partida. Cada release de abajo está publicada. La última, y la que figura arriba, es la 5.1.6.
 
 La 5.0.0, el 2026-10-03T21:21:47Z, sobre `3bf85688470e001c607830a61bf48ae6d512d183`, pasa la versión de producto a 5.0.0 en cabecera, perfil, manifiesto y JSON. El shell es `fairway-v5-500`. Fórmulas, catálogo, navegación, partida compartida y Drive siguen. [v5.0.0](https://github.com/ardu01/app-golf/releases/tag/v5.0.0).
 
@@ -238,7 +238,9 @@ La 5.1.3, el 2026-10-04T18:05:55Z, sobre `b3a05419ea7220ca7f5efafaf1a6d1adc1fb1f
 
 La 5.1.4, el 2026-10-04T18:17:32Z, sobre `fa7d755deba42e6d28ea386accbefe213eeca524`, en Tarjeta, modo Bruta, el recuadro de bogey y de doble bogey es el mismo cuadrado de 26px que en Neta, ceñido al número. Los puntos quedan fuera. Eagle, birdie y las fórmulas no cambian. Shell `fairway-v5-514`. Esquema 3. [v5.1.4](https://github.com/ardu01/app-golf/releases/tag/v5.1.4). No hay foto de esta versión.
 
-La 5.1.5, el 2026-10-05T20:34:57Z, sobre `aa1c45429e5de1e4f4ae0c2e946d625e2ad04414`, es la publicada. En Inicio, Tarjeta y Clasificación, la barra deja de sumar dos veces el margen inferior del iPhone. Ese margen lo lleva la barra. El hoyo, el historial y el resto siguen con el de la app. Shell `fairway-v5-515`. Esquema 3. [v5.1.5](https://github.com/ardu01/app-golf/releases/tag/v5.1.5). No hay foto de esta versión.
+La 5.1.5, el 2026-10-05T20:34:57Z, sobre `aa1c45429e5de1e4f4ae0c2e946d625e2ad04414`, fue la publicada anterior. En Inicio, Tarjeta y Clasificación, la barra deja de sumar dos veces el margen inferior del iPhone. Ese margen lo lleva la barra. El hoyo, el historial y el resto siguen con el de la app. Shell `fairway-v5-515`. Esquema 3. [v5.1.5](https://github.com/ardu01/app-golf/releases/tag/v5.1.5). No hay foto de esta versión.
+
+La 5.1.6, el 2026-10-14T16:48:51Z, sobre `7eef9714bb42e9e0d777c3dee1b33e92abaa92ff`, evita duplicar el margen inferior del iPhone en el compositor del árbitro y en el scroll de Fin de vuelta. Shell `fairway-v5-516`. Esquema 3. [v5.1.6](https://github.com/ardu01/app-golf/releases/tag/v5.1.6).
 
 ## Datos y cómo abrirla
 
